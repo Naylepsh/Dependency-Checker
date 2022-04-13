@@ -2,6 +2,7 @@ package dependencies
 
 import scala.util.Try
 import scala.util.matching.Regex
+import scala.util.Success
 
 object Python {
 
@@ -27,7 +28,16 @@ object Python {
 
   def getDependencyVersions(name: String): Try[List[String]] = ???
 
-  def getLatestVersion(name: String): Try[String] = ???
+  def getLatestVersion(versions: List[String]): Option[String] =
+    versions.sorted(Ordering.String.reverse) match {
+      case Nil => None
+      case xs  => Some(xs.head)
+    }
+
+  def fillInDependency(dependency: Dependency): Try[Dependency] =
+    getDependencyVersions(dependency.name).map(versions =>
+      dependency.copy(latestVersion = getLatestVersion(versions))
+    )
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
