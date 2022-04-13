@@ -26,7 +26,12 @@ object Python {
       })
   }
 
-  def getDependencyVersions(name: String): Try[List[String]] = ???
+  object Pip {
+    val versionPattern = "[0-9]+.[.0-9a-zA-Z]+".r
+
+    def parseDependencyVersions(versionsText: String): List[String] =
+      versionPattern.findAllIn(versionsText).toList
+  }
 
   def getLatestVersion(versions: List[String]): Option[String] =
     versions.sorted(Ordering.String.reverse) match {
@@ -34,9 +39,11 @@ object Python {
       case xs  => Some(xs.head)
     }
 
-  def fillInDependency(dependency: Dependency): Try[Dependency] =
-    getDependencyVersions(dependency.name).map(versions =>
-      dependency.copy(latestVersion = getLatestVersion(versions))
+  def fillInDependency(
+      parseDependencyVersions: String => List[String]
+  )(dependency: Dependency): Dependency =
+    dependency.copy(latestVersion =
+      getLatestVersion(parseDependencyVersions(dependency.name))
     )
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")

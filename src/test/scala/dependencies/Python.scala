@@ -42,6 +42,21 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     dependencies should have length 1
   }
 
+  "Pip: Parse dependency versions" should "extract all versions" in {
+    import Pip._
+
+    // This is a partial output of `pip install Django==`
+    val versionsText =
+      "requirement Django== (from versions: 1.1.3, 1.8b2, 2.1rc1) ERROR"
+
+    val versions = parseDependencyVersions(versionsText)
+
+    versions should have length 3
+    versions should contain("1.1.3")
+    versions should contain("1.8b2")
+    versions should contain("2.1rc1")
+  }
+
   "Get latest version" should "pick the latest from available versions" in {
     val versions = List("1.1.1", "1.2.2", "0.0.1")
 
