@@ -5,8 +5,7 @@ lazy val root = project
   .settings(
     name := "dependency-checker",
     version := "0.1.0-SNAPSHOT",
-
     scalaVersion := scala3Version,
-
-    libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test
+    // https://mvnrepository.com/artifact/org.typelevel/discipline-scalatest
+    libraryDependencies += "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
   )
