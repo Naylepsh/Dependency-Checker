@@ -35,9 +35,10 @@ object Python {
     def getDependencyVersions(name: String): List[String] =
       parseDependencyVersions(
         os.proc("pip", "install", s"$name==")
-          .call(stderr = os.Pipe, check = false)
-          .err
-          .string()
+          .spawn(stderr = os.Pipe)
+          .stderr
+          .lines()
+          .head
       )
   }
 
