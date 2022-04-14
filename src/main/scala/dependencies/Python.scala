@@ -31,6 +31,14 @@ object Python {
 
     def parseDependencyVersions(versionsText: String): List[String] =
       versionPattern.findAllIn(versionsText).toList
+
+    def getDependencyVersions(name: String): List[String] =
+      parseDependencyVersions(
+        os.proc("pip", "install", s"$name==")
+          .call(stderr = os.Pipe, check = false)
+          .err
+          .string()
+      )
   }
 
   def getLatestVersion(versions: List[String]): Option[String] =
@@ -40,10 +48,10 @@ object Python {
     }
 
   def fillInDependency(
-      parseDependencyVersions: String => List[String]
+      getDependencyVersions: String => List[String]
   )(dependency: Dependency): Dependency =
     dependency.copy(latestVersion =
-      getLatestVersion(parseDependencyVersions(dependency.name))
+      getLatestVersion(getDependencyVersions(dependency.name))
     )
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")

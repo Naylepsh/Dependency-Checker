@@ -6,6 +6,10 @@ lazy val root = project
     name := "dependency-checker",
     version := "0.1.0-SNAPSHOT",
     scalaVersion := scala3Version,
+
+    // https://mvnrepository.com/artifact/com.lihaoyi/os-lib
+    libraryDependencies += "com.lihaoyi" %% "os-lib" % "0.8.1",
+
     // https://mvnrepository.com/artifact/org.typelevel/discipline-scalatest
     libraryDependencies += "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
   )
