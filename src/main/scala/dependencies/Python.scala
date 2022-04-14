@@ -3,6 +3,8 @@ package dependencies
 import scala.util.Try
 import scala.util.matching.Regex
 import scala.util.Success
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 object Python {
 
@@ -54,6 +56,16 @@ object Python {
     dependency.copy(latestVersion =
       getLatestVersion(getDependencyVersions(dependency.name))
     )
+
+  def getDependencies(
+      fileContents: String,
+      getDependencyVersions: String => List[String]
+  )(implicit ec: ExecutionContext): Future[List[Dependency]] = {
+    val dependenciesFutures = parseRequirements(fileContents).map(dependency =>
+      Future { fillInDependency(getDependencyVersions)(dependency) }
+    )
+    Future.sequence(dependenciesFutures)
+  }
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
