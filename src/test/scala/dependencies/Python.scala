@@ -88,16 +88,4 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
 
     versions should have length 0
   }
-
-  "Get latest version" should "pick the latest from available versions" in {
-    val versions = List("1.1.1", "1.2.2", "0.0.1")
-
-    val latestVersion = getLatestVersion(versions)
-
-    latestVersion.value shouldBe "1.2.2"
-  }
-
-  // it should "not allow latest version to be earlier than current version" in {
-
-  // }
 }

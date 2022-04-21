@@ -5,6 +5,8 @@ import scala.util.matching.Regex
 import scala.util.Success
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import upickle.default.{ReadWriter => RW, macroRW}
+import javax.security.auth.login.FailedLoginException
 
 object Python {
 
@@ -29,9 +31,9 @@ object Python {
   }
 
   object Pip {
-    /**
-     * Can be replaced by requests to pypi.org/pypi/<lib-name>/json
-     */
+
+    /** Can be replaced by requests to pypi.org/pypi/<lib-name>/json
+      */
     val versionPattern = "[0-9]+.[.0-9a-zA-Z]+".r
     val versionLinesPattern = "ERROR:[^\n]*\n".r
 
@@ -40,30 +42,41 @@ object Python {
     }
 
     def getDependencyVersions(name: String): List[String] = {
-      val pipOutput =  os
+      val pipOutput = os
         .proc("pip", "install", s"$name==")
         .spawn(stderr = os.Pipe)
         .stderr
         .lines()
         .mkString("\n")
-      
-      val versionsLine = versionLinesPattern.findFirstIn(pipOutput).getOrElse("")
+
+      val versionsLine =
+        versionLinesPattern.findFirstIn(pipOutput).getOrElse("")
       parseDependencyVersions(versionsLine)
     }
   }
 
-  def getLatestVersion(versions: List[String]): Option[String] =
-    versions.sorted(Ordering.String.reverse) match {
-      case Nil => None
-      case xs  => Some(xs.head)
+  object Pypi {
+    case class PackageInfo(version: String)
+    object PackageInfo {
+      implicit val rw: RW[PackageInfo] = macroRW
     }
+
+    case class PypiResponse(info: PackageInfo)
+    object PypiResponse {
+      implicit val rw: RW[PypiResponse] = macroRW
+    }
+
+  }
+
+  def getLatestVersion(packageName: String): Try[String] = Try {
+    val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
+    upickle.default.read[Pypi.PypiResponse](response.text()).info.version
+  }
 
   def fillInDependency(
       getDependencyVersions: String => List[String]
   )(dependency: Dependency): Dependency =
-    dependency.copy(latestVersion =
-      getLatestVersion(getDependencyVersions(dependency.name))
-    )
+    dependency.copy(latestVersion =tryToOption(getLatestVersion(dependency.name)))
 
   def getDependencies(
       fileContents: String,
@@ -81,4 +94,9 @@ object Python {
     if (value != null) Some(value) else None
 
   private val dependencyPattern: Regex = "([-a-zA-Z0-9]+)(==)?(.+)?".r
+
+  private def tryToOption[T](tryResult: Try[T]): Option[T] = tryResult match {
+    case Success(value) => Some(value)
+    case _              => None
+  }
 }
