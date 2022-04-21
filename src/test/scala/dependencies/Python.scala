@@ -41,6 +41,22 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     )
     dependencies should have length 1
   }
+  
+  it should "extract a name that uses special characters" in {
+    val requirements = """
+    | django-autocomplete-light
+    """.stripMargin
+
+    val dependencies = parseRequirements(requirements)
+    dependencies should contain(
+      Dependency(
+        name = "django-autocomplete-light",
+        currentVersion = None,
+        latestVersion = None
+      )
+    )
+    dependencies should have length 1
+  }
 
   "Pip: Parse dependency versions" should "extract all versions" in {
     import Pip._

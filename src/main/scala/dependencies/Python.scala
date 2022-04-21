@@ -29,19 +29,27 @@ object Python {
   }
 
   object Pip {
+    /**
+     * Can be replaced by requests to pypi.org/pypi/<lib-name>/json
+     */
     val versionPattern = "[0-9]+.[.0-9a-zA-Z]+".r
+    val versionLinesPattern = "ERROR:[^\n]*\n".r
 
-    def parseDependencyVersions(versionsText: String): List[String] =
+    def parseDependencyVersions(versionsText: String): List[String] = {
       versionPattern.findAllIn(versionsText).toList
+    }
 
-    def getDependencyVersions(name: String): List[String] =
-      parseDependencyVersions(
-        os.proc("pip", "install", s"$name==")
-          .spawn(stderr = os.Pipe)
-          .stderr
-          .lines()
-          .head
-      )
+    def getDependencyVersions(name: String): List[String] = {
+      val pipOutput =  os
+        .proc("pip", "install", s"$name==")
+        .spawn(stderr = os.Pipe)
+        .stderr
+        .lines()
+        .mkString("\n")
+      
+      val versionsLine = versionLinesPattern.findFirstIn(pipOutput).getOrElse("")
+      parseDependencyVersions(versionsLine)
+    }
   }
 
   def getLatestVersion(versions: List[String]): Option[String] =
@@ -72,5 +80,5 @@ object Python {
   private def convertToOption[T](value: T): Option[T] =
     if (value != null) Some(value) else None
 
-  private val dependencyPattern: Regex = "([a-zA-Z0-9]+)(==)?(.+)?".r
+  private val dependencyPattern: Regex = "([-a-zA-Z0-9]+)(==)?(.+)?".r
 }
