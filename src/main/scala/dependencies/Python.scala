@@ -6,7 +6,6 @@ import scala.util.Success
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import upickle.default.{ReadWriter => RW, macroRW}
-import javax.security.auth.login.FailedLoginException
 
 object Python {
 
