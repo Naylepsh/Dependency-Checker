@@ -1,8 +1,9 @@
 import dependencies.Python
-import scala.util.{Success, Failure}
+import scala.util.{Success, Failure, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 import scala.concurrent.Future
+import dependencies.Dependency
 
 @main def hello: Unit =
   val repoPaths = List(
@@ -13,25 +14,38 @@ import scala.concurrent.Future
   )
 
   def appendReqsFile(path: String): String = s"$path/requirements.txt"
-  def getFileContents(path: String): String =
+  def getLocalFileContents(path: String): String =
     Source.fromFile(path).getLines.mkString("\n")
 
-  val getRepositoryDependencies = appendReqsFile
-    .andThen(getFileContents)
-    .andThen(fileContents =>
-      Python.getDependencies(fileContents, Python.Pypi.getLatestVersion)
-    )
+  def getRepositoryDependencies(
+      getFileContents: String => Future[String],
+      getLatestVersion: String => Try[String]
+  )(path: String): Future[List[Dependency]] = {
+    for {
+      fileContents <- getFileContents(path)
+      dependencies <- Python.getDependencies(fileContents, getLatestVersion)
+    } yield dependencies
+  }
+
+  val getDeps = getRepositoryDependencies(
+    x => Future { appendReqsFile.andThen(getLocalFileContents)(x) },
+    Python.Pypi.getLatestVersion
+  )
 
   val result =
-    Future.sequence(repoPaths.map(x => Future { getRepositoryDependencies(x) }))
+    Future.sequence(repoPaths.map(path => Future { (path, getDeps(path)) }))
   result.onComplete {
     case Success(repoDependencies) =>
-      repoDependencies.map(_.foreach { dependencies =>
-        {
-          println("*" * 10)
-          dependencies.foreach(println)
+      repoDependencies.map {
+        case (path, dependenciesFuture) => {
+          dependenciesFuture.map { dependencies =>
+            println("*" * 10)
+            println(path)
+            dependencies.foreach(println)
+          }
         }
-      })
+      }
+
     case Failure(err) => println(s"error = $err")
   }
 
