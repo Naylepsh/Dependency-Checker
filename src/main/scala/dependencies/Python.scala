@@ -70,6 +70,16 @@ object Python {
   }
 
   def getDependencies(
+      getFileContents: String => Future[String],
+      getLatestVersion: String => Try[String]
+  )(path: String)(implicit ec: ExecutionContext): Future[List[Dependency]] = {
+    for {
+      fileContents <- getFileContents(path)
+      dependencies <- Python.getDependencies(fileContents, getLatestVersion)
+    } yield dependencies
+  }
+
+  def getDependencies(
       fileContents: String,
       getLatestVersion: String => Try[String]
   )(implicit ec: ExecutionContext): Future[List[Dependency]] = {

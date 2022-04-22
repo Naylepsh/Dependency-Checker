@@ -17,17 +17,7 @@ import dependencies.Dependency
   def getLocalFileContents(path: String): String =
     Source.fromFile(path).getLines.mkString("\n")
 
-  def getRepositoryDependencies(
-      getFileContents: String => Future[String],
-      getLatestVersion: String => Try[String]
-  )(path: String): Future[List[Dependency]] = {
-    for {
-      fileContents <- getFileContents(path)
-      dependencies <- Python.getDependencies(fileContents, getLatestVersion)
-    } yield dependencies
-  }
-
-  val getDeps = getRepositoryDependencies(
+  val getDeps = Python.getDependencies(
     x => Future { appendReqsFile.andThen(getLocalFileContents)(x) },
     Python.Pypi.getLatestVersion
   )
