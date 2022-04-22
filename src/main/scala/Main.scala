@@ -12,7 +12,7 @@ import scala.io.Source
   Python
     .getDependencies(fileContents, Python.Pypi.getLatestVersion)
     .onComplete {
-      case Success(data) => println(s"data = $data")
+      case Success(dependencies) => dependencies.foreach(println)
       case Failure(err)  => println(s"error = $err")
     }
   Thread.sleep(100000)
