@@ -41,7 +41,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     )
     dependencies should have length 1
   }
-  
+
   it should "extract a name that uses special characters" in {
     val requirements = """
     | django-autocomplete-light
@@ -58,34 +58,12 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     dependencies should have length 1
   }
 
-  "Pip: Parse dependency versions" should "extract all versions" in {
-    import Pip._
+  "Pypi: parse response" should "transform json-string to appropriate case class" in {
+    import Pypi._
+    val response = """{"info": {"version": "1.2.3"} }"""
 
-    // This is a partial output of `pip install Django==`
-    val versionsText =
-      "requirement Django== (from versions: 1.1.3, 1.8b2, 2.1rc1) ERROR"
+    val parsed = parseResponse(response)
 
-    val versions = parseDependencyVersions(versionsText)
-
-    versions should have length 3
-    versions should contain("1.1.3")
-    versions should contain("1.8b2")
-    versions should contain("2.1rc1")
-  }
-
-  "Pip: Get dependency versions" should "extract multiple versions of Django" in {
-    import Pip._
-
-    val versions = getDependencyVersions("Django")
-
-    versions.length should be > 0
-  }
-
-  it should "return an empty list if a package name is invalid" in {
-    import Pip._
-
-    val versions = getDependencyVersions("Djangooooooooo")
-
-    versions should have length 0
+    parsed.info.version shouldBe "1.2.3"
   }
 }

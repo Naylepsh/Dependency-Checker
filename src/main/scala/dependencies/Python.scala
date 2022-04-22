@@ -29,28 +29,6 @@ object Python {
       })
   }
 
-  object Pip {
-    val versionPattern = "[0-9]+.[.0-9a-zA-Z]+".r
-    val versionLinesPattern = "ERROR:[^\n]*\n".r
-
-    def parseDependencyVersions(versionsText: String): List[String] = {
-      versionPattern.findAllIn(versionsText).toList
-    }
-
-    def getDependencyVersions(name: String): List[String] = {
-      val pipOutput = os
-        .proc("pip", "install", s"$name==")
-        .spawn(stderr = os.Pipe)
-        .stderr
-        .lines()
-        .mkString("\n")
-
-      val versionsLine =
-        versionLinesPattern.findFirstIn(pipOutput).getOrElse("")
-      parseDependencyVersions(versionsLine)
-    }
-  }
-
   object Pypi {
     case class PackageInfo(version: String)
     object PackageInfo {
@@ -64,8 +42,11 @@ object Python {
 
     def getLatestVersion(packageName: String): Try[String] = Try {
       val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
-      upickle.default.read[Pypi.PypiResponse](response.text()).info.version
+      parseResponse(response.text()).info.version
     }
+
+    def parseResponse(responseText: String): PypiResponse =
+      upickle.default.read[Pypi.PypiResponse](responseText)
   }
 
   def getDependencies(
