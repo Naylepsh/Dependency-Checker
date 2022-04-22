@@ -31,9 +31,6 @@ object Python {
   }
 
   object Pip {
-
-    /** Can be replaced by requests to pypi.org/pypi/<lib-name>/json
-      */
     val versionPattern = "[0-9]+.[.0-9a-zA-Z]+".r
     val versionLinesPattern = "ERROR:[^\n]*\n".r
 
