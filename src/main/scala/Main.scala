@@ -10,7 +10,7 @@ import scala.io.Source
 
   val fileContents = Source.fromFile(filename).getLines.mkString("\n")
   Python
-    .getDependencies(fileContents, Python.Pip.getDependencyVersions)
+    .getDependencies(fileContents, Python.Pypi.getLatestVersion)
     .onComplete {
       case Success(data) => println(s"data = $data")
       case Failure(err)  => println(s"error = $err")

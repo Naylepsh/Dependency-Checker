@@ -63,24 +63,22 @@ object Python {
       implicit val rw: RW[PypiResponse] = macroRW
     }
 
+    def getLatestVersion(packageName: String): Try[String] = Try {
+      val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
+      upickle.default.read[Pypi.PypiResponse](response.text()).info.version
+    }
   }
-
-  def getLatestVersion(packageName: String): Try[String] = Try {
-    val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
-    upickle.default.read[Pypi.PypiResponse](response.text()).info.version
-  }
-
-  def fillInDependency(
-      getDependencyVersions: String => List[String]
-  )(dependency: Dependency): Dependency =
-    dependency.copy(latestVersion =tryToOption(getLatestVersion(dependency.name)))
 
   def getDependencies(
       fileContents: String,
-      getDependencyVersions: String => List[String]
+      getLatestVersion: String => Try[String]
   )(implicit ec: ExecutionContext): Future[List[Dependency]] = {
     val dependenciesFutures = parseRequirements(fileContents).map(dependency =>
-      Future { fillInDependency(getDependencyVersions)(dependency) }
+      Future {
+        dependency.copy(latestVersion =
+          tryToOption(getLatestVersion(dependency.name))
+        )
+      }
     )
     Future.sequence(dependenciesFutures)
   }
