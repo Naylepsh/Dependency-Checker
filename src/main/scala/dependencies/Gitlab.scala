@@ -5,6 +5,8 @@ import scala.util.{Try, Success, Failure}
 import upickle.default.{ReadWriter => RW, macroRW}
 
 object Gitlab {
+  case class GitlabProps(host: String, token: Option[String])
+
   case class RepositoryTreeFile(name: String, path: String)
   object RepositoryTreeFile {
     implicit val rw: RW[RepositoryTreeFile] = macroRW
@@ -20,34 +22,38 @@ object Gitlab {
     implicit val rw: RW[RepositoryFile] = macroRW
   }
 
-  def getProjectDependenciesTreeFile(host: String)(
+  def getProjectDependenciesTreeFile(props: GitlabProps)(
       projectId: String
   )(implicit ec: ExecutionContext): Future[Try[String]] = Future {
-    getProjectTree(host)(projectId).flatMap(tree => {
+    getProjectTree(props)(projectId).flatMap(tree => {
       // TODO: handle the case where no file matches the candidates (no head present)
       val dependencyFilePath = tree.files
         .filter(file => dependencyFileCandidates.contains(file.name))
         .head
-      getProjectFile(host)(projectId)(dependencyFilePath.path).map(file =>
+      getProjectFile(props)(projectId)(dependencyFilePath.path).map(file =>
         decodeFile(file.content)
       )
     })
   }
 
   private def getProjectTree(
-      host: String
+      props: GitlabProps
   )(projectId: String): Try[RepositoryTree] = Try {
     val response = requests.get(
-      s"https://$host/api/v4/projects/$projectId/repository/tree?ref=master"
+      s"https://${props.host}/api/v4/projects/$projectId/repository/tree",
+      params =
+        Map("ref" -> "master", "private_token" -> props.token.getOrElse(""))
     )
     parseResponse[RepositoryTree](response.text())
   }
 
-  private def getProjectFile(host: String)(projectId: String)(
+  private def getProjectFile(props: GitlabProps)(projectId: String)(
       path: String
   ): Try[RepositoryFile] = Try {
     val response = requests.get(
-      s"https://$host/api/v4/projects/$projectId/repository/files/$path?ref=master"
+      s"https://${props.host}/api/v4/projects/$projectId/repository/files/$path",
+      params =
+        Map("ref" -> "master", "private_token" -> props.token.getOrElse(""))
     )
     parseResponse[RepositoryFile](response.text())
   }
