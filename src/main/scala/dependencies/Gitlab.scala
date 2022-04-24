@@ -4,7 +4,7 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Try, Success, Failure}
 import upickle.default.{ReadWriter => RW, macroRW}
 
-import Utils.Requests._
+import Utils.JSON._
 
 object Gitlab {
   case class GitlabProps(host: String, token: Option[String])
@@ -43,7 +43,7 @@ object Gitlab {
       params =
         Map("ref" -> "master", "private_token" -> props.token.getOrElse(""))
     )
-    parseResponse[RepositoryTree](response.text())
+    parse[RepositoryTree](response.text())
   }
 
   private def getProjectFile(props: GitlabProps)(projectId: String)(
@@ -54,7 +54,7 @@ object Gitlab {
       params =
         Map("ref" -> "master", "private_token" -> props.token.getOrElse(""))
     )
-    parseResponse[RepositoryFile](response.text())
+    parse[RepositoryFile](response.text())
   }
 
   private def decodeFile(encodedContent: String): String =

@@ -58,11 +58,13 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     dependencies should have length 1
   }
 
-  "Pypi: parse response" should "transform json-string to appropriate case class" in {
+  "Pypi response" should "be transformable from json-string to appropriate case class" in {
     import Pypi._
+    import Utils.JSON
+
     val response = """{"info": {"version": "1.2.3"} }"""
 
-    val parsed = parseResponse(response)
+    val parsed = JSON.parse[PypiResponse](response)
 
     parsed.info.version shouldBe "1.2.3"
   }

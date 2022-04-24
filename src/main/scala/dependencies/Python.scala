@@ -42,7 +42,7 @@ object Python {
 
     def getLatestVersion(packageName: String): Try[String] = Try {
       val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
-      Utils.Requests.parseResponse[PypiResponse](response.text()).info.version
+      Utils.JSON.parse[PypiResponse](response.text()).info.version
     }
   }
 
