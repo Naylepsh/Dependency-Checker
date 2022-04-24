@@ -42,11 +42,8 @@ object Python {
 
     def getLatestVersion(packageName: String): Try[String] = Try {
       val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
-      parseResponse(response.text()).info.version
+      Utils.Requests.parseResponse[PypiResponse](response.text()).info.version
     }
-
-    def parseResponse(responseText: String): PypiResponse =
-      upickle.default.read[Pypi.PypiResponse](responseText)
   }
 
   def getDependencies(

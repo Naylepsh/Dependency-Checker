@@ -4,6 +4,8 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Try, Success, Failure}
 import upickle.default.{ReadWriter => RW, macroRW}
 
+import Utils.Requests._
+
 object Gitlab {
   case class GitlabProps(host: String, token: Option[String])
 
@@ -54,9 +56,6 @@ object Gitlab {
     )
     parseResponse[RepositoryFile](response.text())
   }
-
-  def parseResponse[T: RW](responseText: String): T =
-    upickle.default.read[T](responseText)
 
   private def decodeFile(encodedContent: String): String =
     new String(java.util.Base64.getDecoder.decode(encodedContent))
