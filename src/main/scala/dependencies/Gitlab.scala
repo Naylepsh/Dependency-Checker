@@ -12,22 +12,19 @@ object Gitlab {
     implicit val rw: RW[RepositoryTreeFile] = macroRW
   }
 
-  case class RepositoryTree(files: List[RepositoryTreeFile])
-  object RepositoryTree {
-    implicit val rw: RW[RepositoryTree] = macroRW
-  }
-
   case class RepositoryFile(content: String)
   object RepositoryFile {
     implicit val rw: RW[RepositoryFile] = macroRW
   }
+
+  type RepositoryTree = List[RepositoryTreeFile]
 
   def getProjectDependenciesTreeFile(props: GitlabProps)(
       projectId: String
   )(implicit ec: ExecutionContext): Future[Try[String]] = Future {
     getProjectTree(props)(projectId).flatMap(tree => {
       // TODO: handle the case where no file matches the candidates (no head present)
-      val dependencyFilePath = tree.files
+      val dependencyFilePath = tree
         .filter(file => dependencyFileCandidates.contains(file.name))
         .head
       getProjectFile(props)(projectId)(dependencyFilePath.path).map(file =>
