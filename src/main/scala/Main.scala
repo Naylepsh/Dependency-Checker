@@ -4,6 +4,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 import scala.concurrent.Future
 import dependencies.Dependency
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 @main def hello: Unit =
   val repoPaths = List(
@@ -22,21 +24,16 @@ import dependencies.Dependency
     Python.Pypi.getLatestVersion
   )
 
-  val result =
+  val dependenciesFuture =
     Future.sequence(repoPaths.map(path => Future { (path, getDeps(path)) }))
-  result.onComplete {
-    case Success(repoDependencies) =>
-      repoDependencies.map {
-        case (path, dependenciesFuture) => {
-          dependenciesFuture.map { dependencies =>
-            println("*" * 10)
-            println(path)
-            dependencies.foreach(println)
-          }
-        }
+
+  val dependencies = Await.result(dependenciesFuture, Duration.Inf)
+  dependencies.map {
+    case (path, dependenciesFuture) => {
+      dependenciesFuture.map { dependencies =>
+        println("*" * 10)
+        println(path)
+        dependencies.foreach(println)
       }
-
-    case Failure(err) => println(s"error = $err")
+    }
   }
-
-  Thread.sleep(100000)
