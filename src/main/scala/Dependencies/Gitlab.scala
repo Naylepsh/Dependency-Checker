@@ -38,6 +38,9 @@ object Gitlab {
   private def getProjectTree(
       props: GitlabProps
   )(projectId: String): Try[RepositoryTree] = Try {
+    // Gitlab defaults to 20 (and paginate to get more).
+    // Using 100 to give some safety net for pagination-less result
+    val filesPerPage = 100
     val response = requests.get(
       s"https://${props.host}/api/v4/projects/$projectId/repository/tree",
       params =
