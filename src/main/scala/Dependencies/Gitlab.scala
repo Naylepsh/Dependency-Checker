@@ -1,4 +1,4 @@
-package dependencies
+package Dependencies
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Try, Success, Failure}

@@ -1,4 +1,4 @@
-package object dependencies {
+package object Dependencies {
   case class Dependency(
       name: String,
       currentVersion: Option[String],

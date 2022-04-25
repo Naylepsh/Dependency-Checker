@@ -1,4 +1,4 @@
-package dependencies
+package Dependencies
 
 import scala.util.Try
 import scala.util.matching.Regex

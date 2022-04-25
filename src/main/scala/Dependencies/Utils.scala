@@ -1,4 +1,4 @@
-package dependencies
+package Dependencies
 
 import upickle.default.{ReadWriter => RW, macroRW}
 

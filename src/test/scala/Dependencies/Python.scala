@@ -1,4 +1,4 @@
-package dependencies
+package Dependencies
 
 import collection.mutable.Stack
 import org.scalatest._
