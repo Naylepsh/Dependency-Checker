@@ -59,7 +59,7 @@ def readLocal: Unit =
     {
       dependenciesFuture.map { dependencies =>
         println("*" * 10)
-        dependencies.foreach(println)
+        println(dependencies)
       }
     }
   }
