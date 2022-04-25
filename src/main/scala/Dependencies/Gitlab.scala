@@ -43,8 +43,11 @@ object Gitlab {
     val filesPerPage = 100
     val response = requests.get(
       s"https://${props.host}/api/v4/projects/$projectId/repository/tree",
-      params =
-        Map("ref" -> "master", "private_token" -> props.token.getOrElse(""))
+      params = Map(
+        "ref" -> "master",
+        "private_token" -> props.token.getOrElse(""),
+        "per_page" -> filesPerPage.toString
+      )
     )
     parse[RepositoryTree](response.text())
   }
