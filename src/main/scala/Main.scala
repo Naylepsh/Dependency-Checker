@@ -1,11 +1,18 @@
-import dependencies.Python
 import scala.util.{Success, Failure, Try}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.concurrent.Future
-import dependencies.Dependency
+import upickle.default.{ReadWriter => RW, macroRW}
 
-@main def hello: Unit =
+import Dependencies.Python
+import Dependencies.Dependency
+import Dependencies.Utils.JSON
+import Dependencies.Gitlab
+import Dependencies.Gitlab.GitlabProps
+
+def readLocal: Unit =
   val repoPaths = List(
     "/Users/sebastian.kondraciuk/Documents/code/vsa/vsa-core",
     "/Users/sebastian.kondraciuk/Documents/code/vsa/vsa-lynx",
@@ -22,21 +29,48 @@ import dependencies.Dependency
     Python.Pypi.getLatestVersion
   )
 
-  val result =
+  val dependenciesFuture =
     Future.sequence(repoPaths.map(path => Future { (path, getDeps(path)) }))
-  result.onComplete {
-    case Success(repoDependencies) =>
-      repoDependencies.map {
-        case (path, dependenciesFuture) => {
-          dependenciesFuture.map { dependencies =>
-            println("*" * 10)
-            println(path)
-            dependencies.foreach(println)
-          }
-        }
-      }
 
-    case Failure(err) => println(s"error = $err")
+  val dependencies = Await.result(dependenciesFuture, Duration.Inf)
+  dependencies.map {
+    case (path, dependenciesFuture) => {
+      dependenciesFuture.map { dependencies =>
+        println("*" * 10)
+        println(path)
+        dependencies.foreach(println)
+      }
+    }
   }
 
-  Thread.sleep(100000)
+@main def readRemote: Unit =
+  import Data._
+
+  val content = Source.fromFile("./registry.json").getLines.mkString("\n")
+  val registry = JSON.parse[Registry](content)
+
+  val props = GitlabProps(registry.host, Some(registry.token))
+  val resultsFuture = Future.sequence(
+    registry.projectIds.map(Gitlab.getProjectDependenciesTreeFile(props))
+  )
+
+  val dependencies = Await.result(resultsFuture, Duration.Inf)
+  dependencies.map { dependenciesFuture =>
+    {
+      dependenciesFuture.map { dependencies =>
+        println("*" * 10)
+        println(dependencies)
+      }
+    }
+  }
+
+object Data {
+  case class Registry(
+      host: String,
+      token: String,
+      projectIds: List[String]
+  )
+  object Registry {
+    implicit val rw: RW[Registry] = macroRW
+  }
+}
