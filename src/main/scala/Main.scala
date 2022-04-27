@@ -53,8 +53,9 @@ def readLocal: Unit =
   val gitlabProps = GitlabProps(registry.host, Some(registry.token))
   val props = ProjectDependenciesFileProps(gitlabProps)
   val resultsFuture = Future.sequence(
-    registry.projectIds.map(id =>
-      Gitlab.getProjectDependenciesFile(props)(id) match {
+    registry.projectIds.map(id => {
+      val file = Future { Gitlab.getProjectDependenciesFile(props)(id) }
+      val dependencies = file.flatMap {
         case Success(fileOption) =>
           fileOption match {
             case Some(file) =>
@@ -63,7 +64,8 @@ def readLocal: Unit =
           }
         case Failure(error) => Future { List[Dependency]() }
       }
-    )
+      dependencies
+    })
   )
 
   val dependencies = Await.result(resultsFuture, Duration.Inf)
