@@ -11,6 +11,7 @@ import Dependencies.Dependency
 import Dependencies.Utils.JSON
 import Dependencies.Gitlab
 import Dependencies.Gitlab.GitlabProps
+import Dependencies.Gitlab.ProjectDependenciesFileProps
 
 def readLocal: Unit =
   val repoPaths = List(
@@ -49,9 +50,12 @@ def readLocal: Unit =
   val content = Source.fromFile("./registry.json").getLines.mkString("\n")
   val registry = JSON.parse[Registry](content)
 
-  val props = GitlabProps(registry.host, Some(registry.token))
+  val gitlabProps = GitlabProps(registry.host, Some(registry.token))
+  val props = ProjectDependenciesFileProps(gitlabProps)
   val resultsFuture = Future.sequence(
-    registry.projectIds.map(Gitlab.getProjectDependenciesTreeFile(props))
+    registry.projectIds.map(id =>
+      Future { Gitlab.getProjectDependenciesFile(props)(id) }
+    )
   )
 
   val dependencies = Await.result(resultsFuture, Duration.Inf)
