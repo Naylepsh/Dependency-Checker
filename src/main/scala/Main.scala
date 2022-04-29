@@ -12,6 +12,7 @@ import Dependencies.Utils.JSON
 import Dependencies.Gitlab
 import Dependencies.Gitlab.GitlabProps
 import Dependencies.Gitlab.ProjectDependenciesFileProps
+import Dependencies.RepositoryDependencies
 
 def readLocal: Unit =
   val repoPaths = List(
@@ -53,8 +54,8 @@ def readLocal: Unit =
   val gitlabProps = GitlabProps(registry.host, Some(registry.token))
   val props = ProjectDependenciesFileProps(gitlabProps)
   val resultsFuture = Future.sequence(
-    registry.projectIds.map(id => {
-      val file = Future { Gitlab.getProjectDependenciesFile(props)(id) }
+    registry.projects.map(project => {
+      val file = Future { Gitlab.getProjectDependenciesFile(props)(project.id) }
       val dependencies = file.flatMap {
         case Success(fileOption) =>
           fileOption match {
@@ -64,25 +65,29 @@ def readLocal: Unit =
           }
         case Failure(error) => Future { List[Dependency]() }
       }
-      dependencies
+      dependencies.map(dependencies =>
+        RepositoryDependencies(project.name, dependencies)
+      )
     })
   )
 
   val dependencies = Await.result(resultsFuture, Duration.Inf)
-  dependencies.map { repoDependencies =>
-    {
-      println("*" * 10)
-      repoDependencies.map { dependencies =>
-        println(dependencies)
-      }
-    }
-  }
+  dependencies.map(repoDependencies => {
+    println("*" * 10)
+    println(repoDependencies.name)
+    repoDependencies.dependencies.foreach(println)
+  })
 
 object Data {
+  case class Project(id: String, name: String)
+  object Project {
+    implicit val rw: RW[Project] = macroRW
+  }
+
   case class Registry(
       host: String,
       token: String,
-      projectIds: List[String]
+      projects: List[Project]
   )
   object Registry {
     implicit val rw: RW[Registry] = macroRW
