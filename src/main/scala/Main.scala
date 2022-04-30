@@ -13,6 +13,8 @@ import Dependencies.Gitlab
 import Dependencies.Gitlab.GitlabProps
 import Dependencies.Gitlab.ProjectDependenciesFileProps
 import Dependencies.RepositoryDependencies
+import Dependencies.Excel
+import Dependencies.RepositoryDependenciesSheetExporter
 
 def readLocal: Unit =
   val repoPaths = List(
@@ -72,11 +74,15 @@ def readLocal: Unit =
   )
 
   val dependencies = Await.result(resultsFuture, Duration.Inf)
-  dependencies.map(repoDependencies => {
-    println("*" * 10)
-    println(repoDependencies.name)
-    repoDependencies.dependencies.foreach(println)
-  })
+  val workBook =
+    Excel.createWorkbook(dependencies)(RepositoryDependenciesSheetExporter())
+  Excel.saveWorkbook(workBook, "./export.xlsx")
+
+def showResultsInConsole(repoDependencies: RepositoryDependencies): Unit = {
+  println("*" * 10)
+  println(repoDependencies.name)
+  repoDependencies.dependencies.foreach(println)
+}
 
 object Data {
   case class Project(id: String, name: String)
