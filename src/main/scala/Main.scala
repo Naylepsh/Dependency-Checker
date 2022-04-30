@@ -11,6 +11,10 @@ import Dependencies.Dependency
 import Dependencies.Utils.JSON
 import Dependencies.Gitlab
 import Dependencies.Gitlab.GitlabProps
+import Dependencies.Gitlab.ProjectDependenciesFileProps
+import Dependencies.RepositoryDependencies
+import Dependencies.Excel
+import Dependencies.RepositoryDependenciesSheetExporter
 
 def readLocal: Unit =
   val repoPaths = List(
@@ -49,26 +53,47 @@ def readLocal: Unit =
   val content = Source.fromFile("./registry.json").getLines.mkString("\n")
   val registry = JSON.parse[Registry](content)
 
-  val props = GitlabProps(registry.host, Some(registry.token))
+  val gitlabProps = GitlabProps(registry.host, Some(registry.token))
+  val props = ProjectDependenciesFileProps(gitlabProps)
   val resultsFuture = Future.sequence(
-    registry.projectIds.map(Gitlab.getProjectDependenciesTreeFile(props))
+    registry.projects.map(project => {
+      val file = Future { Gitlab.getProjectDependenciesFile(props)(project.id) }
+      val dependencies = file.flatMap {
+        case Success(fileOption) =>
+          fileOption match {
+            case Some(file) =>
+              Python.getDependencies(file, Python.Pypi.getLatestVersion)
+            case None => Future { List[Dependency]() }
+          }
+        case Failure(error) => Future { List[Dependency]() }
+      }
+      dependencies.map(dependencies =>
+        RepositoryDependencies(project.name, dependencies)
+      )
+    })
   )
 
   val dependencies = Await.result(resultsFuture, Duration.Inf)
-  dependencies.map { dependenciesFuture =>
-    {
-      dependenciesFuture.map { dependencies =>
-        println("*" * 10)
-        println(dependencies)
-      }
-    }
-  }
+  val workBook =
+    Excel.createWorkbook(dependencies)(RepositoryDependenciesSheetExporter())
+  Excel.saveWorkbook(workBook, "./export.xlsx")
+
+def showResultsInConsole(repoDependencies: RepositoryDependencies): Unit = {
+  println("*" * 10)
+  println(repoDependencies.name)
+  repoDependencies.dependencies.foreach(println)
+}
 
 object Data {
+  case class Project(id: String, name: String)
+  object Project {
+    implicit val rw: RW[Project] = macroRW
+  }
+
   case class Registry(
       host: String,
       token: String,
-      projectIds: List[String]
+      projects: List[Project]
   )
   object Registry {
     implicit val rw: RW[Registry] = macroRW

@@ -21,18 +21,38 @@ object Gitlab {
 
   type RepositoryTree = List[RepositoryTreeFile]
 
-  def getProjectDependenciesTreeFile(props: GitlabProps)(
-      projectId: String
-  )(implicit ec: ExecutionContext): Future[Try[String]] = Future {
-    getProjectTree(props)(projectId).flatMap(tree => {
-      // TODO: handle the case where no file matches the candidates (no head present)
-      val dependencyFilePath = tree
-        .filter(file => dependencyFileCandidates.contains(file.name))
-        .head
-      getProjectFile(props)(projectId)(dependencyFilePath.path).map(file =>
-        decodeFile(file.content)
+  // TBD: should dependencyFileCandidates be passable instead of being hard-coded?
+  case class ProjectDependenciesFileProps(
+      getProjectTree: String => Try[RepositoryTree],
+      getProjectFile: String => String => Try[RepositoryFile]
+  )
+
+  object ProjectDependenciesFileProps {
+    def apply(gitlabProps: GitlabProps): ProjectDependenciesFileProps =
+      ProjectDependenciesFileProps(
+        getProjectTree(gitlabProps),
+        getProjectFile(gitlabProps)
       )
-    })
+  }
+
+  def getProjectDependenciesFile(
+      props: ProjectDependenciesFileProps
+  )(projectId: String): Try[Option[String]] = {
+    props
+      .getProjectTree(projectId)
+      .flatMap(tree => {
+        val dependencyFileOption = tree
+          .filter(file => dependencyFileCandidates.contains(file.name))
+          .headOption
+
+        dependencyFileOption match {
+          case None => Try { None }
+          case Some(file) =>
+            props
+              .getProjectFile(projectId)(file.path)
+              .map(file => Some(decodeFile(file.content)))
+        }
+      })
   }
 
   private def getProjectTree(

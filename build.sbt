@@ -12,6 +12,9 @@ lazy val root = project
     libraryDependencies += "com.lihaoyi" %% "requests" % "0.7.0",
     libraryDependencies += "com.lihaoyi" %% "upickle" % "1.6.0",
 
+    // https://mvnrepository.com/artifact/com.norbitltd/spoiwo
+    libraryDependencies += "com.norbitltd" %% "spoiwo" % "2.2.1",
+
     // https://mvnrepository.com/artifact/org.typelevel/discipline-scalatest
     libraryDependencies += "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
   )

@@ -1,6 +1,5 @@
 package Dependencies
 
-import collection.mutable.Stack
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
 import flatspec._
