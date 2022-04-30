@@ -75,7 +75,7 @@ object Python {
   private def convertToOption[T](value: T): Option[T] =
     if (value != null) Some(value) else None
 
-  private val dependencyPattern: Regex = "([-a-zA-Z0-9]+)(==)?(.+)?".r
+  private val dependencyPattern: Regex = "([-_a-zA-Z0-9]+)(==)?(.+)?".r
 
   private def tryToOption[T](tryResult: Try[T]): Option[T] = tryResult match {
     case Success(value) => Some(value)
