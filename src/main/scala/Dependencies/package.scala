@@ -17,7 +17,7 @@ package object Dependencies {
   enum VersionDifference:
     case Patch, Minor, Major
 
-  def calculate_version_difference(
+  def calculateVersionDifference(
       a: String,
       b: String
   ): Try[Option[VersionDifference]] = {
