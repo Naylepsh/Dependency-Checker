@@ -48,12 +48,18 @@ class RepositoryDependenciesSheetExporter
 
   def createSheet(repoDependencies: RepositoryDependencies): Sheet = {
     val headerRow = Row(style = headerStyle)
-      .withCellValues("Name", "Current Version", "Latest Version")
+      .withCellValues(
+        "Name",
+        "Current Version",
+        "Latest Version",
+        "Vulnerabilities"
+      )
     val dataRows = repoDependencies.dependencies.map(d =>
       Row(style = chooseStyle(d)).withCellValues(
         d.name,
         d.currentVersion.getOrElse(""),
-        d.latestVersion.getOrElse("")
+        d.latestVersion.getOrElse(""),
+        d.vulnerabilities.mkString(",\n")
       )
     )
 

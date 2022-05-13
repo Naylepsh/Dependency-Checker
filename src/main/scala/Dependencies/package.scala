@@ -5,7 +5,9 @@ package object Dependencies {
   case class Dependency(
       name: String,
       currentVersion: Option[String],
-      latestVersion: Option[String]
+      latestVersion: Option[String],
+      vulnerabilities: List[String] = List(),
+      notes: Option[String] = None
   )
 
   case class RepositoryDependencies(
@@ -32,7 +34,7 @@ package object Dependencies {
               Some(VersionDifference.Major)
             else if (aMajor == bMajor && aSymbol == Some("^"))
               None
-            else if (aMinor != bMinor )
+            else if (aMinor != bMinor)
               Some(VersionDifference.Minor)
             else if (aMinor == bMinor && aSymbol == Some("~"))
               None

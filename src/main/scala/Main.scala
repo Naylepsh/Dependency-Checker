@@ -31,7 +31,7 @@ import Dependencies.RepositoryDependenciesSheetExporter
         case Success(fileOption) =>
           fileOption match {
             case Some(file) =>
-              Python.getDependencies(file, Python.Pypi.getLatestVersion)
+              Python.getDependencies(file, Python.Pypi.getDependencyDetails)
             case None => Future { List[Dependency]() }
           }
         case Failure(error) => Future { List[Dependency]() }

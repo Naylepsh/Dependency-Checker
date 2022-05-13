@@ -24,9 +24,18 @@ object Python {
         Dependency(
           name = patternMatch.group(1),
           currentVersion = convertToOption(patternMatch.group(3)),
-          latestVersion = None
+          latestVersion = None,
+          vulnerabilities = List(),
+          notes = None
         )
       })
+  }
+
+  case class PackageDetails(
+      latestVersion: Option[String],
+      vulnerabilities: List[String]
+  ) {
+    // Things that are generally unknown when just parsing the local file
   }
 
   object Pypi {
@@ -35,36 +44,69 @@ object Python {
       implicit val rw: RW[PackageInfo] = macroRW
     }
 
-    case class PypiResponse(info: PackageInfo)
+    case class PackageRelease(url: String)
+    object PackageRelease {
+      implicit val rw: RW[PackageRelease] = macroRW
+    }
+
+    case class PackageVulnerability(id: String, details: String)
+    object PackageVulnerability {
+      implicit val rw: RW[PackageVulnerability] = macroRW
+    }
+
+    case class PypiResponse(
+        info: PackageInfo,
+        releases: Map[String, List[PackageRelease]],
+        vulnerabilities: List[PackageVulnerability]
+    )
     object PypiResponse {
       implicit val rw: RW[PypiResponse] = macroRW
     }
 
-    def getLatestVersion(packageName: String): Try[String] = Try {
-      val response = requests.get(s"https://pypi.org/pypi/$packageName/json")
-      Utils.JSON.parse[PypiResponse](response.text()).info.version
-    }
+    def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
+      Try {
+        val resource = dependency.currentVersion match {
+          case Some(version) => s"${dependency.name}/${version}"
+          case None          => dependency.name
+        }
+
+        val response = requests.get(s"https://pypi.org/pypi/$resource/json")
+        val parsedResponse = Utils.JSON.parse[PypiResponse](response.text())
+
+        val latestRelease =
+          parsedResponse.releases.keySet.toList.sorted.lastOption
+
+        PackageDetails(
+          latestRelease,
+          parsedResponse.vulnerabilities.map(_.id)
+        )
+      }
   }
 
   def getDependencies(
       getFileContents: String => Future[String],
-      getLatestVersion: String => Try[String]
+      getDependencyDetails: Dependency => Try[PackageDetails]
   )(path: String)(implicit ec: ExecutionContext): Future[List[Dependency]] = {
     for {
       fileContents <- getFileContents(path)
-      dependencies <- Python.getDependencies(fileContents, getLatestVersion)
+      dependencies <- Python.getDependencies(fileContents, getDependencyDetails)
     } yield dependencies
   }
 
   def getDependencies(
       fileContents: String,
-      getLatestVersion: String => Try[String]
+      getDependencyDetails: Dependency => Try[PackageDetails]
   )(implicit ec: ExecutionContext): Future[List[Dependency]] = {
     val dependenciesFutures = parseRequirements(fileContents).map(dependency =>
       Future {
-        dependency.copy(latestVersion =
-          tryToOption(getLatestVersion(dependency.name))
-        )
+        getDependencyDetails(dependency)
+          .map(details => {
+            dependency.copy(
+              latestVersion = details.latestVersion,
+              vulnerabilities = details.vulnerabilities
+            )
+          })
+          .getOrElse(dependency)
       }
     )
     Future.sequence(dependenciesFutures)
