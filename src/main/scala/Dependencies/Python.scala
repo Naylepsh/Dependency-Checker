@@ -1,13 +1,9 @@
 package Dependencies
 
-import scala.util.Try
+import scala.util.{Try, Success}
 import scala.util.matching.Regex
-import scala.util.Success
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import upickle.default.{ReadWriter => RW, macroRW}
-import javax.swing.SortOrder
-import scala.util.Failure
 
 object Python {
 
@@ -25,7 +21,7 @@ object Python {
       .map(patternMatch => {
         Dependency(
           name = patternMatch.group(1),
-          currentVersion = convertToOption(patternMatch.group(3)),
+          currentVersion = Option(patternMatch.group(3)),
           latestVersion = None,
           vulnerabilities = List(),
           notes = None
@@ -125,13 +121,5 @@ object Python {
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
-  private def convertToOption[T](value: T): Option[T] =
-    if (value != null) Some(value) else None
-
   private val dependencyPattern: Regex = "([-_a-zA-Z0-9]+)(==)?(.+)?".r
-
-  private def tryToOption[T](tryResult: Try[T]): Option[T] = tryResult match {
-    case Success(value) => Some(value)
-    case _              => None
-  }
 }
