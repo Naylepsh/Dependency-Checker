@@ -48,15 +48,14 @@ package object Dependencies {
 
   private def extractVersion(
       text: String
-  ): Try[(Option[String], String, String, String)] = {
+  ): Try[(Option[String], Option[String], Option[String], Option[String])] = {
     versionPattern
       .findFirstMatchIn(text)
       .map(matches => {
-        val symbol =
-          if (matches.group(1) != null) Some(matches.group(1)) else None
-        val major = matches.group(2)
-        val minor = matches.group(3)
-        val patch = matches.group(4)
+        val symbol = Option(matches.group(1))
+        val major = Option(matches.group(2))
+        val minor = Option(matches.group(3))
+        val patch = Option(matches.group(4))
 
         (symbol, major, minor, patch)
       }) match {
@@ -66,6 +65,6 @@ package object Dependencies {
     }
   }
 
-  private val versionPattern = "([~^])*([0-9])+.([0-9])+.([0-9])+".r
+  private val versionPattern = "([~^])*([0-9])*.([0-9])*.?([0-9])*".r
 
 }
