@@ -65,6 +65,6 @@ package object Dependencies {
     }
   }
 
-  private val versionPattern = "([~^])*([0-9])*.([0-9])*.?([0-9])*".r
+  private val versionPattern = "([~^])*([0-9])*.([0-9a-z])*.?([0-9a-z])*".r
 
 }

@@ -61,7 +61,15 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     import Pypi._
     import Utils.JSON
 
-    val response = """{"info": {"version": "1.2.3"} }"""
+    val response = """{
+      "info": {"version": "1.2.3"}, 
+      "releases": {"0.0.1": [{"url": "localhost:8080/foo/bar"}]},
+      "vulnerabilities": [
+        {"id": "PYSEC-2021-9", "details": "Some desc. here"},
+        {"id": "PYSEC-2021-8", "details": "More data here"}
+      ] 
+    }
+    """
 
     val parsed = JSON.parse[PypiResponse](response)
 

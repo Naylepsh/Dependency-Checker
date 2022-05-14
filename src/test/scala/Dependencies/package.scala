@@ -5,8 +5,7 @@ import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.TryValues.convertTryToSuccessOrFailure
 import flatspec._
 import matchers._
-import scala.util.Success
-import scala.util.Try
+import scala.util.{Success, Try}
 
 class PackageSpec extends AnyFlatSpec with should.Matchers {
   "calculate version difference" should "detect major differences" in {
@@ -34,8 +33,10 @@ class PackageSpec extends AnyFlatSpec with should.Matchers {
     calculateVersionDifference("1.2.3", "1.2.3").success.value shouldBe None
   }
 
-  it should "have no result on non-purely-numeric versions" in {
-    calculateVersionDifference("1.2b.3", "1.2.3").success.value shouldBe None
+  it should "handle non-purely-numeric versions" in {
+    calculateVersionDifference("1.2b.3", "1.2.3").success.value shouldBe Some(
+      VersionDifference.Minor
+    )
   }
 
   it should "handle semantic versioning symbols" in {
