@@ -63,7 +63,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
 
     val response = """{
       "info": {"version": "1.2.3"}, 
-      "releases": {"0.0.1": [{"url": "localhost:8080/foo/bar"}]},
+      "releases": {"0.0.1": [{"upload_time": "2020-10-16T17:37:23"}]},
       "vulnerabilities": [
         {"id": "PYSEC-2021-9", "details": "Some desc. here"},
         {"id": "PYSEC-2021-8", "details": "More data here"}
