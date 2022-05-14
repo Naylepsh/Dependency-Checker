@@ -63,24 +63,33 @@ object Python {
       implicit val rw: RW[PypiResponse] = macroRW
     }
 
-    def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
+    private def getLatestVersion(dependency: Dependency): Try[String] = Try {
+      val response =
+        requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
+      Utils.JSON.parse[PypiResponse](response.text()).info.version
+    }
+
+    private def getVulnerabilities(dependency: Dependency): Try[List[String]] =
       Try {
-        val resource = dependency.currentVersion match {
-          case Some(version) => s"${dependency.name}/${version}"
-          case None          => dependency.name
-        }
-
-        val response = requests.get(s"https://pypi.org/pypi/$resource/json")
-        val parsedResponse = Utils.JSON.parse[PypiResponse](response.text())
-
-        val latestRelease =
-          parsedResponse.releases.keySet.toList.sorted.lastOption
-
-        PackageDetails(
-          latestRelease,
-          parsedResponse.vulnerabilities.map(_.id)
-        )
+        dependency.currentVersion
+          .map(version => {
+            val response =
+              requests.get(
+                s"https://pypi.org/pypi/${dependency.name}/${version}/json"
+              )
+            Utils.JSON
+              .parse[PypiResponse](response.text())
+              .vulnerabilities
+              .map(_.id)
+          })
+          .getOrElse(List())
       }
+
+    def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
+      for {
+        latestVersion <- getLatestVersion(dependency)
+        vulnerabilities <- getVulnerabilities(dependency)
+      } yield PackageDetails(Some(latestVersion), vulnerabilities)
   }
 
   def getDependencies(
