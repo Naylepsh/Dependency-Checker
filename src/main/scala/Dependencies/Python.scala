@@ -1,10 +1,8 @@
 package Dependencies
 
-import scala.util.Try
+import scala.util.{Try, Success}
 import scala.util.matching.Regex
-import scala.util.Success
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import upickle.default.{ReadWriter => RW, macroRW}
 
 object Python {
@@ -23,7 +21,7 @@ object Python {
       .map(patternMatch => {
         Dependency(
           name = patternMatch.group(1),
-          currentVersion = convertToOption(patternMatch.group(3)),
+          currentVersion = Option(patternMatch.group(3)),
           latestVersion = None,
           vulnerabilities = List(),
           notes = None
@@ -44,7 +42,9 @@ object Python {
       implicit val rw: RW[PackageInfo] = macroRW
     }
 
-    case class PackageRelease(url: String)
+    case class PackageRelease(upload_time: String) {
+      val uploadTime = upload_time
+    }
     object PackageRelease {
       implicit val rw: RW[PackageRelease] = macroRW
     }
@@ -63,33 +63,31 @@ object Python {
       implicit val rw: RW[PypiResponse] = macroRW
     }
 
-    private def getLatestVersion(dependency: Dependency): Try[String] = Try {
-      val response =
-        requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
-      Utils.JSON.parse[PypiResponse](response.text()).info.version
-    }
-
-    private def getVulnerabilities(dependency: Dependency): Try[List[String]] =
-      Try {
-        dependency.currentVersion
-          .map(version => {
-            val response =
-              requests.get(
-                s"https://pypi.org/pypi/${dependency.name}/${version}/json"
-              )
-            Utils.JSON
-              .parse[PypiResponse](response.text())
-              .vulnerabilities
-              .map(_.id)
-          })
-          .getOrElse(List())
-      }
+    private def getLatestVersion(response: PypiResponse): Option[String] =
+      response.releases.toList
+        .collect {
+          case items if items._2.nonEmpty =>
+            (items._1, items._2.head.uploadTime)
+        }
+        .sortBy(_._2)(Ordering.String.reverse)
+        .map(_._1)
+        .headOption
 
     def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
-      for {
-        latestVersion <- getLatestVersion(dependency)
-        vulnerabilities <- getVulnerabilities(dependency)
-      } yield PackageDetails(Some(latestVersion), vulnerabilities)
+      Try {
+        val resource = dependency.currentVersion match {
+          case Some(version) => s"${dependency.name}/$version"
+          case None          => dependency.name
+        }
+
+        val response = requests.get(s"https://pypi.org/pypi/$resource/json")
+        val parsedResponse = Utils.JSON.parse[PypiResponse](response.text())
+
+        val latestVersion = getLatestVersion(parsedResponse)
+        val vulnerabilities = parsedResponse.vulnerabilities.map(_.id)
+
+        PackageDetails(latestVersion, vulnerabilities)
+      }
   }
 
   def getDependencies(
@@ -123,13 +121,5 @@ object Python {
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
-  private def convertToOption[T](value: T): Option[T] =
-    if (value != null) Some(value) else None
-
   private val dependencyPattern: Regex = "([-_a-zA-Z0-9]+)(==)?(.+)?".r
-
-  private def tryToOption[T](tryResult: Try[T]): Option[T] = tryResult match {
-    case Success(value) => Some(value)
-    case _              => None
-  }
 }
