@@ -52,14 +52,16 @@ class RepositoryDependenciesSheetExporter
         "Name",
         "Current Version",
         "Latest Version",
-        "Vulnerabilities"
+        "Vulnerabilities",
+        "Notes"
       )
     val dataRows = repoDependencies.dependencies.map(d =>
       Row(style = chooseStyle(d)).withCellValues(
         d.name,
         d.currentVersion.getOrElse(""),
         d.latestVersion.getOrElse(""),
-        d.vulnerabilities.mkString(",\n")
+        d.vulnerabilities.mkString(",\n"),
+        d.notes.getOrElse("")
       )
     )
 

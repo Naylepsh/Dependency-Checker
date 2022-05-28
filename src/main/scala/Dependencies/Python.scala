@@ -31,19 +31,22 @@ object Python {
 
   case class PackageDetails(
       latestVersion: Option[String],
-      vulnerabilities: List[String]
+      vulnerabilities: List[String],
+      requiredPython: Option[String]
   ) {
     // Things that are generally unknown when just parsing the local file
   }
 
   object Pypi {
-    case class PackageInfo(version: String)
+    case class PackageInfo(version: String) {
+    }
     object PackageInfo {
       implicit val rw: RW[PackageInfo] = macroRW
     }
 
-    case class PackageRelease(upload_time: String) {
+    case class PackageRelease(upload_time: String, requires_python: String) {
       val uploadTime = upload_time
+      val requiresPython = requires_python
     }
     object PackageRelease {
       implicit val rw: RW[PackageRelease] = macroRW
@@ -84,9 +87,18 @@ object Python {
         val parsedResponse = Utils.JSON.parse[PypiResponse](response.text())
 
         val latestVersion = getLatestVersion(parsedResponse)
+        val requiredPython = for {
+          version <- latestVersion
+          release <- parsedResponse.releases.get(version).flatMap(_.headOption)
+          value <- Option(release.requiresPython)
+        } yield value
         val vulnerabilities = parsedResponse.vulnerabilities.map(_.id)
 
-        PackageDetails(latestVersion, vulnerabilities)
+        PackageDetails(
+          latestVersion,
+          vulnerabilities,
+          requiredPython
+        )
       }
   }
 
@@ -110,7 +122,8 @@ object Python {
           .map(details => {
             dependency.copy(
               latestVersion = details.latestVersion,
-              vulnerabilities = details.vulnerabilities
+              vulnerabilities = details.vulnerabilities,
+              notes = details.requiredPython.map(version => s"Required python: ${version}")
             )
           })
           .getOrElse(dependency)
