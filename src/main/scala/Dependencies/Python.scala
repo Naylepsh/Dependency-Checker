@@ -38,8 +38,7 @@ object Python {
   }
 
   object Pypi {
-    case class PackageInfo(version: String) {
-    }
+    case class PackageInfo(version: String) {}
     object PackageInfo {
       implicit val rw: RW[PackageInfo] = macroRW
     }
@@ -123,7 +122,9 @@ object Python {
             dependency.copy(
               latestVersion = details.latestVersion,
               vulnerabilities = details.vulnerabilities,
-              notes = details.requiredPython.map(version => s"Required python: ${version}")
+              notes = details.requiredPython.map(version =>
+                s"Required python: ${version}"
+              )
             )
           })
           .getOrElse(dependency)
@@ -134,5 +135,5 @@ object Python {
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
-  private val dependencyPattern: Regex = "([-_a-zA-Z0-9]+)(==)?(.+)?".r
+  private val dependencyPattern: Regex = "([-_a-zA-Z0-9]+)(==)?([-._a-zA-Z0-9]+)?".r
 }

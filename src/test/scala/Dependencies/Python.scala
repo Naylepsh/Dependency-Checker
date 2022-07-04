@@ -57,13 +57,27 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     dependencies should have length 1
   }
 
+  it should "ignore comment to dependency" in {
+    val comment = "my comment here"
+    val requirements = s"""
+    | django-autocomplete-light==1.2.3 # $comment
+    """
+
+    val dependencies = parseRequirements(requirements)
+
+    dependencies should have length 1
+    dependencies.foreach(dependency => {
+      dependency.currentVersion.value shouldNot contain(comment)
+    })
+  }
+
   "Pypi response" should "be transformable from json-string to appropriate case class" in {
     import Pypi._
     import Utils.JSON
 
     val response = """{
       "info": {"version": "1.2.3"}, 
-      "releases": {"0.0.1": [{"upload_time": "2020-10-16T17:37:23"}]},
+      "releases": {"0.0.1": [{"upload_time": "2020-10-16T17:37:23", "requires_python": ""}]},
       "vulnerabilities": [
         {"id": "PYSEC-2021-9", "details": "Some desc. here"},
         {"id": "PYSEC-2021-8", "details": "More data here"}
