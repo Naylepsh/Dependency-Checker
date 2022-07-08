@@ -58,11 +58,17 @@ object Python {
 
     case class PypiResponse(
         info: PackageInfo,
-        releases: Map[String, List[PackageRelease]],
-        vulnerabilities: List[PackageVulnerability]
+        releases: Map[String, List[PackageRelease]]
     )
     object PypiResponse {
       implicit val rw: RW[PypiResponse] = macroRW
+    }
+
+    case class VulnerabilitiesResponse(
+        vulnerabilities: List[PackageVulnerability]
+    )
+    object VulnerabilitiesResponse {
+      given rw: RW[VulnerabilitiesResponse] = macroRW
     }
 
     private def getLatestVersion(response: PypiResponse): Option[String] =
@@ -75,14 +81,25 @@ object Python {
         .map(_._1)
         .headOption
 
+    private def getVulnerabilities(
+        dependency: Dependency
+    ): Try[List[PackageVulnerability]] = Try {
+      val resource = dependency.currentVersion match {
+        case Some(version) => s"${dependency.name}/$version"
+        case None          => dependency.name
+      }
+      val response =
+        requests.get(s"https://pypi.org/pypi/$resource/json")
+      val parsedResponse =
+        Utils.JSON.parse[VulnerabilitiesResponse](response.text())
+
+      parsedResponse.vulnerabilities
+    }
+
     def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
       Try {
-        val resource = dependency.currentVersion match {
-          case Some(version) => s"${dependency.name}/$version"
-          case None          => dependency.name
-        }
-
-        val response = requests.get(s"https://pypi.org/pypi/$resource/json")
+        val response =
+          requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
         val parsedResponse = Utils.JSON.parse[PypiResponse](response.text())
 
         val latestVersion = getLatestVersion(parsedResponse)
@@ -91,7 +108,8 @@ object Python {
           release <- parsedResponse.releases.get(version).flatMap(_.headOption)
           value <- Option(release.requiresPython)
         } yield value
-        val vulnerabilities = parsedResponse.vulnerabilities.map(_.id)
+        val vulnerabilities =
+          getVulnerabilities(dependency).getOrElse(List()).map(_.id)
 
         PackageDetails(
           latestVersion,
@@ -135,5 +153,6 @@ object Python {
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
-  private val dependencyPattern: Regex = "([-_a-zA-Z0-9]+)(==)?([-._a-zA-Z0-9]+)?".r
+  private val dependencyPattern: Regex =
+    "([-_a-zA-Z0-9]+)(==)?([-._a-zA-Z0-9]+)?".r
 }
