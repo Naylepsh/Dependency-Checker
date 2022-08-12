@@ -1,20 +1,21 @@
-package Dependencies
+package Dependencies.Python
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
 import flatspec._
 import matchers._
+import Dependencies.Dependency
 
-class PythonSpec extends AnyFlatSpec with should.Matchers {
-  import Python._
+class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
+  import RequirementsTxt._
 
-  "Parse requirements" should "ignore commented out depenencies" in {
+  "Parse" should "ignore commented out depenencies" in {
     val requirements = """
     | Django==1.2.3
     | # Flask==4.5.6
     """.stripMargin
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
     dependencies should contain(
       Dependency(
         name = "Django",
@@ -30,7 +31,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     | Django
     """.stripMargin
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
     dependencies should contain(
       Dependency(
         name = "Django",
@@ -46,7 +47,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     | django-autocomplete-light
     """.stripMargin
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
     dependencies should contain(
       Dependency(
         name = "django-autocomplete-light",
@@ -55,16 +56,5 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
       )
     )
     dependencies should have length 1
-  }
-
-  "Pypi response" should "be transformable from json-string to appropriate case class" in {
-    import Pypi._
-    import Utils.JSON
-
-    val response = """{"info": {"version": "1.2.3"} }"""
-
-    val parsed = JSON.parse[PypiResponse](response)
-
-    parsed.info.version shouldBe "1.2.3"
   }
 }

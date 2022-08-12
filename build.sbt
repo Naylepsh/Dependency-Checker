@@ -6,7 +6,6 @@ lazy val root = project
     name := "dependency-checker",
     version := "0.1.0-SNAPSHOT",
     scalaVersion := scala3Version,
-
     libraryDependencies += "com.lihaoyi" %% "requests" % "0.7.0",
     libraryDependencies += "com.lihaoyi" %% "upickle" % "1.6.0",
 

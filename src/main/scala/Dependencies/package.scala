@@ -32,7 +32,7 @@ package object Dependencies {
               Some(VersionDifference.Major)
             else if (aMajor == bMajor && aSymbol == Some("^"))
               None
-            else if (aMinor != bMinor )
+            else if (aMinor != bMinor)
               Some(VersionDifference.Minor)
             else if (aMinor == bMinor && aSymbol == Some("~"))
               None
