@@ -3,6 +3,7 @@ package Dependencies
 import scala.concurrent.Future
 import scala.util.Try
 import scala.concurrent.ExecutionContext
+import Dependencies._
 
 package object Python {
   case class PackageDetails(
@@ -18,36 +19,51 @@ package object Python {
   }
 
   def getDependencies(
-      getFileContents: String => Future[String],
+      getDependencyFile: String => Future[DependencyFile],
       getDependencyDetails: Dependency => Try[PackageDetails]
-  )(path: String)(implicit ec: ExecutionContext): Future[List[Dependency]] = {
+  )(path: String)(using ExecutionContext): Future[List[Dependency]] = {
     for {
-      fileContents <- getFileContents(path)
-      dependencies <- Python.getDependencies(fileContents, getDependencyDetails)
+      file <- getDependencyFile(path)
+      dependencies <- Python.getDependencies(file, getDependencyDetails)
     } yield dependencies
   }
 
   def getDependencies(
-      fileContents: String,
+      file: DependencyFile,
       getDependencyDetails: Dependency => Try[PackageDetails]
-  )(implicit ec: ExecutionContext): Future[List[Dependency]] = {
-    // TODO: Infer parser
-    val dependenciesFutures = RequirementsTxt
-      .parse(fileContents)
-      .map(dependency =>
-        Future {
-          getDependencyDetails(dependency)
-            .map(details => {
-              dependency.copy(
-                latestVersion = details.latestVersion,
-                vulnerabilities = details.vulnerabilities,
-                notes = details.requiredPython
-                  .map(version => s"Required python: ${version}")
-              )
-            })
-            .getOrElse(dependency)
-        }
-      )
-    Future.sequence(dependenciesFutures)
+  )(using ExecutionContext): Future[List[Dependency]] = {
+    matchParser(file.format) match {
+      case Right(parser) => {
+        val dependenciesFutures = parser
+          .parse(file.content)
+          .map(dependency =>
+            Future {
+              getDependencyDetails(dependency)
+                .map(details => {
+                  dependency.copy(
+                    latestVersion = details.latestVersion,
+                    vulnerabilities = details.vulnerabilities,
+                    notes = details.requiredPython
+                      .map(version => s"Required python: ${version}")
+                  )
+                })
+                .getOrElse(dependency)
+            }
+          )
+        Future.sequence(dependenciesFutures)
+      }
+
+      case Left(reason) => {
+        println(reason)
+        Future(List())
+      }
+    }
+  }
+
+  private def matchParser(
+      format: DependencyFileFormat
+  ): Either[String, DependencyFormat] = format match {
+    case Txt  => Right(RequirementsTxt)
+    case Toml => Right(PyProjectToml)
   }
 }

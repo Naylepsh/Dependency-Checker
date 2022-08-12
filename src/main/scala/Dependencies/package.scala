@@ -16,6 +16,15 @@ package object Dependencies {
       dependencies: List[Dependency]
   )
 
+  sealed trait DependencyFileFormat
+  object Toml extends DependencyFileFormat
+  object Txt extends DependencyFileFormat
+
+  case class DependencyFile(
+      content: String,
+      format: DependencyFileFormat
+  )
+
   // TBD: Move this to a separate package?
   enum VersionDifference:
     case Patch, Minor, Major

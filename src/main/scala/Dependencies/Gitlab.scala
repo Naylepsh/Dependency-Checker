@@ -11,12 +11,12 @@ object Gitlab {
 
   case class RepositoryTreeFile(name: String, path: String)
   object RepositoryTreeFile {
-    implicit val rw: RW[RepositoryTreeFile] = macroRW
+    given RW[RepositoryTreeFile] = macroRW
   }
 
-  case class RepositoryFile(content: String)
+  case class RepositoryFile(name: String, content: String)
   object RepositoryFile {
-    implicit val rw: RW[RepositoryFile] = macroRW
+    given RW[RepositoryFile] = macroRW
   }
 
   type RepositoryTree = List[RepositoryTreeFile]
@@ -37,20 +37,26 @@ object Gitlab {
 
   def getProjectDependenciesFile(
       props: ProjectDependenciesFileProps
-  )(projectId: String): Try[Option[String]] = {
+  )(projectId: String): Try[Option[DependencyFile]] = {
     props
       .getProjectTree(projectId)
       .flatMap(tree => {
         val dependencyFileOption = tree
-          .filter(file => dependencyFileCandidates.contains(file.name))
-          .headOption
+          .find(file => dependencyFileCandidates.contains(file.name))
 
         dependencyFileOption match {
           case None => Try { None }
           case Some(file) =>
             props
               .getProjectFile(projectId)(file.path)
-              .map(file => Some(decodeFile(file.content)))
+              .map(file =>
+                Some(
+                  DependencyFile(
+                    content = decodeFile(file.content),
+                    format = dependencyFileCandidates(file.name)
+                  )
+                )
+              )
         }
       })
   }
@@ -86,6 +92,9 @@ object Gitlab {
   private def decodeFile(encodedContent: String): String =
     new String(java.util.Base64.getDecoder.decode(encodedContent))
 
-  private val dependencyFileCandidates = List("requirements.txt")
+  private val dependencyFileCandidates = Map(
+    "requirements.txt" -> Txt,
+    "pyproject.toml" -> Toml
+  )
 
 }
