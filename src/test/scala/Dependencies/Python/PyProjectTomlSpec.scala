@@ -33,6 +33,7 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
 
     parsed.length shouldBe 2
     parsed.map(_.name) should contain("python")
+    parsed.map(_.currentVersion) should contain(Some("^3.8"))
     parsed.map(_.name) should contain("python-foo")
   }
 }

@@ -32,9 +32,17 @@ import Dependencies.RepositoryDependenciesSheetExporter
           fileOption match {
             case Some(file) =>
               Python.getDependencies(file, Python.Pypi.getDependencyDetails)
-            case None => Future { List[Dependency]() }
+            case None => {
+              println(s"Could not get depedency file for ${project.name}")
+
+              Future { List[Dependency]() }
+            }
           }
-        case Failure(error) => Future { List[Dependency]() }
+        case Failure(error) => {
+          println(s"project: ${project.name} failed due to $error")
+
+          Future { List[Dependency]() }
+        }
       }
       dependencies.map(dependencies =>
         RepositoryDependencies(project.name, dependencies)

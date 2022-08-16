@@ -15,15 +15,39 @@ object PyProjectToml extends DependencyFormat {
     if (line.startsWith("#") || line.contains("git"))
       return None
 
-    dependencyPattern
-      .findFirstMatchIn(line)
-      .map(patternMatch => {
-        Dependency(
-          name = patternMatch.group(1),
-          currentVersion = Option(patternMatch.group(4)),
-          latestVersion = None
-        )
-      })
+    line.filterNot(_.isWhitespace).split("=", 2).toList match {
+      case Nil => None
+
+      case name :: Nil =>
+        dependencyNamePattern
+          .findFirstIn(name)
+          .map(cleanName => {
+            Dependency(
+              name = cleanName,
+              currentVersion = None,
+              latestVersion = None,
+              vulnerabilities = List(),
+              notes = None
+            )
+          })
+
+      case name :: currentVersion :: _ =>
+        dependencyNamePattern
+          .findFirstIn(name)
+          .flatMap(cleanName => {
+            dependencyVersionPattern
+              .findFirstIn(currentVersion)
+              .map(cleanVersion => {
+                Dependency(
+                  name = cleanName,
+                  currentVersion = Some(cleanVersion),
+                  latestVersion = None,
+                  vulnerabilities = List(),
+                  notes = None
+                )
+              })
+          })
+    }
   }
 
   def getDependenciesPart(
@@ -47,6 +71,9 @@ object PyProjectToml extends DependencyFormat {
 
   private val dependenciesSectionName = "tool.poetry.dependencies"
 
-  private val dependencyPattern: Regex =
-    """([-_a-zA-Z0-9]+).*=.*(")?(.+)?(")?""".r
+  private val dependencyNamePattern: Regex =
+    "[-_a-zA-Z0-9]+".r
+
+  private val dependencyVersionPattern: Regex =
+    "[-^~._a-zA-Z0-9]+".r
 }

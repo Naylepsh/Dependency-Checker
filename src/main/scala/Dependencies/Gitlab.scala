@@ -14,7 +14,7 @@ object Gitlab {
     given RW[RepositoryTreeFile] = macroRW
   }
 
-  case class RepositoryFile(name: String, content: String)
+  case class RepositoryFile(content: String)
   object RepositoryFile {
     given RW[RepositoryFile] = macroRW
   }
@@ -46,14 +46,14 @@ object Gitlab {
 
         dependencyFileOption match {
           case None => Try { None }
-          case Some(file) =>
+          case Some(treeFile) =>
             props
-              .getProjectFile(projectId)(file.path)
+              .getProjectFile(projectId)(treeFile.path)
               .map(file =>
                 Some(
                   DependencyFile(
                     content = decodeFile(file.content),
-                    format = dependencyFileCandidates(file.name)
+                    format = dependencyFileCandidates(treeFile.name)
                   )
                 )
               )
