@@ -15,6 +15,7 @@ import Dependencies.Gitlab.ProjectDependenciesFileProps
 import Dependencies.RepositoryDependencies
 import Dependencies.Excel
 import Dependencies.RepositoryDependenciesSheetExporter
+import Dependencies.Gitlab.ProjectProps
 
 @main def readRemote: Unit =
   import Data._
@@ -22,11 +23,16 @@ import Dependencies.RepositoryDependenciesSheetExporter
   val content = Source.fromFile("./registry.json").getLines.mkString("\n")
   val registry = JSON.parse[Registry](content)
 
-  val gitlabProps = GitlabProps(registry.host, Some(registry.token))
-  val props = ProjectDependenciesFileProps(gitlabProps)
+  val props = ProjectDependenciesFileProps(
+    GitlabProps(registry.host, Some(registry.token))
+  )
   val resultsFuture = Future.sequence(
     registry.projects.map(project => {
-      val file = Future { Gitlab.getProjectDependenciesFile(props)(project.id) }
+      val file = Future {
+        Gitlab.getProjectDependenciesFile(props)(
+          ProjectProps(project.id, project.branch)
+        )
+      }
       val dependencies = file.flatMap {
         case Success(fileOption) =>
           fileOption match {
@@ -49,8 +55,8 @@ import Dependencies.RepositoryDependenciesSheetExporter
       )
     })
   )
-
   val dependencies = Await.result(resultsFuture, Duration.Inf)
+
   val workBook =
     Excel.createWorkbook(dependencies)(RepositoryDependenciesSheetExporter())
   Excel.saveWorkbook(workBook, "./export.xlsx")
@@ -62,9 +68,13 @@ def showResultsInConsole(repoDependencies: RepositoryDependencies): Unit = {
 }
 
 object Data {
-  case class Project(id: String, name: String)
+  case class Project(
+      id: String,
+      name: String,
+      branch: String = "master"
+  )
   object Project {
-    implicit val rw: RW[Project] = macroRW
+    given RW[Project] = macroRW
   }
 
   case class Registry(
@@ -73,6 +83,6 @@ object Data {
       projects: List[Project]
   )
   object Registry {
-    implicit val rw: RW[Registry] = macroRW
+    given RW[Registry] = macroRW
   }
 }
