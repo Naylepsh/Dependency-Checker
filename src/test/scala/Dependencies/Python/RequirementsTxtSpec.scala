@@ -1,12 +1,13 @@
-package Dependencies
+package Dependencies.Python
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
 import flatspec._
 import matchers._
+import Dependencies.Dependency
 
-class PythonSpec extends AnyFlatSpec with should.Matchers {
-  import Python._
+class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
+  import RequirementsTxt._
 
   "Parse requirements" should "ignore commented out depenencies" in {
     val requirements = """
@@ -14,7 +15,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     | # Flask==4.5.6
     """.stripMargin
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
     dependencies should contain(
       Dependency(
         name = "Django",
@@ -30,7 +31,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     | Django
     """.stripMargin
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
     dependencies should contain(
       Dependency(
         name = "Django",
@@ -46,7 +47,7 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     | django-autocomplete-light
     """.stripMargin
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
     dependencies should contain(
       Dependency(
         name = "django-autocomplete-light",
@@ -63,30 +64,11 @@ class PythonSpec extends AnyFlatSpec with should.Matchers {
     | django-autocomplete-light==1.2.3 # $comment
     """
 
-    val dependencies = parseRequirements(requirements)
+    val dependencies = parse(requirements)
 
     dependencies should have length 1
     dependencies.foreach(dependency => {
       dependency.currentVersion.value shouldNot contain(comment)
     })
-  }
-
-  "Pypi response" should "be transformable from json-string to appropriate case class" in {
-    import Pypi._
-    import Utils.JSON
-
-    val response = """{
-      "info": {"version": "1.2.3"}, 
-      "releases": {"0.0.1": [{"upload_time": "2020-10-16T17:37:23", "requires_python": ""}]},
-      "vulnerabilities": [
-        {"id": "PYSEC-2021-9", "details": "Some desc. here"},
-        {"id": "PYSEC-2021-8", "details": "More data here"}
-      ] 
-    }
-    """
-
-    val parsed = JSON.parse[PypiResponse](response)
-
-    parsed.info.version shouldBe "1.2.3"
   }
 }
