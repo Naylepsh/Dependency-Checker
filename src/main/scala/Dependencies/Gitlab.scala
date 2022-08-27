@@ -9,6 +9,8 @@ import Utils.JSON._
 object Gitlab {
   case class GitlabProps(host: String, token: Option[String])
 
+  case class ProjectProps(id: String, branch: String)
+
   case class RepositoryTreeFile(name: String, path: String)
   object RepositoryTreeFile {
     given RW[RepositoryTreeFile] = macroRW
@@ -23,8 +25,8 @@ object Gitlab {
 
   // TBD: should dependencyFileCandidates be passable instead of being hard-coded?
   case class ProjectDependenciesFileProps(
-      getProjectTree: String => Try[RepositoryTree],
-      getProjectFile: String => String => Try[RepositoryFile]
+      getProjectTree: ProjectProps => Try[RepositoryTree],
+      getProjectFile: ProjectProps => String => Try[RepositoryFile]
   )
 
   object ProjectDependenciesFileProps {
@@ -37,9 +39,9 @@ object Gitlab {
 
   def getProjectDependenciesFile(
       props: ProjectDependenciesFileProps
-  )(projectId: String): Try[Option[DependencyFile]] = {
+  )(projectProps: ProjectProps): Try[Option[DependencyFile]] = {
     props
-      .getProjectTree(projectId)
+      .getProjectTree(projectProps)
       .flatMap(tree => {
         val dependencyFileOption = tree
           .find(file => dependencyFileCandidates.contains(file.name))
@@ -48,7 +50,7 @@ object Gitlab {
           case None => Try { None }
           case Some(treeFile) =>
             props
-              .getProjectFile(projectId)(treeFile.path)
+              .getProjectFile(projectProps)(treeFile.path)
               .map(file =>
                 Some(
                   DependencyFile(
@@ -62,29 +64,33 @@ object Gitlab {
   }
 
   private def getProjectTree(
-      props: GitlabProps
-  )(projectId: String): Try[RepositoryTree] = Try {
+      gitlabProps: GitlabProps
+  )(projectProps: ProjectProps): Try[RepositoryTree] = Try {
     // Gitlab defaults to 20 (and paginate to get more).
     // Using 100 to give some safety net for pagination-less result
     val filesPerPage = 100
     val response = requests.get(
-      s"https://${props.host}/api/v4/projects/$projectId/repository/tree",
+      s"https://${gitlabProps.host}/api/v4/projects/${projectProps.id}/repository/tree",
       params = Map(
-        "ref" -> "master",
-        "private_token" -> props.token.getOrElse(""),
+        "ref" -> projectProps.branch,
+        "private_token" -> gitlabProps.token.getOrElse(""),
         "per_page" -> filesPerPage.toString
       )
     )
     parse[RepositoryTree](response.text())
   }
 
-  private def getProjectFile(props: GitlabProps)(projectId: String)(
+  private def getProjectFile(gitlabProps: GitlabProps)(
+      projectProps: ProjectProps
+  )(
       path: String
   ): Try[RepositoryFile] = Try {
     val response = requests.get(
-      s"https://${props.host}/api/v4/projects/$projectId/repository/files/$path",
-      params =
-        Map("ref" -> "master", "private_token" -> props.token.getOrElse(""))
+      s"https://${gitlabProps.host}/api/v4/projects/${projectProps.id}/repository/files/$path",
+      params = Map(
+        "ref" -> projectProps.branch,
+        "private_token" -> gitlabProps.token.getOrElse("")
+      )
     )
     parse[RepositoryFile](response.text())
   }
