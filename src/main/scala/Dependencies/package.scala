@@ -34,24 +34,25 @@ package object Dependencies {
       b: String
   ): Try[Option[VersionDifference]] = {
     if (a == b)
-      return Success(None)
-
-    for {
-      (aSymbol, aMajor, aMinor, aPatch) <- extractVersion(a)
-      (_, bMajor, bMinor, bPatch) <- extractVersion(b)
-    } yield {
-      if (aMajor != bMajor)
-        Some(VersionDifference.Major)
-      else if (aMajor == bMajor && aSymbol == Some("^"))
-        None
-      else if (aMinor != bMinor)
-        Some(VersionDifference.Minor)
-      else if (aMinor == bMinor && aSymbol == Some("~"))
-        None
-      else if (aPatch != bPatch)
-        Some(VersionDifference.Patch)
-      else
-        None
+      Success(None)
+    else {
+      for {
+        (aSymbol, aMajor, aMinor, aPatch) <- extractVersion(a)
+        (_, bMajor, bMinor, bPatch) <- extractVersion(b)
+      } yield {
+        if (aMajor != bMajor)
+          Some(VersionDifference.Major)
+        else if (aMajor == bMajor && aSymbol == Some("^"))
+          None
+        else if (aMinor != bMinor)
+          Some(VersionDifference.Minor)
+        else if (aMinor == bMinor && aSymbol == Some("~"))
+          None
+        else if (aPatch != bPatch)
+          Some(VersionDifference.Patch)
+        else
+          None
+      }
     }
   }
 

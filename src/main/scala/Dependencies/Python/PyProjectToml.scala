@@ -13,41 +13,41 @@ object PyProjectToml extends DependencyFormat {
 
   private def parseLine(line: String): Option[Dependency] = {
     if (line.startsWith("#") || line.contains("git"))
-      return None
+      None
+    else
+      line.filterNot(_.isWhitespace).split("=", 2).toList match {
+        case Nil => None
 
-    line.filterNot(_.isWhitespace).split("=", 2).toList match {
-      case Nil => None
+        case name :: Nil =>
+          dependencyNamePattern
+            .findFirstIn(name)
+            .map(cleanName => {
+              Dependency(
+                name = cleanName,
+                currentVersion = None,
+                latestVersion = None,
+                vulnerabilities = List(),
+                notes = None
+              )
+            })
 
-      case name :: Nil =>
-        dependencyNamePattern
-          .findFirstIn(name)
-          .map(cleanName => {
-            Dependency(
-              name = cleanName,
-              currentVersion = None,
-              latestVersion = None,
-              vulnerabilities = List(),
-              notes = None
-            )
-          })
-
-      case name :: currentVersion :: _ =>
-        dependencyNamePattern
-          .findFirstIn(name)
-          .flatMap(cleanName => {
-            dependencyVersionPattern
-              .findFirstIn(currentVersion)
-              .map(cleanVersion => {
-                Dependency(
-                  name = cleanName,
-                  currentVersion = Some(cleanVersion),
-                  latestVersion = None,
-                  vulnerabilities = List(),
-                  notes = None
-                )
-              })
-          })
-    }
+        case name :: currentVersion :: _ =>
+          dependencyNamePattern
+            .findFirstIn(name)
+            .flatMap(cleanName => {
+              dependencyVersionPattern
+                .findFirstIn(currentVersion)
+                .map(cleanVersion => {
+                  Dependency(
+                    name = cleanName,
+                    currentVersion = Some(cleanVersion),
+                    latestVersion = None,
+                    vulnerabilities = List(),
+                    notes = None
+                  )
+                })
+            })
+      }
   }
 
   def getDependenciesPart(
