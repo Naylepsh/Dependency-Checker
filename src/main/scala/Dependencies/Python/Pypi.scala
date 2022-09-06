@@ -40,16 +40,6 @@ object Pypi {
     given rw: RW[VulnerabilitiesResponse] = macroRW
   }
 
-  private def getLatestVersion(response: PypiResponse): Option[String] =
-    response.releases.toList
-      .collect {
-        case items if items._2.nonEmpty =>
-          (items._1, items._2.head.uploadTime)
-      }
-      .sortBy(_._2)(Ordering.String.reverse)
-      .map(_._1)
-      .headOption
-
   private def getVulnerabilities(
       dependency: Dependency
   ): Try[List[PackageVulnerability]] = Try {
@@ -66,24 +56,30 @@ object Pypi {
   }
 
   def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
-    Try {
-      val response =
-        requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
-      val parsedResponse = Utils.JSON.parse[PypiResponse](response.text())
-
-      val latestVersion = getLatestVersion(parsedResponse)
+    getLatestDependencyInfo(dependency).flatMap(response => {
+      val latestVersion = response.info.version
       val requiredPython = for {
-        version <- latestVersion
-        release <- parsedResponse.releases.get(version).flatMap(_.headOption)
+        release <- response.releases
+          .get(latestVersion)
+          .flatMap(_.headOption)
         value <- Option(release.requiresPython)
       } yield value
-      val vulnerabilities =
-        getVulnerabilities(dependency).getOrElse(List()).map(_.id)
 
-      PackageDetails(
-        latestVersion,
-        vulnerabilities,
-        requiredPython
-      )
-    }
+      getVulnerabilities(dependency).map(vulnerabilities => {
+        PackageDetails(
+          Some(latestVersion),
+          vulnerabilities.map(_.id),
+          requiredPython
+        )
+      })
+
+    })
+
+  private def getLatestDependencyInfo(
+      dependency: Dependency
+  ): Try[PypiResponse] = Try {
+    val response =
+      requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
+    Utils.JSON.parse[PypiResponse](response.text())
+  }
 }
