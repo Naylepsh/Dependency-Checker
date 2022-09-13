@@ -1,0 +1,15 @@
+{
+	"host": "gitlab.my-host.com",
+	"token": "very-secret-token-here",
+	"projects": [
+		{
+			"id": "1",
+			"name": "my-whatever-project"
+		},
+		{
+			"id": "1337",
+			"name": "some-other-project",
+			"branch": "main"
+		}
+	]
+}

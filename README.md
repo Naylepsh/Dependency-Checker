@@ -1,8 +1,15 @@
-## sbt project compiled with Scala 3
+# Dependency Checker
 
-### Usage
+Scuffed dependabot, but for gitlab
 
-This is a normal sbt project. You can compile code with `sbt compile`, run it with `sbt run`, and `sbt console` will start a Scala 3 REPL.
+## Pre-requisites
 
-For more information on the sbt-dotty plugin, see the
-[scala3-example-project](https://github.com/scala/scala3-example-project/blob/main/README.md).
+- `scala` [https://www.scala-lang.org/download/]
+
+
+## Usage
+
+1. Rename `registry.example.json` to `registry.json` and fill in your gitlab token
+2. Run with `sbt run` (or package it first so that you don't have to recompile every time, you know the drill...)
+3. The results will be in the same directory in `export.xlsx` file
+
