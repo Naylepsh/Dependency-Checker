@@ -44,7 +44,7 @@ object Pypi {
       dependency: Dependency
   ): Try[List[PackageVulnerability]] = Try {
     val resource = dependency.currentVersion match {
-      case Some(version) => s"${dependency.name}/$version"
+      case Some(version) => s"${dependency.name}/${cleanupVersion(version)}"
       case None          => dependency.name
     }
     val response =
@@ -54,6 +54,10 @@ object Pypi {
 
     parsedResponse.vulnerabilities
   }
+
+  private def cleanupVersion(version: String): String =
+    // This is a temporary hack, for ~/^ version shoud be bumped to the latest appropriate one
+    version.replaceAll("[\\^~]", "")
 
   def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
     getLatestDependencyInfo(dependency).flatMap(response => {
