@@ -15,6 +15,9 @@ lazy val root = project
     // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
     libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.17.2",
 
+    // https://mvnrepository.com/artifact/com.moandjiezana.toml/toml4j
+    libraryDependencies += "com.moandjiezana.toml" % "toml4j" % "0.7.2",
+
     // https://mvnrepository.com/artifact/org.typelevel/discipline-scalatest
     libraryDependencies += "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
   )
