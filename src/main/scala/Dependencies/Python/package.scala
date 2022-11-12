@@ -32,38 +32,29 @@ package object Python {
       file: DependencyFile,
       getDependencyDetails: Dependency => Try[PackageDetails]
   )(using ExecutionContext): Future[List[Dependency]] = {
-    matchParser(file.format) match {
-      case Right(parser) => {
-        val dependenciesFutures = parser
-          .parse(file.content)
-          .map(dependency =>
-            Future {
-              getDependencyDetails(dependency)
-                .map(details => {
-                  dependency.copy(
-                    latestVersion = details.latestVersion,
-                    vulnerabilities = details.vulnerabilities,
-                    notes = details.requiredPython
-                      .map(version => s"Required python: ${version}")
-                  )
-                })
-                .getOrElse(dependency)
-            }
+    Future.sequence(
+      matchParser(file.format)
+        .parse(file.content)
+        .map(dependency =>
+          Future(
+            getDependencyDetails(dependency)
+              .map(details => {
+                dependency.copy(
+                  latestVersion = details.latestVersion,
+                  vulnerabilities = details.vulnerabilities,
+                  notes = details.requiredPython
+                    .map(version => s"Required python: ${version}")
+                )
+              })
+              .getOrElse(dependency)
           )
-        Future.sequence(dependenciesFutures)
-      }
+        )
+    )
+  }
 
-      case Left(reason) => {
-        println(reason)
-        Future(List())
-      }
+  private def matchParser(format: DependencyFileFormat): DependencyFormat =
+    format match {
+      case Txt  => RequirementsTxt
+      case Toml => PyProjectToml
     }
-  }
-
-  private def matchParser(
-      format: DependencyFileFormat
-  ): Either[String, DependencyFormat] = format match {
-    case Txt  => Right(RequirementsTxt)
-    case Toml => Right(PyProjectToml)
-  }
 }
