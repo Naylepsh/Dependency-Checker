@@ -1,9 +1,7 @@
-import scala.util.{Success, Failure, Try}
 import scala.io.Source
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent._
-import upickle.default.{ReadWriter => RW, macroRW}
 import cats._
 import cats.implicits._
 import services.DependencyService
@@ -11,33 +9,34 @@ import services.sources.GitlabSource
 import services.reporters.python.PythonDependencyReporter
 import services.exports.ConsoleExporter
 import services.exports.ExcelExporter
+import services.sources.GitlabSource.ProjectProps
 
 @main
-def app: Unit =
-  import Data._
+def app: Unit = {
   import utils._
+  import domain.registry._
 
-  val content = Source.fromFile("./registry.json").getLines.mkString("\n")
+  val exportDestination = "./export.xslx"
+  val registrySource = "./registry.json"
+  val content = Source.fromFile(registrySource).getLines.mkString("\n")
   val registry = json.parse[Registry](content)
 
   def prepareForSource(
       project: domain.project.Project
-  ): Option[services.sources.GitlabSource.ProjectProps] =
+  ): Option[ProjectProps] =
     registry.projects
       .find(_.id == project.id)
-      .map(project =>
-        services.sources.GitlabSource.ProjectProps(project.id, project.branch)
-      )
+      .map(project => ProjectProps(project.id, project.branch))
 
   val service =
-    DependencyService.make[Future, services.sources.GitlabSource.ProjectProps](
+    DependencyService.make[Future, ProjectProps](
       source = GitlabSource.forFuture(
         GitlabSource.GitlabProps(registry.host, registry.token.some)
       ),
       prepareForSource = prepareForSource,
       reporter = PythonDependencyReporter.forFuture,
       exporter =
-        ExcelExporter.make(ExcelExporter.dependencies.toSheet, "./export.xlsx")
+        ExcelExporter.make(ExcelExporter.dependencies.toSheet, registrySource)
     )
 
   Await.result(
@@ -46,23 +45,4 @@ def app: Unit =
     }),
     Duration.Inf
   )
-
-object Data {
-  case class Project(
-      id: String,
-      name: String,
-      branch: String = "master"
-  )
-  object Project {
-    given RW[Project] = macroRW
-  }
-
-  case class Registry(
-      host: String,
-      token: String,
-      projects: List[Project]
-  )
-  object Registry {
-    given RW[Registry] = macroRW
-  }
 }
