@@ -1,15 +1,16 @@
-package Dependencies.Python
+package services.reporters.python
 
 import upickle.default.{ReadWriter => RW, macroRW}
-import Dependencies.Dependency
-import Dependencies.Utils
 import scala.util.Try
+import domain.dependency.Dependency
+import domain.dependency.DependencyDetails
+import utils.json
 
 object Pypi {
 
-  case class PackageInfo(version: String) {}
+  case class PackageInfo(version: String)
   object PackageInfo {
-    implicit val rw: RW[PackageInfo] = macroRW
+    given RW[PackageInfo] = macroRW
   }
 
   case class PackageRelease(upload_time: String, requires_python: String) {
@@ -17,12 +18,12 @@ object Pypi {
     val requiresPython = requires_python
   }
   object PackageRelease {
-    implicit val rw: RW[PackageRelease] = macroRW
+    given RW[PackageRelease] = macroRW
   }
 
   case class PackageVulnerability(id: String, details: String)
   object PackageVulnerability {
-    implicit val rw: RW[PackageVulnerability] = macroRW
+    given RW[PackageVulnerability] = macroRW
   }
 
   case class PypiResponse(
@@ -30,14 +31,14 @@ object Pypi {
       releases: Map[String, List[PackageRelease]]
   )
   object PypiResponse {
-    implicit val rw: RW[PypiResponse] = macroRW
+    given RW[PypiResponse] = macroRW
   }
 
   case class VulnerabilitiesResponse(
       vulnerabilities: List[PackageVulnerability]
   )
   object VulnerabilitiesResponse {
-    given rw: RW[VulnerabilitiesResponse] = macroRW
+    given RW[VulnerabilitiesResponse] = macroRW
   }
 
   private def getVulnerabilities(
@@ -50,7 +51,7 @@ object Pypi {
     val response =
       requests.get(s"https://pypi.org/pypi/$resource/json")
     val parsedResponse =
-      Utils.JSON.parse[VulnerabilitiesResponse](response.text())
+      json.parse[VulnerabilitiesResponse](response.text())
 
     parsedResponse.vulnerabilities
   }
@@ -59,7 +60,7 @@ object Pypi {
     // This is a temporary hack, for ~/^ version shoud be bumped to the latest appropriate one
     version.replaceAll("[\\^~]", "")
 
-  def getDependencyDetails(dependency: Dependency): Try[PackageDetails] =
+  def getDependencyDetails(dependency: Dependency): Try[DependencyDetails] =
     getLatestDependencyInfo(dependency).flatMap(response => {
       val latestVersion = response.info.version
       val requiredPython = for {
@@ -70,8 +71,9 @@ object Pypi {
       } yield value
 
       getVulnerabilities(dependency).map(vulnerabilities => {
-        PackageDetails(
-          Some(latestVersion),
+        DependencyDetails(
+          dependency.name,
+          latestVersion,
           vulnerabilities.map(_.id),
           requiredPython
         )
@@ -84,6 +86,6 @@ object Pypi {
   ): Try[PypiResponse] = Try {
     val response =
       requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
-    Utils.JSON.parse[PypiResponse](response.text())
+    json.parse[PypiResponse](response.text())
   }
 }

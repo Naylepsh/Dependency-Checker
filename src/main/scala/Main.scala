@@ -1,71 +1,51 @@
 import scala.util.{Success, Failure, Try}
 import scala.io.Source
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.concurrent.Future
+import scala.concurrent._
 import upickle.default.{ReadWriter => RW, macroRW}
+import cats._
+import cats.implicits._
+import services.DependencyService
+import services.sources.GitlabSource
+import services.reporters.python.PythonDependencyReporter
+import services.exports.ConsoleExporter
+import services.exports.ExcelExporter
 
-import Dependencies.Python
-import Dependencies.Dependency
-import Dependencies.Utils.JSON
-import Dependencies.Gitlab
-import Dependencies.Gitlab.GitlabProps
-import Dependencies.Gitlab.ProjectDependenciesFileProps
-import Dependencies.RepositoryDependencies
-import Dependencies.Excel
-import Dependencies.RepositoryDependenciesSheetExporter
-import Dependencies.Gitlab.ProjectProps
-
-@main def readRemote: Unit =
+@main
+def app: Unit =
   import Data._
+  import utils._
 
   val content = Source.fromFile("./registry.json").getLines.mkString("\n")
-  val registry = JSON.parse[Registry](content)
+  val registry = json.parse[Registry](content)
 
-  val props = ProjectDependenciesFileProps(
-    GitlabProps(registry.host, Some(registry.token))
-  )
-  val resultsFuture = Future.sequence(
-    registry.projects.map(project => {
-      val file = Future {
-        Gitlab.getProjectDependenciesFile(props)(
-          ProjectProps(project.id, project.branch)
-        )
-      }
-      val dependencies = file.flatMap {
-        case Success(fileOption) =>
-          fileOption match {
-            case Some(file) =>
-              Python.getDependencies(file, Python.Pypi.getDependencyDetails)
-            case None => {
-              println(s"Could not get depedency file for ${project.name}")
-
-              Future { List[Dependency]() }
-            }
-          }
-        case Failure(error) => {
-          println(s"project: ${project.name} failed due to $error")
-
-          Future { List[Dependency]() }
-        }
-      }
-      dependencies.map(dependencies =>
-        RepositoryDependencies(project.name, dependencies)
+  def prepareForSource(
+      project: domain.project.Project
+  ): Option[services.sources.GitlabSource.ProjectProps] =
+    registry.projects
+      .find(_.id == project.id)
+      .map(project =>
+        services.sources.GitlabSource.ProjectProps(project.id, project.branch)
       )
-    })
+
+  val service =
+    DependencyService.make[Future, services.sources.GitlabSource.ProjectProps](
+      source = GitlabSource.forFuture(
+        GitlabSource.GitlabProps(registry.host, registry.token.some)
+      ),
+      prepareForSource = prepareForSource,
+      reporter = PythonDependencyReporter.forFuture,
+      exporter =
+        ExcelExporter.make(ExcelExporter.dependencies.toSheet, "./export.xlsx")
+    )
+
+  Await.result(
+    service.checkDependencies(registry.projects.map {
+      case Project(id, name, branch) => domain.project.Project(id, name)
+    }),
+    Duration.Inf
   )
-  val dependencies = Await.result(resultsFuture, Duration.Inf)
-
-  val workBook =
-    Excel.createWorkbook(dependencies)(RepositoryDependenciesSheetExporter())
-  Excel.saveWorkbook(workBook, "./export.xlsx")
-
-def showResultsInConsole(repoDependencies: RepositoryDependencies): Unit = {
-  println("*" * 10)
-  println(repoDependencies.name)
-  repoDependencies.dependencies.foreach(println)
-}
 
 object Data {
   case class Project(
