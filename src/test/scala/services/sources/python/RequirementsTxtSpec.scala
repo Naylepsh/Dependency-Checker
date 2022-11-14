@@ -1,10 +1,10 @@
-package Dependencies.Python
+package services.sources.python
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
 import flatspec._
 import matchers._
-import Dependencies.Dependency
+import domain.dependency._
 
 class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
   import RequirementsTxt._
@@ -15,12 +15,11 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
     | # Flask==4.5.6
     """.stripMargin
 
-    val dependencies = parse(requirements)
+    val dependencies = extract(requirements)
     dependencies should contain(
       Dependency(
         name = "Django",
-        currentVersion = Some("1.2.3"),
-        latestVersion = None
+        currentVersion = Some("1.2.3")
       )
     )
     dependencies should have length 1
@@ -31,12 +30,11 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
     | Django
     """.stripMargin
 
-    val dependencies = parse(requirements)
+    val dependencies = extract(requirements)
     dependencies should contain(
       Dependency(
         name = "Django",
-        currentVersion = None,
-        latestVersion = None
+        currentVersion = None
       )
     )
     dependencies should have length 1
@@ -47,12 +45,11 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
     | django-autocomplete-light
     """.stripMargin
 
-    val dependencies = parse(requirements)
+    val dependencies = extract(requirements)
     dependencies should contain(
       Dependency(
         name = "django-autocomplete-light",
-        currentVersion = None,
-        latestVersion = None
+        currentVersion = None
       )
     )
     dependencies should have length 1
@@ -64,7 +61,7 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
     | django-autocomplete-light==1.2.3 # $comment
     """
 
-    val dependencies = parse(requirements)
+    val dependencies = extract(requirements)
 
     dependencies should have length 1
     dependencies.foreach(dependency => {

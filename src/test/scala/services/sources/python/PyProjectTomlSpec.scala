@@ -1,10 +1,9 @@
-package Dependencies.Python
+package services.sources.python
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
 import flatspec._
 import matchers._
-import Dependencies.Dependency
 
 class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
   import PyProjectToml._
@@ -29,7 +28,7 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
       |build-backend = "poetry.core.masonry.api"
     """.stripMargin
 
-    val parsed = parse(fileContents)
+    val parsed = extract(fileContents).get
 
     parsed.length shouldBe 2
     parsed.map(_.name) should contain("python")
