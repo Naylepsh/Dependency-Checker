@@ -10,6 +10,7 @@ import services.reporters.python.PythonDependencyReporter
 import services.exports.ConsoleExporter
 import services.exports.ExcelExporter
 import services.sources.GitlabSource.ProjectProps
+import services.GitlabApi
 
 @main
 def app: Unit = {
@@ -28,11 +29,10 @@ def app: Unit = {
       .find(_.id == project.id)
       .map(project => ProjectProps(project.id, project.branch))
 
+  val gitlabApi = GitlabApi.make[Future](registry.host, registry.token.some)
   val service =
     DependencyService.make[Future, ProjectProps](
-      source = GitlabSource.forFuture(
-        GitlabSource.GitlabProps(registry.host, registry.token.some)
-      ),
+      source = GitlabSource.make(gitlabApi),
       prepareForSource = prepareForSource,
       reporter = PythonDependencyReporter.forFuture,
       exporter =
