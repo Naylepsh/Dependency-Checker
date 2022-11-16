@@ -13,7 +13,9 @@ object GitlabSource {
   case class ProjectProps(id: String, branch: String)
 
   def make[F[_]: Monad](
-      api: GitlabApi[F]
+      api: GitlabApi[F],
+      dependencyFileCandidates: Map[String, String => List[Dependency]] =
+        defaultDependencyFileCandidates
   ): Source[F, ProjectProps] =
     import services.responses._
 
@@ -54,7 +56,13 @@ object GitlabSource {
             }
 
             case Right(RepositoryFile(content)) =>
-              contentExtractor(decodeContent(content))
+              decodeContent(content) match
+                case Left(_) => {
+                  println(s"Could not decode content of $projectProps's $file")
+                  List.empty
+                }
+
+                case Right(decodedContent) => contentExtractor(decodedContent)
           )
       }
     }
@@ -70,10 +78,10 @@ object GitlabSource {
       .flatMap(x => ys.get(f(x)).map(y => (x, y)))
   }
 
-  private def decodeContent(encodedContent: String): String =
-    new String(java.util.Base64.getDecoder.decode(encodedContent))
+  private def decodeContent(encodedContent: String): Either[Throwable, String] =
+    Try(new String(java.util.Base64.getDecoder.decode(encodedContent))).toEither
 
-  private val dependencyFileCandidates = Map(
+  val defaultDependencyFileCandidates = Map(
     "requirements.txt" -> RequirementsTxt.extract,
     "pyproject.toml" -> PyProjectToml.extract.andThen(_.getOrElse(List.empty))
   )
