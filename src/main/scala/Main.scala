@@ -12,12 +12,11 @@ import services.exports.ExcelExporter
 import services.sources.GitlabSource.ProjectProps
 import services.GitlabApi
 
-@main
-def app: Unit = {
+@main def app: Unit = {
   import utils._
   import domain.registry._
 
-  val exportDestination = "./export.xslx"
+  val exportDestination = "./export.xlsx"
   val registrySource = "./registry.json"
   val content = Source.fromFile(registrySource).getLines.mkString("\n")
   val registry = json.parse[Registry](content)
@@ -36,7 +35,7 @@ def app: Unit = {
       prepareForSource = prepareForSource,
       reporter = PythonDependencyReporter.forFuture,
       exporter =
-        ExcelExporter.make(ExcelExporter.dependencies.toSheet, registrySource)
+        ExcelExporter.make(ExcelExporter.dependencies.toSheet, exportDestination)
     )
 
   Await.result(

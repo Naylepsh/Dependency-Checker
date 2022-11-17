@@ -3,8 +3,6 @@ package services.exports
 import spoiwo.model.{Row, Sheet, Font, Workbook, CellStyle}
 import spoiwo.natures.xlsx.Model2XlsxConversions._
 import org.apache.poi.ss.usermodel.Cell
-import scala.util.Success
-import scala.util.Failure
 import spoiwo.model.Color
 import spoiwo.model.enums.CellFill
 import cats._
@@ -12,7 +10,7 @@ import cats.implicits._
 import domain.project.ExportProjectDependencies
 import domain.dependency.DependencyReport
 import domain.semver._
-import scala.util.Try
+import domain.severity._
 
 object ExcelExporter {
   def make[F[_]: Applicative, A](
@@ -52,34 +50,36 @@ object ExcelExporter {
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
-    private def chooseStyle(dependency: DependencyReport): CellStyle = {
-      val versionDifference = for {
-        current <- dependency.currentVersion
-      } yield calculateVersionDifference(current, dependency.latestVersion)
+    private val chooseStyle = determineSeverity.andThen(matchSeverityToStyle)
 
-      val optionalStyle = versionDifference.map(_ match {
-        case Success(Some(diff)) => matchVersionDiffToStyle(diff)
-        case Success(None) =>
+    private def matchSeverityToStyle(severity: Severity): CellStyle = {
+      severity match
+        case Severity.Unknown => CellStyle()
+
+        case Severity.None =>
           CellStyle(
-            fillPattern = CellFill.Solid,
-            fillForegroundColor = Color.Green
+            fillForegroundColor = Color.Green,
+            fillPattern = CellFill.Solid
           )
-        case Failure(errror) => CellStyle()
-      })
 
-      optionalStyle.getOrElse(CellStyle())
+        case Severity.Low =>
+          CellStyle(
+            fillForegroundColor = Color.LightGreen,
+            fillPattern = CellFill.Solid
+          )
+
+        case Severity.Medium =>
+          CellStyle(
+            fillForegroundColor = Color.Yellow,
+            fillPattern = CellFill.Solid
+          )
+
+        case Severity.High =>
+          CellStyle(
+            fillForegroundColor = Color.Red,
+            fillPattern = CellFill.Solid
+          )
     }
-
-    private def matchVersionDiffToStyle(
-        versionDiff: VersionDifference
-    ): CellStyle = CellStyle(
-      fillForegroundColor = versionDiff match {
-        case VersionDifference.Major => Color.Red
-        case VersionDifference.Minor => Color.Yellow
-        case VersionDifference.Patch => Color.LightGreen
-      },
-      fillPattern = CellFill.Solid
-    )
 
   }
 
