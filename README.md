@@ -3,6 +3,14 @@
 Checks the state of your dependencies (how up/out-of-date they are and their vulnerabilities).
 The result is presented within an excel spreadsheet.
 
+## Features
+
+### Currently supported languages & formats
+
+- Python:
+  - requirements.txt
+  - pyproject.toml
+
 ## Pre-requisites
 
 - `scala` [https://www.scala-lang.org/download/]
