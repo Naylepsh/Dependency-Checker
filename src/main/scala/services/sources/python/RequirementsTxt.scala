@@ -1,17 +1,14 @@
-package Dependencies.Python
+package services.sources.python
 
-import Dependencies.Dependency
-import Dependencies.Utils.ltrim
+import domain.dependency.Dependency
 import scala.util.matching.Regex
 
-object RequirementsTxt extends DependencyFormat {
-
-  def parse(fileContents: String): List[Dependency] = {
+object RequirementsTxt {
+  def extract(fileContents: String): List[Dependency] = {
     fileContents.split("\n").flatMap(ltrim andThen parseLine).toList
   }
 
   private def parseLine(line: String): Option[Dependency] = {
-    // Will most likely benefit from using a parser?
     if (line.startsWith("#") || line.contains("git"))
       None
     else
@@ -24,10 +21,7 @@ object RequirementsTxt extends DependencyFormat {
             .map(cleanName => {
               Dependency(
                 name = cleanName,
-                currentVersion = None,
-                latestVersion = None,
-                vulnerabilities = List(),
-                notes = None
+                currentVersion = None
               )
             })
 
@@ -40,10 +34,7 @@ object RequirementsTxt extends DependencyFormat {
                 .map(cleanVersion => {
                   Dependency(
                     name = cleanName,
-                    currentVersion = Some(cleanVersion),
-                    latestVersion = None,
-                    vulnerabilities = List(),
-                    notes = None
+                    currentVersion = Some(cleanVersion)
                   )
                 })
             })
@@ -55,4 +46,6 @@ object RequirementsTxt extends DependencyFormat {
 
   private val dependencyVersionPattern: Regex =
     "[-._a-zA-Z0-9]+".r
+
+  private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 }

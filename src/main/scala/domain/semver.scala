@@ -1,42 +1,19 @@
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
+package domain
 
-package object Dependencies {
-  case class Dependency(
-      name: String,
-      currentVersion: Option[String],
-      latestVersion: Option[String],
-      vulnerabilities: List[String] = List(),
-      notes: Option[String] = None
-  )
+import scala.util._
 
-  case class RepositoryDependencies(
-      name: String,
-      dependencies: List[Dependency]
-  )
-
-  sealed trait DependencyFileFormat
-  object Toml extends DependencyFileFormat
-  object Txt extends DependencyFileFormat
-
-  case class DependencyFile(
-      content: String,
-      format: DependencyFileFormat
-  )
-
-  // TBD: Move this to a separate package?
-  enum VersionDifference:
+object semver {
+  enum VersionDifference {
     case Patch, Minor, Major
+  }
 
   def calculateVersionDifference(
       a: String,
       b: String
-  ): Try[Option[VersionDifference]] = {
-    if (a == b)
-      Success(None)
+  ): Option[VersionDifference] = {
+    if (a == b) None
     else {
-      for {
+      val res = for {
         (aSymbol, aMajor, aMinor, aPatch) <- extractVersion(a)
         (_, bMajor, bMinor, bPatch) <- extractVersion(b)
       } yield {
@@ -53,12 +30,15 @@ package object Dependencies {
         else
           None
       }
+      res.flatten
     }
   }
 
   private def extractVersion(
       text: String
-  ): Try[(Option[String], Option[String], Option[String], Option[String])] = {
+  ): Option[
+    (Option[String], Option[String], Option[String], Option[String])
+  ] = {
     versionPattern
       .findFirstMatchIn(text)
       .map(matches => {
@@ -68,13 +48,8 @@ package object Dependencies {
         val patch = Option(matches.group(4))
 
         (symbol, major, minor, patch)
-      }) match {
-      case Some(version) => Success(version)
-      case None =>
-        Failure(RuntimeException(s"Could not parse the version from $text"))
-    }
+      })
   }
 
   private val versionPattern = "([~^])*([0-9])*.([0-9a-z])*.?([0-9a-z])*".r
-
 }

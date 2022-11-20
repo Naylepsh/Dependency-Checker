@@ -1,4 +1,4 @@
-package Dependencies
+package domain
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -8,6 +8,8 @@ import matchers._
 import scala.util.{Success, Try}
 
 class PackageSpec extends AnyFlatSpec with should.Matchers {
+  import semver._
+
   "calculate version difference" should "detect major differences" in {
     calculateVersionDifference(
       "1.2.3",
