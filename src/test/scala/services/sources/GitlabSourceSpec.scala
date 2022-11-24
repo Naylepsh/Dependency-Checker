@@ -9,74 +9,54 @@ import cats._
 import cats.implicits._
 import services.GitlabApi
 import services.responses._
-import services.sources.GitlabSource.ProjectProps
 import domain.dependency.Dependency
+import domain.registry.Project
+import domain.registry.DependencySource
+import domain.registry.Format
 
 class GitlabSourceSpec extends AnyFlatSpec {
   import GitlabSourceSpec._
 
-  "Extract" should "return an empty list if failed to get the project's tree" in {
-    GitlabSource
-      .make(failingTreeApi)
-      .extract(testProjectProps) shouldBe empty
-  }
-
   "Extract" should "return an empty list if failed to get the project's concrete file" in {
     GitlabSource
-      .make(failingFileApi, testExtractors)
-      .extract(testProjectProps) shouldBe empty
+      .make(failingFileApi, testContentParser)
+      .extract(testProject) shouldBe empty
   }
 
   "Extract" should "return the list of dependencies" in {
     val tree = List(RepositoryTreeFile("foo", "foo"))
-    val expectedDependencies = List(
-      Dependency("bar", None),
-      Dependency("quux", None)
-    )
     val file = RepositoryFile("")
-    val extractors =
-      Map("foo" -> ((content: String) => expectedDependencies))
 
     val dependencies =
       GitlabSource
-        .make(dataGitlabApi(tree, file), extractors)
-        .extract(testProjectProps)
+        .make(dataGitlabApi(tree, file), testContentParser)
+        .extract(testProject)
 
-    dependencies should contain only (expectedDependencies.head, expectedDependencies.tail.head)
+    dependencies should contain only (testDependencies.head, testDependencies.tail.head)
   }
 }
 
 object GitlabSourceSpec {
-  val testProjectProps = ProjectProps(id = "", branch = "")
-  val testFileNames = List("foo", "bar")
-  val testTree = testFileNames.map(name => RepositoryTreeFile(name, name))
-  val testFiles = testFileNames.map(name => RepositoryFile("c0nt3nt"))
+  val testProject = Project(
+    id = "123",
+    name = "test-project",
+    sources =
+      List(DependencySource(path = "requirements.txt", format = Format.Txt))
+  )
   val testDependencies =
     List(Dependency("baz", None), Dependency("quux", "1.2.3".some))
-  val testExtractors = testFileNames
-    .map(name => name -> ((x: String) => testDependencies))
-    .toMap
-
-  val failingTreeApi = makeApi(
-    RuntimeException("Unable to get the tree").asLeft,
-    testFiles.head.asRight
-  )
+  val testContentParser = (format: Format) =>
+    (content: String) => testDependencies
 
   val failingFileApi =
-    makeApi(testTree.asRight, RuntimeException("Unable to get the file").asLeft)
+    makeApi(RuntimeException("Unable to get the file").asLeft)
 
   def dataGitlabApi(tree: RepositoryTree, file: RepositoryFile) =
-    makeApi(tree.asRight, file.asRight)
+    makeApi(file.asRight)
 
   def makeApi(
-      treeResult: Either[Throwable, RepositoryTree],
       fileResult: Either[Throwable, RepositoryFile]
   ) = new GitlabApi[Id] {
-    override def getFileTree(
-        id: String,
-        branch: String
-    ): Id[Either[Throwable, RepositoryTree]] = treeResult
-
     override def getFile(
         id: String,
         branch: String,

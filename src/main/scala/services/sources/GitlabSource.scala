@@ -7,50 +7,39 @@ import cats.implicits._
 import domain.dependency._
 import services.GitlabApi
 import services.sources.python._
+import domain.registry.Project
+import domain.registry.DependencySource
+import domain.registry.Format
 
 object GitlabSource {
   case class GitlabProps(host: String, token: Option[String])
-  case class ProjectProps(id: String, branch: String)
 
   def make[F[_]: Monad](
       api: GitlabApi[F],
-      dependencyFileCandidates: Map[String, String => List[Dependency]] =
-        defaultDependencyFileCandidates
-  ): Source[F, ProjectProps] =
+      contentParser: Format => String => List[Dependency] = defaultContentParser
+  ): Source[F, Project] =
     import services.responses._
 
-    new Source[F, ProjectProps] {
-      def extract(projectProps: ProjectProps): F[List[Dependency]] =
-        api
-          .getFileTree(projectProps.id, projectProps.branch)
-          .flatMap(_ match
-            case Left(reason) => {
-              println(
-                s"Could not get the tree structure of $projectProps due to $reason"
-              )
-              List.empty.pure
-            }
-
-            case Right(tree) => {
-              find(tree, dependencyFileCandidates, _.name)
-                .map { case (file, extractor) =>
-                  extractFromFile(projectProps, file, extractor)
-                }
-                .getOrElse(List.empty.pure)
-            }
-          )
+    new Source[F, Project] {
+      def extract(project: Project): F[List[Dependency]] =
+        project.sources
+          .map { case DependencySource(path, format) =>
+            extractFromFile(project, path, contentParser(format))
+          }
+          .sequence
+          .map(_.flatten)
 
       private def extractFromFile(
-          projectProps: ProjectProps,
-          file: RepositoryTreeFile,
+          project: Project,
+          filePath: String,
           contentExtractor: String => List[Dependency]
       ): F[List[Dependency]] = {
         api
-          .getFile(projectProps.id, projectProps.branch, file.path)
+          .getFile(project.id, project.branch, filePath)
           .map(_ match
             case Left(reason) => {
               println(
-                s"Could not get the file contents of $projectProps and $file due to $reason"
+                s"Could not get the file contents of ${project.name} and $filePath due to $reason"
               )
               List.empty
             }
@@ -58,7 +47,9 @@ object GitlabSource {
             case Right(RepositoryFile(content)) =>
               decodeContent(content) match
                 case Left(_) => {
-                  println(s"Could not decode content of $projectProps's $file")
+                  println(
+                    s"Could not decode content of ${project.name}'s $filePath"
+                  )
                   List.empty
                 }
 
@@ -81,8 +72,10 @@ object GitlabSource {
   private def decodeContent(encodedContent: String): Either[Throwable, String] =
     Try(new String(java.util.Base64.getDecoder.decode(encodedContent))).toEither
 
-  val defaultDependencyFileCandidates = Map(
-    "requirements.txt" -> RequirementsTxt.extract,
-    "pyproject.toml" -> PyProjectToml.extract.andThen(_.getOrElse(List.empty))
-  )
+  private def defaultContentParser(format: Format): String => List[Dependency] =
+    format match
+      case Format.Txt => RequirementsTxt.extract
+      case Format.TOML =>
+        PyProjectToml.extract.andThen(_.getOrElse(List.empty))
+
 }

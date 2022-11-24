@@ -14,35 +14,36 @@ class PackageSpec extends AnyFlatSpec with should.Matchers {
     calculateVersionDifference(
       "1.2.3",
       "2.2.3"
-    ).success.value shouldBe Some(VersionDifference.Major)
+    ).value shouldBe VersionDifference.Major
   }
 
   it should "detect minor differences" in {
     calculateVersionDifference(
       "1.2.3",
       "1.3.3"
-    ).success.value shouldBe Some(VersionDifference.Minor)
+    ).value shouldBe VersionDifference.Minor
   }
 
   it should "detect patch differences" in {
     calculateVersionDifference(
       "1.2.3",
       "1.2.4"
-    ).success.value shouldBe Some(VersionDifference.Patch)
+    ).value shouldBe VersionDifference.Patch
   }
 
   it should "detect when there are no differences" in {
-    calculateVersionDifference("1.2.3", "1.2.3").success.value shouldBe None
+    calculateVersionDifference("1.2.3", "1.2.3") shouldBe None
   }
 
   it should "handle non-purely-numeric versions" in {
-    calculateVersionDifference("1.2b.3", "1.2.3").success.value shouldBe Some(
-      VersionDifference.Minor
-    )
+    calculateVersionDifference(
+      "1.2b.3",
+      "1.2.3"
+    ).value shouldBe VersionDifference.Minor
   }
 
   it should "handle semantic versioning symbols" in {
-    calculateVersionDifference("^1.2.3", "1.3.3").success.value shouldBe None
-    calculateVersionDifference("~1.2.3", "1.2.4").success.value shouldBe None
+    calculateVersionDifference("^1.2.3", "1.3.3") shouldBe None
+    calculateVersionDifference("~1.2.3", "1.2.4") shouldBe None
   }
 }

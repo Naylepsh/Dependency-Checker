@@ -23,11 +23,6 @@ object responses {
 import responses._
 
 trait GitlabApi[F[_]] {
-
-  def getFileTree(
-      id: String,
-      branch: String
-  ): F[Either[Throwable, RepositoryTree]]
   def getFile(
       id: String,
       branch: String,

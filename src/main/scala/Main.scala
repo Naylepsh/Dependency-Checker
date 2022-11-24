@@ -5,12 +5,10 @@ import scala.concurrent._
 import cats._
 import cats.implicits._
 import services.DependencyService
-import services.sources.GitlabSource
 import services.reporters.python.PythonDependencyReporter
-import services.exports.ConsoleExporter
 import services.exports.ExcelExporter
-import services.sources.GitlabSource.ProjectProps
 import services.GitlabApi
+import services.sources.GitlabSource
 
 @main def app: Unit = {
   import utils._
@@ -23,14 +21,12 @@ import services.GitlabApi
 
   def prepareForSource(
       project: domain.project.Project
-  ): Option[ProjectProps] =
-    registry.projects
-      .find(_.id == project.id)
-      .map(project => ProjectProps(project.id, project.branch))
+  ): Option[Project] =
+    registry.projects.find(_.id == project.id)
 
   val gitlabApi = GitlabApi.make[Future](registry.host, registry.token.some)
   val service =
-    DependencyService.make[Future, ProjectProps](
+    DependencyService.make[Future, Project](
       source = GitlabSource.make(gitlabApi),
       prepareForSource = prepareForSource,
       reporter = PythonDependencyReporter.forFuture,
@@ -40,7 +36,7 @@ import services.GitlabApi
 
   Await.result(
     service.checkDependencies(registry.projects.map {
-      case Project(id, name, branch) => domain.project.Project(id, name)
+      case Project(id, name, sources, branch) => domain.project.Project(id, name)
     }),
     Duration.Inf
   )
