@@ -3,7 +3,6 @@ package domain
 import upickle.default.{ReadWriter => RW, macroRW, readwriter}
 import cats._
 import cats.implicits._
-import util.Try
 import scala.util.control.NoStackTrace
 
 object registry {
