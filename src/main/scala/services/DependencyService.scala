@@ -8,7 +8,6 @@ import services.reporters._
 import domain.dependency._
 import domain.project._
 import scala.annotation.tailrec
-import services.sources.GitlabSource.ProjectProps
 
 trait DependencyService[F[_]] {
   def checkDependencies(projects: List[Project]): F[Unit]
@@ -33,7 +32,9 @@ object DependencyService {
               .map(dependencies => ProjectDependencies(project, dependencies))
           }
         dependencies = projectsDependencies.map(_.dependencies).flatten
-        _ = println(s"Checking the details of ${dependencies.length} dependencies...")
+        _ = println(
+          s"Checking the details of ${dependencies.length} dependencies..."
+        )
         details <- reporter.getDetails(dependencies)
         _ = println("Building the report...")
         detailsMap = details.map(detail => detail.name -> detail).toMap
