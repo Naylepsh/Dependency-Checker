@@ -4,12 +4,19 @@
 	"projects": [
 		{
 			"id": "1",
-			"name": "my-whatever-project"
+			"name": "my-whatever-project",
+			"sources": [
+				{"path": "requirements-dev.txt", "format": "txt"},
+				{"path": "requirements.txt", "format": "txt"}
+			]
 		},
 		{
 			"id": "1337",
 			"name": "some-other-project",
-			"branch": "main"
+			"branch": "main",
+			"sources": [
+				{"path": "pyproject.toml", "format": "toml"}
+			]
 		}
 	]
 }
