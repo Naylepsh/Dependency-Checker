@@ -7,9 +7,7 @@ import cats.implicits._
 import domain.dependency._
 import services.GitlabApi
 import services.sources.python._
-import domain.registry.Project
-import domain.registry.DependencySource
-import domain.registry.Format
+import domain.registry._
 
 object GitlabSource {
   case class GitlabProps(host: String, token: Option[String])
@@ -23,10 +21,9 @@ object GitlabSource {
     new Source[F, Project] {
       def extract(project: Project): F[List[Dependency]] =
         project.sources
-          .map { case DependencySource(path, format) =>
+          .traverse { case DependencySource(path, format) =>
             extractFromFile(project, path, contentParser(format))
           }
-          .sequence
           .map(_.flatten)
 
       private def extractFromFile(
