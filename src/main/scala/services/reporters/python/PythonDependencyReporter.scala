@@ -2,32 +2,31 @@ package services.reporters.python
 
 import cats._
 import cats.implicits._
+import cats.effect._
 import scala.concurrent._
 import scala.util._
 import domain.dependency._
 import services.reporters.DependencyReporter
 
 object PythonDependencyReporter {
-
-  def forFuture(using ExecutionContext) = new DependencyReporter[Future] {
-    override def getDetails(
+  def forIo: DependencyReporter[IO] = new DependencyReporter[IO] {
+    def getDetails(
         dependencies: List[Dependency]
-    ): Future[List[DependencyDetails]] = {
+    ): IO[List[DependencyDetails]] =
       dependencies
-        .map(d => Future(Pypi.getDependencyDetails(d)))
-        .sequence
-        .map(
-          _.foldLeft(List.empty)((acc, result) =>
-            result match
-              case Failure(exception) => {
-                println(exception)
-                acc
-              }
-              case Success(value) => value :: acc
-          )
+        .grouped(64)
+        .toList
+        .parTraverse(_.traverse(d => IO.blocking(Pypi.getDependencyDetails(d))))
+        .flatMap(results =>
+          val (details, exceptions) = results.flatten
+            .foldLeft((List.empty[DependencyDetails], List.empty[Throwable])) {
+              case ((results, exceptions), result) =>
+                result match
+                  case Failure(exception) => (results, exception :: exceptions)
+                  case Success(value)     => (value :: results, exceptions)
+            }
+          exceptions.traverse(IO.println) *> details.pure
         )
-    }
-
   }
 
 }

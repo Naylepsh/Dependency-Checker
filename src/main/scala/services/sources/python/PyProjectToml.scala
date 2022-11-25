@@ -7,12 +7,28 @@ import scala.util.Try
 import scala.collection.JavaConverters._
 import cats._
 import cats.implicits._
+import scala.util.Success
 
 object PyProjectToml {
-  def extract(fileContents: String): Try[List[Dependency]] = {
+  def extract(fileContents: String): Try[List[Dependency]] =
     val toml = new Toml().read(fileContents)
-    parseDependencies(toml, dependenciesSectionName)
-  }
+    extract(toml)
+
+  private def extract(toml: Toml): Try[List[Dependency]] =
+    toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency])) {
+      case (acc, entry) =>
+        val key = entry.getKey
+        if (key.endsWith("dependencies"))
+          parseDependencies(toml, key).flatMap(dependencies =>
+            acc.map(dependencies ::: _)
+          )
+        else
+          acc.map(
+            _ ::: Try(entry.getValue.asInstanceOf[Toml])
+              .flatMap(extract)
+              .getOrElse(List.empty)
+          )
+    }
 
   private def parseDependencies(
       toml: Toml,
@@ -30,6 +46,4 @@ object PyProjectToml {
       }
       .toList
   )
-
-  private val dependenciesSectionName = "tool.poetry.dependencies"
 }

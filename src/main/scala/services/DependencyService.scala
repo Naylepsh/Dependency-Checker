@@ -2,6 +2,7 @@ package services
 
 import cats._
 import cats.implicits._
+import cats.effect.std._
 import services.sources._
 import services.exports._
 import services.reporters._
@@ -14,7 +15,7 @@ trait DependencyService[F[_]] {
 }
 
 object DependencyService {
-  def make[F[_]: Monad, A](
+  def make[F[_]: Monad: Console: Parallel, A](
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
@@ -22,21 +23,23 @@ object DependencyService {
   ): DependencyService[F] = new DependencyService[F] {
 
     override def checkDependencies(projects: List[Project]): F[Unit] = {
-      println(s"Checking dependencies of ${projects.length} projects...")
       for {
+        _ <- Console[F].println(
+          s"Checking dependencies of ${projects.length} projects..."
+        )
         projectsDependencies <- projects
-          .traverse { case project @ Project(_, _) =>
+          .parTraverse { case project @ Project(_, _) =>
             prepareForSource(project)
               .map(source.extract(_))
               .getOrElse(Monad[F].pure(List.empty))
               .map(dependencies => ProjectDependencies(project, dependencies))
           }
         dependencies = projectsDependencies.map(_.dependencies).flatten
-        _ = println(
+        _ <- Console[F].println(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
         details <- reporter.getDetails(dependencies)
-        _ = println("Building the report...")
+        _ <- Console[F].println("Building the report...")
         detailsMap = details.map(detail => detail.name -> detail).toMap
         reports = projectsDependencies.map(buildReport(detailsMap))
         _ <- exporter.exportData(reports)
