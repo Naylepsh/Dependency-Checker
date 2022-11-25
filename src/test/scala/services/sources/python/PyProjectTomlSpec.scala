@@ -8,7 +8,7 @@ import matchers._
 class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
   import PyProjectToml._
 
-  "Parse" should "extract dependencies only from [tools.poetry.dependencies] section" in {
+  "Parse" should "extract dependencies only from all sections containing 'dependencies' keyword" in {
     val fileContents = """
       |[tool.poetry]
       |name = "foo"
@@ -29,10 +29,10 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
     """.stripMargin
 
     val parsed = extract(fileContents).get
+    val names = parsed.map(_.name)
+    val versions = parsed.map(_.currentVersion)
 
-    parsed.length shouldBe 2
-    parsed.map(_.name) should contain("python")
-    parsed.map(_.currentVersion) should contain(Some("^3.8"))
-    parsed.map(_.name) should contain("python-foo")
+    names should contain only ("python", "python-foo", "bar")
+    versions should contain only (Some("^3.8"), Some("^2.6.0"), Some("~3.4.5"))
   }
 }
