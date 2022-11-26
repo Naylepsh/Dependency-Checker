@@ -73,6 +73,7 @@ object Pypi {
       getVulnerabilities(dependency).map(vulnerabilities => {
         DependencyDetails(
           dependency.name,
+          dependency.currentVersion.getOrElse(latestVersion),
           latestVersion,
           vulnerabilities.map(_.id),
           requiredPython

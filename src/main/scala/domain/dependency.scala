@@ -8,6 +8,7 @@ object dependency {
 
   case class DependencyDetails(
       name: String,
+      ofVersion: String,
       latestVersion: String,
       vulnerabilities: List[String] = List(),
       requiredPython: Option[String] = None
