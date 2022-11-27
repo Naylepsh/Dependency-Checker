@@ -15,3 +15,5 @@ lazy val root = project
     libraryDependencies += "org.typelevel" %% "cats-effect" % "3.4.1",
     libraryDependencies += "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
   )
+
+enablePlugins(JavaAppPackaging)

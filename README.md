@@ -11,12 +11,20 @@ The result is presented within an excel spreadsheet.
   - requirements.txt
   - pyproject.toml
 
+### Currently supported export formats
+
+- Excel
+
 ## Pre-requisites
 
 - `scala` [https://www.scala-lang.org/download/]
 
-## Usage
+## Installation
 
 1. Rename `registry.example.json` to `registry.json` and fill in your gitlab token
-2. Run with `sbt run` (or package it first so that you don't have to recompile every time, you know the drill...)
-3. The results will be in the same directory in `export.xlsx` file
+2. Run `sbt stage` to compile & package
+
+## Usage
+
+1. Run `./target/universal/scripts/bin/dependency-checker`
+2. The results will be in the same directory in `export.xlsx` file
