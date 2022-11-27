@@ -41,9 +41,14 @@ object PyProjectToml {
       .map { case (name, version) =>
         Dependency(
           name = name,
-          currentVersion = Option(version).map(_.toString)
+          currentVersion = Option(version).map(v => normalize(v.toString))
         )
       }
       .toList
   )
+
+  private def normalize(version: String): String = version match
+    case s"""${_}version=$v,""" => v
+    case s"""${_}version=$v}""" => v
+    case other                  => other
 }

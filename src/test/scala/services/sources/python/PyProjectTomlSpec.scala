@@ -47,4 +47,15 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
 
     names should not contain "python"
   }
+
+  it should "extract only name and version" in {
+    val fileContents = """
+    |[tool.poetry.dev-dependencies]
+    |black = {version = "^22.6.0", allow-prereleases = true}
+    """.stripMargin
+
+    val versions = extract(fileContents).get.map(_.currentVersion)
+
+    versions should contain only (Some("^22.6.0"))
+  }
 }
