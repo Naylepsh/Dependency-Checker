@@ -13,6 +13,7 @@ lazy val root = project
     libraryDependencies += "com.moandjiezana.toml" % "toml4j" % "0.7.2",
     libraryDependencies += "org.typelevel" %% "cats-core" % "2.9.0",
     libraryDependencies += "org.typelevel" %% "cats-effect" % "3.4.1",
+    libraryDependencies += "org.legogroup" %% "woof-core" % "0.4.7",
     libraryDependencies += "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
   )
 

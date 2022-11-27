@@ -3,6 +3,7 @@ package services
 import cats._
 import cats.implicits._
 import cats.effect.std._
+import org.legogroup.woof.{given, *}
 import services.sources._
 import services.exports._
 import services.reporters._
@@ -15,7 +16,7 @@ trait DependencyService[F[_]] {
 }
 
 object DependencyService {
-  def make[F[_]: Monad: Console: Parallel, A](
+  def make[F[_]: Monad: Logger: Parallel, A](
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
@@ -24,7 +25,7 @@ object DependencyService {
 
     override def checkDependencies(projects: List[Project]): F[Unit] = {
       for {
-        _ <- Console[F].println(
+        _ <- Logger[F].info(
           s"Checking dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
@@ -35,15 +36,15 @@ object DependencyService {
               .map(dependencies => ProjectDependencies(project, dependencies))
           }
         dependencies = projectsDependencies.map(_.dependencies).flatten
-        _ <- Console[F].println(
+        _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
         details <- reporter.getDetails(dependencies)
-        _ <- Console[F].println("Building the report...")
+        _ <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
         reports = projectsDependencies.map(buildReport(detailsMap))
         _ <- exporter.exportData(reports)
-        _ <- Console[F].println("Exported the results")
+        _ <- Logger[F].info("Exported the results")
       } yield ()
     }
   }

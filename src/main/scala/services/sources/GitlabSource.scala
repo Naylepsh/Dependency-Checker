@@ -4,15 +4,16 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Try, Success, Failure}
 import cats._
 import cats.implicits._
+import org.legogroup.woof.{given, *}
 import domain.dependency._
+import domain.registry._
 import services.GitlabApi
 import services.sources.python._
-import domain.registry._
 
 object GitlabSource {
   case class GitlabProps(host: String, token: Option[String])
 
-  def make[F[_]: Monad](
+  def make[F[_]: Monad: Logger](
       api: GitlabApi[F],
       contentParser: Format => String => List[Dependency] = defaultContentParser
   ): Source[F, Project] =
@@ -33,24 +34,23 @@ object GitlabSource {
       ): F[List[Dependency]] = {
         api
           .getFile(project.id, project.branch, filePath)
-          .map(_ match
+          .flatMap(_ match
             case Left(reason) => {
-              println(
+              Logger[F].error(
                 s"Could not get the file contents of ${project.name} and $filePath due to $reason"
-              )
-              List.empty
+              ) *> List.empty.pure
             }
 
             case Right(RepositoryFile(content)) =>
               decodeContent(content) match
                 case Left(_) => {
-                  println(
+                  Logger[F].error(
                     s"Could not decode content of ${project.name}'s $filePath"
-                  )
-                  List.empty
+                  ) *> List.empty.pure
                 }
 
-                case Right(decodedContent) => contentExtractor(decodedContent)
+                case Right(decodedContent) =>
+                  contentExtractor(decodedContent).pure
           )
       }
     }
