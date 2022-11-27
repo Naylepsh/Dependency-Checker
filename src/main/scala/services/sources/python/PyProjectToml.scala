@@ -12,7 +12,7 @@ import scala.util.Success
 object PyProjectToml {
   def extract(fileContents: String): Try[List[Dependency]] =
     val toml = new Toml().read(fileContents)
-    extract(toml)
+    extract(toml).map(_.filter(_.name != "python"))
 
   private def extract(toml: Toml): Try[List[Dependency]] =
     toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency])) {
@@ -41,9 +41,14 @@ object PyProjectToml {
       .map { case (name, version) =>
         Dependency(
           name = name,
-          currentVersion = Option(version).map(_.toString)
+          currentVersion = Option(version).map(v => normalize(v.toString))
         )
       }
       .toList
   )
+
+  private def normalize(version: String): String = version match
+    case s"""${_}version=$v,""" => v
+    case s"""${_}version=$v}""" => v
+    case other                  => other
 }

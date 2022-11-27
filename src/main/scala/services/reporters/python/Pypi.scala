@@ -40,26 +40,6 @@ object Pypi {
   object VulnerabilitiesResponse {
     given RW[VulnerabilitiesResponse] = macroRW
   }
-
-  private def getVulnerabilities(
-      dependency: Dependency
-  ): Try[List[PackageVulnerability]] = Try {
-    val resource = dependency.currentVersion match {
-      case Some(version) => s"${dependency.name}/${cleanupVersion(version)}"
-      case None          => dependency.name
-    }
-    val response =
-      requests.get(s"https://pypi.org/pypi/$resource/json")
-    val parsedResponse =
-      json.parse[VulnerabilitiesResponse](response.text())
-
-    parsedResponse.vulnerabilities
-  }
-
-  private def cleanupVersion(version: String): String =
-    // This is a temporary hack, for ~/^ version shoud be bumped to the latest appropriate one
-    version.replaceAll("[\\^~]", "")
-
   def getDependencyDetails(dependency: Dependency): Try[DependencyDetails] =
     getLatestDependencyInfo(dependency).flatMap(response => {
       val latestVersion = response.info.version
@@ -89,4 +69,23 @@ object Pypi {
       requests.get(s"https://pypi.org/pypi/${dependency.name}/json")
     json.parse[PypiResponse](response.text())
   }
+
+  private def getVulnerabilities(
+      dependency: Dependency
+  ): Try[List[PackageVulnerability]] = Try {
+    val resource = dependency.currentVersion match {
+      case Some(version) => s"${dependency.name}/${cleanupVersion(version)}"
+      case None          => dependency.name
+    }
+    val response =
+      requests.get(s"https://pypi.org/pypi/$resource/json")
+    val parsedResponse =
+      json.parse[VulnerabilitiesResponse](response.text())
+
+    parsedResponse.vulnerabilities
+  }
+
+  private def cleanupVersion(version: String): String =
+    // This is a temporary hack, for ~/^ version shoud be bumped to the latest appropriate one
+    version.replaceAll("[\\^~]", "")
 }
