@@ -17,11 +17,11 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
       |authors = ["me <author@example.com>"]
       |
       |[tool.poetry.dependencies]
-      |python = "^3.8"
-      |python-foo = "^2.6.0"
+      |foo = "^2.6.0"
+      |bar = "^3.8"
       |
       |[tool.poetry.dev-dependencies]
-      |bar = "~3.4.5"
+      |baz = "~3.4.5"
       |
       |[build-system]
       |requires = ["poetry-core>=1.0.0"]
@@ -32,7 +32,19 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
     val names = parsed.map(_.name)
     val versions = parsed.map(_.currentVersion)
 
-    names should contain only ("python", "python-foo", "bar")
+    names should contain only ("foo", "bar", "baz")
     versions should contain only (Some("^3.8"), Some("^2.6.0"), Some("~3.4.5"))
+  }
+
+  it should "ignore python" in {
+    val fileContents = """
+    |[tool.poetry.dependencies]
+    |python = "^3.8"
+    |foo = "^2.6.0"
+    """.stripMargin
+
+    val names = extract(fileContents).get.map(_.name)
+
+    names should not contain "python"
   }
 }

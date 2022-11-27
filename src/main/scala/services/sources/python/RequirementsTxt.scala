@@ -9,10 +9,12 @@ object RequirementsTxt {
   }
 
   private def parseLine(line: String): Option[Dependency] = {
-    if (line.startsWith("#") || line.contains("git"))
+    val cleanedLine = preProcess(line)
+
+    if (shouldIgnore(cleanedLine))
       None
     else
-      line.split("==", 2).toList match {
+      cleanedLine.split("==", 2).toList match {
         case Nil => None
 
         case name :: Nil =>
@@ -41,8 +43,17 @@ object RequirementsTxt {
       }
   }
 
+  private def preProcess(line: String): String =
+    if (line.startsWith("-e"))
+      line.replaceFirst("-e", "")
+    else
+      line
+
+  private def shouldIgnore(line: String): Boolean =
+    line.startsWith("#") || line.contains("git+")
+
   private val dependencyNamePattern: Regex =
-    "[-_a-zA-Z0-9]+".r
+    "[-._a-zA-Z0-9]+".r
 
   private val dependencyVersionPattern: Regex =
     "[-._a-zA-Z0-9]+".r

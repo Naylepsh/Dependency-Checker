@@ -12,7 +12,7 @@ import scala.util.Success
 object PyProjectToml {
   def extract(fileContents: String): Try[List[Dependency]] =
     val toml = new Toml().read(fileContents)
-    extract(toml)
+    extract(toml).map(_.filter(_.name != "python"))
 
   private def extract(toml: Toml): Try[List[Dependency]] =
     toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency])) {
