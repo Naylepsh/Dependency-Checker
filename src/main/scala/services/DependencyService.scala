@@ -83,7 +83,11 @@ object DependencyService {
         case head :: next =>
           detailsOf(head.name, head.currentVersion.getOrElse(latestKey)) match
             case Some(detail) =>
-              inner(next, DependencyReport(head, detail, None) :: report)
+              val notes = detail.minLanguageVersion.map(version =>
+                s"min. language version: $version"
+              )
+
+              inner(next, DependencyReport(head, detail, notes) :: report)
 
             case None => inner(next, report)
 

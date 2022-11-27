@@ -11,7 +11,7 @@ object dependency {
       ofVersion: String,
       latestVersion: String,
       vulnerabilities: List[String] = List(),
-      requiredPython: Option[String] = None
+      minLanguageVersion: Option[String] = None
   )
 
   case class DependencyReport(
