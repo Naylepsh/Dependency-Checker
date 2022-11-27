@@ -43,6 +43,7 @@ object DependencyService {
         detailsMap = buildDetailsMap(details)
         reports = projectsDependencies.map(buildReport(detailsMap))
         _ <- exporter.exportData(reports)
+        _ <- Console[F].println("Exported the results")
       } yield ()
     }
   }
