@@ -11,6 +11,7 @@ import services.reporters.python.PythonDependencyReporter
 import services.exports.ExcelExporter
 import services.GitlabApi
 import services.sources.GitlabSource
+import services.RegistryRepository
 
 object Main extends IOApp.Simple:
   import utils._
@@ -20,20 +21,14 @@ object Main extends IOApp.Simple:
   val registrySource = "./registry.json"
 
   def run: IO[Unit] =
-    val content = Source.fromFile(registrySource).getLines.mkString("\n")
-    val registry = json.parse[Registry](content)
+    val registryRepository = RegistryRepository.fileBased(registrySource)
 
-    def prepareForSource(
-        project: domain.project.Project
-    ): Option[Project] =
-      registry.projects.find(_.id == project.id)
-
-    given Filter = Filter.everything
-    given Printer = ColorPrinter()
-
-    val gitlabApi = GitlabApi.make[IO](registry.host, registry.token.some)
     for
-      given Logger[IO] <- DefaultLogger.makeIo(Output.fromConsole)
+      given Logger[IO] <- logging.forConsoleIo()
+      registry <- registryRepository.get()
+      prepareForSource = (project: domain.project.Project) =>
+        registry.projects.find(_.id == project.id)
+      gitlabApi = GitlabApi.make[IO](registry.host, registry.token.some)
       service =
         DependencyService.make[IO, Project](
           source = GitlabSource.make(gitlabApi),
