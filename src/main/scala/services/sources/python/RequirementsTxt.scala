@@ -56,7 +56,7 @@ object RequirementsTxt {
     "[-._a-zA-Z0-9]+".r
 
   private val dependencyVersionPattern: Regex =
-    "[-._a-zA-Z0-9]+".r
+    "[-*._a-zA-Z0-9]+".r
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 }

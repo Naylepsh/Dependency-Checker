@@ -68,4 +68,17 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
       dependency.currentVersion.value shouldNot contain(comment)
     })
   }
+
+  it should "detect * in version" in {
+    val requirements = """
+    | django-autocomplete-light==1.2.*
+    """
+
+    val dependencies = extract(requirements)
+
+    dependencies should contain only (Dependency(
+      "django-autocomplete-light",
+      Some("1.2.*")
+    ))
+  }
 }
