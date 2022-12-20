@@ -84,4 +84,4 @@ object Pypi:
       // This is a temporary hack, for ~/^ version shoud be bumped to the latest appropriate one
       .replaceAll("[\\^~]", "")
       // Another hack, * should take the latest available version, not 0
-      .replaceAll("*", "0")
+      .replaceAll("\\*", "0")
