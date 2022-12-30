@@ -39,8 +39,8 @@ object Main extends IOApp.Simple:
             exportDestination
           )
         )
-      _ <- service.checkDependencies(registry.projects.map {
-        case Project(id, name, sources, branch) =>
+      _ <- service.checkDependencies(registry.projects.collect {
+        case Project(id, name, sources, true, branch) =>
           domain.project.Project(id, name)
       })
     yield ()

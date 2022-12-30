@@ -31,6 +31,7 @@ object registry {
       id: String,
       name: String,
       sources: List[DependencySource],
+      enabled: Boolean = true,
       branch: String = "master"
   )
   object Project {

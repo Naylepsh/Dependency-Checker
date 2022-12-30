@@ -8,7 +8,8 @@
 			"sources": [
 				{"path": "requirements-dev.txt", "format": "txt"},
 				{"path": "requirements.txt", "format": "txt"}
-			]
+			],
+			"enabled": true
 		},
 		{
 			"id": "1337",
@@ -16,7 +17,8 @@
 			"branch": "main",
 			"sources": [
 				{"path": "pyproject.toml", "format": "toml"}
-			]
+			],
+			"enabled": false
 		}
 	]
 }
