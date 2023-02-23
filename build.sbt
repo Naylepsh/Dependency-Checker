@@ -8,14 +8,14 @@ lazy val root = project
     scalaVersion := scala3Version,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "requests" % "0.7.0",
-      "com.lihaoyi" %% "upickle" % "1.6.0",
+      "com.lihaoyi" %% "upickle" % "2.0.0",
       "com.norbitltd" %% "spoiwo" % "2.2.1",
-      "org.apache.logging.log4j" % "log4j-core" % "2.17.2",
+      "org.apache.logging.log4j" % "log4j-core" % "2.20.0",
       "com.moandjiezana.toml" % "toml4j" % "0.7.2",
       "org.typelevel" %% "cats-core" % "2.9.0",
-      "org.typelevel" %% "cats-effect" % "3.4.1",
+      "org.typelevel" %% "cats-effect" % "3.4.8",
       "org.legogroup" %% "woof-core" % "0.4.7",
-      "org.typelevel" %% "discipline-scalatest" % "2.1.5" % Test
+      "org.typelevel" %% "discipline-scalatest" % "2.2.0" % Test
     )
   )
 
