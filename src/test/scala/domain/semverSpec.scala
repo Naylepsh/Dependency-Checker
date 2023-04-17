@@ -7,7 +7,7 @@ import flatspec._
 import matchers._
 import scala.util.{Success, Try}
 
-class PackageSpec extends AnyFlatSpec with should.Matchers {
+class SemverSpec extends AnyFlatSpec with should.Matchers {
   import semver._
 
   "calculate version difference" should "detect major differences" in {

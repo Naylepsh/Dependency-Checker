@@ -40,12 +40,11 @@ object GitlabSourceSpec {
   val testProject = Project(
     id = "123",
     name = "test-project",
-    sources =
-      List(DependencySource(path = "requirements.txt", format = Format.Txt))
+    sources = List(DependencySource.TxtSource(path = "requirements.txt"))
   )
   val testDependencies =
     List(Dependency("baz", None), Dependency("quux", "1.2.3".some))
-  val testContentParser = (format: Format) =>
+  val testContentParser = (sourcee: DependencySource) =>
     (content: String) => testDependencies
 
   val failingFileApi =

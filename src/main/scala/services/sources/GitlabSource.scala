@@ -9,22 +9,25 @@ import domain.dependency._
 import domain.registry._
 import services.GitlabApi
 import services.sources.python._
+import domain.registry.DependencySource.TxtSource
+import domain.registry.DependencySource.TomlSource
 
-object GitlabSource {
+object GitlabSource:
   case class GitlabProps(host: String, token: Option[String])
 
   def make[F[_]: Monad: Logger](
       api: GitlabApi[F],
-      contentParser: Format => String => List[Dependency] = defaultContentParser
+      contentParser: DependencySource => String => List[Dependency] =
+        defaultContentParser
   ): Source[F, Project] =
     import services.responses._
 
     new Source[F, Project] {
       def extract(project: Project): F[List[Dependency]] =
         project.sources
-          .traverse { case DependencySource(path, format) =>
-            extractFromFile(project, path, contentParser(format))
-          }
+          .traverse(source =>
+            extractFromFile(project, source.path, contentParser(source))
+          )
           .map(_.flatten)
 
       private def extractFromFile(
@@ -69,10 +72,10 @@ object GitlabSource {
   private def decodeContent(encodedContent: String): Either[Throwable, String] =
     Try(new String(java.util.Base64.getDecoder.decode(encodedContent))).toEither
 
-  private def defaultContentParser(format: Format): String => List[Dependency] =
-    format match
-      case Format.Txt => RequirementsTxt.extract
-      case Format.TOML =>
+  private def defaultContentParser(
+      source: DependencySource
+  ): String => List[Dependency] =
+    source match
+      case TxtSource(path) => RequirementsTxt.extract
+      case TomlSource(path, group) =>
         PyProjectToml.extract.andThen(_.getOrElse(List.empty))
-
-}
