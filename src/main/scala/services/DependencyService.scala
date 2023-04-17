@@ -35,7 +35,9 @@ object DependencyService {
               .getOrElse(Monad[F].pure(List.empty))
               .map(dependencies => ProjectDependencies(project, dependencies))
           }
-        dependencies = projectsDependencies.map(_.dependencies).flatten
+        dependencies = projectsDependencies
+          .flatMap(_.dependencies.flatMap(_.dependencies))
+          // .flatten
         _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
@@ -96,7 +98,8 @@ object DependencyService {
         case Nil => report
     }
 
-    val report = inner(projectDependencies.dependencies, List())
+    val report =
+      inner(projectDependencies.dependencies.flatMap(_.dependencies), List())
     ExportProjectDependencies(projectDependencies.project, report)
 
 }

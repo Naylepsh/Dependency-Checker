@@ -20,7 +20,9 @@ class GitlabSourceSpec extends AnyFlatSpec {
   "Extract" should "return an empty list if failed to get the project's concrete file" in {
     GitlabSource
       .make(failingFileApi, testContentParser)
-      .extract(testProject) shouldBe empty
+      .extract(testProject)
+      .head
+      .dependencies shouldBe empty
   }
 
   "Extract" should "return the list of dependencies" in {
@@ -31,6 +33,7 @@ class GitlabSourceSpec extends AnyFlatSpec {
       GitlabSource
         .make(dataGitlabApi(tree, file), testContentParser)
         .extract(testProject)
+        .flatMap(_.dependencies)
 
     dependencies should contain only (testDependencies.head, testDependencies.tail.head)
   }
