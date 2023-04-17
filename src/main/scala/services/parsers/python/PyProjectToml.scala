@@ -1,4 +1,4 @@
-package services.sources.python
+package services.parsers.python
 
 import services.sources._
 import domain.dependency.Dependency

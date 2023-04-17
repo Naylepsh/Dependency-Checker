@@ -1,4 +1,4 @@
-package services.sources.python
+package services.parsers.python
 
 import domain.dependency.Dependency
 import scala.util.matching.Regex

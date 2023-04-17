@@ -8,7 +8,7 @@ import org.legogroup.woof.{given, *}
 import domain.dependency._
 import domain.registry._
 import services.GitlabApi
-import services.sources.python._
+import services.parsers.python._
 import domain.registry.DependencySource.TxtSource
 import domain.registry.DependencySource.TomlSource
 
