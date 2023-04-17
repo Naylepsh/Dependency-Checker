@@ -5,17 +5,17 @@ import domain.dependency._
 object project:
   case class Project(id: String, name: String)
 
-  case class GroupedDependencies(
-    groupName: String,
-    dependencies: List[Dependency]
+  case class Grouped[A](
+      groupName: String,
+      items: List[A]
   )
 
   case class ProjectDependencies(
       project: Project,
-      dependencies: List[GroupedDependencies]
+      dependencies: List[Grouped[Dependency]]
   )
 
   case class ExportProjectDependencies(
       project: Project,
-      dependenciesReports: List[DependencyReport]
+      dependenciesReports: List[Grouped[DependencyReport]]
   )

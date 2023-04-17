@@ -36,8 +36,7 @@ object DependencyService {
               .map(dependencies => ProjectDependencies(project, dependencies))
           }
         dependencies = projectsDependencies
-          .flatMap(_.dependencies.flatMap(_.dependencies))
-          // .flatten
+          .flatMap(_.dependencies.flatMap(_.items))
         _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
@@ -98,8 +97,12 @@ object DependencyService {
         case Nil => report
     }
 
-    val report =
-      inner(projectDependencies.dependencies.flatMap(_.dependencies), List())
+    val report = projectDependencies.dependencies.map(dependencyGroup =>
+      Grouped(
+        dependencyGroup.groupName,
+        inner(dependencyGroup.items, List.empty)
+      )
+    )
     ExportProjectDependencies(projectDependencies.project, report)
 
 }

@@ -6,7 +6,7 @@ import cats._
 import cats.implicits._
 import org.legogroup.woof.{given, *}
 import domain.dependency._
-import domain.project.GroupedDependencies
+import domain.project.Grouped
 import domain.registry._
 import services.GitlabApi
 import services.parsers.python._
@@ -24,11 +24,11 @@ object GitlabSource:
     import services.responses._
 
     new Source[F, Project] {
-      def extract(project: Project): F[List[GroupedDependencies]] =
+      def extract(project: Project): F[List[Grouped[Dependency]]] =
         project.sources
           .traverse(source =>
             extractFromFile(project, source.path, contentParser(source)).map(
-              dependencies => GroupedDependencies(source.path, dependencies)
+              dependencies => Grouped(source.path, dependencies)
             )
           )
 

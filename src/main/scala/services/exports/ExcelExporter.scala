@@ -34,15 +34,17 @@ object ExcelExporter {
           "Vulnerabilities",
           "Notes"
         )
-      val dataRows = repoDependencies.dependenciesReports.map(d =>
-        Row(style = chooseStyle(d)).withCellValues(
-          d.name,
-          d.currentVersion.getOrElse(""),
-          d.latestVersion,
-          d.vulnerabilities.mkString(",\n"),
-          d.notes.getOrElse("")
+      val dataRows = repoDependencies.dependenciesReports
+        .flatMap(g => g.items)
+        .map(d =>
+          Row(style = chooseStyle(d)).withCellValues(
+            d.name,
+            d.currentVersion.getOrElse(""),
+            d.latestVersion,
+            d.vulnerabilities.mkString(",\n"),
+            d.notes.getOrElse("")
+          )
         )
-      )
 
       Sheet(name = repoDependencies.project.name)
         .withRows(headerRow :: dataRows: _*)

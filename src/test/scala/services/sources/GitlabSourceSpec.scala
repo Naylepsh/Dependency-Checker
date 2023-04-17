@@ -22,7 +22,7 @@ class GitlabSourceSpec extends AnyFlatSpec {
       .make(failingFileApi, testContentParser)
       .extract(testProject)
       .head
-      .dependencies shouldBe empty
+      .items shouldBe empty
   }
 
   "Extract" should "return the list of dependencies" in {
@@ -33,7 +33,7 @@ class GitlabSourceSpec extends AnyFlatSpec {
       GitlabSource
         .make(dataGitlabApi(tree, file), testContentParser)
         .extract(testProject)
-        .flatMap(_.dependencies)
+        .flatMap(_.items)
 
     dependencies should contain only (testDependencies.head, testDependencies.tail.head)
   }
