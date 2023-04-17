@@ -78,4 +78,4 @@ object GitlabSource:
     source match
       case TxtSource(path) => RequirementsTxt.extract
       case TomlSource(path, group) =>
-        PyProjectToml.extract.andThen(_.getOrElse(List.empty))
+        PyProjectToml.extract(group).andThen(_.getOrElse(List.empty))

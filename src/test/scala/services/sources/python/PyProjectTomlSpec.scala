@@ -5,10 +5,11 @@ import org.scalatest.OptionValues.convertOptionToValuable
 import flatspec._
 import matchers._
 
-class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
+class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers:
   import PyProjectToml._
 
-  "Parse" should "extract dependencies only from all sections containing 'dependencies' keyword" in {
+  "Extract without a group name" should """
+    extract dependencies only from all sections containing 'dependencies' keyword""" in {
     val fileContents = """
       |[tool.poetry]
       |name = "foo"
@@ -28,7 +29,7 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
       |build-backend = "poetry.core.masonry.api"
     """.stripMargin
 
-    val parsed = extract(fileContents).get
+    val parsed = extract(None)(fileContents).get
     val names = parsed.map(_.name)
     val versions = parsed.map(_.currentVersion)
 
@@ -43,7 +44,7 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
     |foo = "^2.6.0"
     """.stripMargin
 
-    val names = extract(fileContents).get.map(_.name)
+    val names = extract(None)(fileContents).get.map(_.name)
 
     names should not contain "python"
   }
@@ -54,8 +55,24 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers {
     |black = {version = "^22.6.0", allow-prereleases = true}
     """.stripMargin
 
-    val versions = extract(fileContents).get.map(_.currentVersion)
+    val versions = extract(None)(fileContents).get.map(_.currentVersion)
 
     versions should contain only (Some("^22.6.0"))
   }
-}
+
+  "Extract with a group name" should """
+    extract dependencies of specific group only""" in {
+    val fileContents = """
+    |[tool.poetry.dependencies]
+    |python = "^3.8"
+    |foo = "^2.6.0"
+    |
+    |[tool.poetry.dev-dependencies]
+    |black = {version = "^22.6.0", allow-prereleases = true}
+    """.stripMargin
+
+    val names =
+      extract(Some("tool.poetry.dependencies"))(fileContents).get.map(_.name)
+
+    names should contain only "foo"
+  }
