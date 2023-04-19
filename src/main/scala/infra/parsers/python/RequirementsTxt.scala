@@ -47,7 +47,7 @@ object RequirementsTxt:
       line
 
   private def shouldIgnore(line: String): Boolean =
-    line.startsWith("#") || line.contains("git+")
+    line.startsWith("#") || line.startsWith("-") || line.contains("git+")
 
   private val dependencyNamePattern: Regex =
     "[-._a-zA-Z0-9]+".r
