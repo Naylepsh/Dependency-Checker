@@ -1,4 +1,4 @@
-package services.exports
+package infra.exporters
 
 import spoiwo.model.{Row, Sheet, Font, Workbook, CellStyle}
 import spoiwo.natures.xlsx.Model2XlsxConversions._
@@ -11,6 +11,7 @@ import domain.project.ExportProjectDependencies
 import domain.dependency.DependencyReport
 import domain.semver._
 import domain.severity._
+import domain.Exporter
 
 object ExcelExporter:
   def make[F[_]: Applicative, A](

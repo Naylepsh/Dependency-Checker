@@ -1,4 +1,4 @@
-package services.sources
+package infra.sources
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -9,10 +9,12 @@ import cats._
 import cats.implicits._
 import org.legogroup.woof.{given, *}
 import org.legogroup.woof.Logger.StringLocal
-import services.GitlabApi
-import services.responses._
+import infra.GitlabApi
 import domain.dependency.Dependency
 import domain.registry._
+import infra.responses.RepositoryTreeFile
+import infra.responses.RepositoryFile
+import infra.responses.RepositoryTree
 
 class GitlabSourceSpec extends AnyFlatSpec {
   import GitlabSourceSpec.{given, *}

@@ -5,11 +5,11 @@ import flatspec._
 import matchers._
 import org.scalatest.TryValues.convertTryToSuccessOrFailure
 import scala.util.Try
+import registry._
+import infra.json
 
 class RegistrySpec extends AnyFlatSpec with should.Matchers:
-  import registry._
   import DependencySource._
-  import utils.json
 
   "Parsing registry's source config" should "handle txt config" in {
     val config = """{

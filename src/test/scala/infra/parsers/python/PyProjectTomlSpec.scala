@@ -1,4 +1,4 @@
-package services.parsers.python
+package infra.parsers.python
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable

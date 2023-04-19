@@ -1,6 +1,5 @@
-package services.parsers.python
+package infra.parsers.python
 
-import services.sources._
 import domain.dependency.Dependency
 import com.moandjiezana.toml.Toml
 import scala.util.Try
@@ -9,7 +8,7 @@ import cats._
 import cats.implicits._
 import scala.util.Success
 
-object PyProjectToml {
+object PyProjectToml:
   def extract(groupName: Option[String])(
       fileContents: String
   ): Try[List[Dependency]] =
@@ -60,4 +59,3 @@ object PyProjectToml {
     case s"""${_}version=$v,""" => v
     case s"""${_}version=$v}""" => v
     case other                  => other
-}

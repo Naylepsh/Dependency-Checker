@@ -30,15 +30,16 @@ object registry:
       enabled: Boolean = true,
       branch: String = "master"
   )
-  object Project {
+  object Project:
     given RW[Project] = macroRW
-  }
 
   case class Registry(
       host: String,
       token: String,
       projects: List[Project]
   )
-  object Registry {
+  object Registry:
     given RW[Registry] = macroRW
-  }
+
+  trait RegistryRepository[F[_]]:
+    def get(): F[Registry]

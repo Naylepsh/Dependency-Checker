@@ -1,13 +1,11 @@
-package services
+package infra.persistance
 
 import cats.effect._
 import domain.registry.Project
-import utils.json
 import domain.registry.Registry
+import domain.registry.RegistryRepository
+import infra.json
 import scala.io.Source
-
-trait RegistryRepository[F[_]]:
-  def get(): F[Registry]
 
 object RegistryRepository:
   def fileBased(pathToFile: String): RegistryRepository[IO] =

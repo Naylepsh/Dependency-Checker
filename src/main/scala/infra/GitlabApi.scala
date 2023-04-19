@@ -1,37 +1,32 @@
-package services
+package infra
 
 import upickle.default.{ReadWriter => RW, macroRW}
-import utils.json
+import infra.json
 import cats._
 import cats.implicits._
 import scala.util.Try
 
-object responses {
+object responses:
   case class RepositoryTreeFile(name: String, path: String)
-  object RepositoryTreeFile {
+  object RepositoryTreeFile:
     given RW[RepositoryTreeFile] = macroRW
-  }
 
   type RepositoryTree = List[RepositoryTreeFile]
 
   case class RepositoryFile(content: String)
-  object RepositoryFile {
+  object RepositoryFile:
     given RW[RepositoryFile] = macroRW
-  }
-
-}
 
 import responses._
 
-trait GitlabApi[F[_]] {
+trait GitlabApi[F[_]]:
   def getFile(
       id: String,
       branch: String,
       filePath: String
   ): F[Either[Throwable, RepositoryFile]]
-}
 
-object GitlabApi {
+object GitlabApi:
 
   import responses._
 
@@ -40,7 +35,7 @@ object GitlabApi {
       host: String,
       token: Option[String]
   ): GitlabApi[F] =
-    new GitlabApi[F] {
+    new GitlabApi[F]:
       def getFile(
           id: String,
           branch: String,
@@ -57,5 +52,3 @@ object GitlabApi {
           json.parse[RepositoryFile](response.text())
         }.toEither
       }
-    }
-}

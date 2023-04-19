@@ -1,19 +1,17 @@
-package services
+package application
 
 import cats._
 import cats.implicits._
 import cats.effect.std._
 import org.legogroup.woof.{given, *}
-import services.sources._
-import services.exports._
-import services.reporters._
 import domain.dependency._
 import domain.project._
 import scala.annotation.tailrec
+import domain.Source
+import domain.Exporter
 
-trait DependencyService[F[_]] {
+trait DependencyService[F[_]]:
   def checkDependencies(projects: List[Project]): F[Unit]
-}
 
 object DependencyService {
   def make[F[_]: Monad: Logger: Parallel, A](

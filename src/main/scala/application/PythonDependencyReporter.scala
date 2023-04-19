@@ -1,4 +1,4 @@
-package services.reporters.python
+package application
 
 import cats._
 import cats.implicits._
@@ -7,11 +7,11 @@ import org.legogroup.woof.{given, *}
 import scala.concurrent._
 import scala.util._
 import domain.dependency._
-import services.reporters.DependencyReporter
+import infra.reporters.python.Pypi
 
-object PythonDependencyReporter {
+object PythonDependencyReporter:
   def forIo(using Logger[IO]): DependencyReporter[IO] =
-    new DependencyReporter[IO] {
+    new DependencyReporter[IO]:
       def getDetails(
           dependencies: List[Dependency]
       ): IO[List[DependencyDetails]] =
@@ -34,6 +34,3 @@ object PythonDependencyReporter {
               Logger[IO].error(exc.toString)
             ) *> details.pure
           )
-    }
-
-}

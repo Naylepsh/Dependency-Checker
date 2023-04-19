@@ -1,4 +1,4 @@
-package services.sources
+package infra.sources
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Try, Success, Failure}
@@ -8,10 +8,12 @@ import org.legogroup.woof.{given, *}
 import domain.dependency._
 import domain.project.Grouped
 import domain.registry._
-import services.GitlabApi
-import services.parsers.python._
 import domain.registry.DependencySource.TxtSource
 import domain.registry.DependencySource.TomlSource
+import domain.Source
+import infra.parsers.python.RequirementsTxt
+import infra.parsers.python.PyProjectToml
+import infra.GitlabApi
 
 object GitlabSource:
   case class GitlabProps(host: String, token: Option[String])
@@ -21,7 +23,7 @@ object GitlabSource:
       contentParser: DependencySource => String => List[Dependency] =
         defaultContentParser
   ): Source[F, Project] =
-    import services.responses._
+    import infra.responses._
 
     new Source[F, Project] {
       def extract(project: Project): F[List[Grouped[Dependency]]] =

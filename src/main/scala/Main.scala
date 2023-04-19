@@ -6,15 +6,15 @@ import cats._
 import cats.implicits._
 import cats.effect._
 import org.legogroup.woof.{given, *}
-import services.DependencyService
-import services.reporters.python.PythonDependencyReporter
-import services.exports.ExcelExporter
-import services.GitlabApi
-import services.sources.GitlabSource
-import services.RegistryRepository
+import infra.logging
+import infra.GitlabApi
+import infra.persistance.RegistryRepository
+import infra.sources.GitlabSource
+import infra.exporters.ExcelExporter
+import application.DependencyService
+import application.PythonDependencyReporter
 
 object Main extends IOApp.Simple:
-  import utils._
   import domain.registry._
 
   val exportDestination = "./export.xlsx"
