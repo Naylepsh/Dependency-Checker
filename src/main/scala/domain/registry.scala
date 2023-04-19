@@ -8,13 +8,16 @@ import scala.util.control.NoStackTrace
 object registry:
   sealed trait DependencySource:
     val path: String
+    val groupName: String
   object DependencySource:
-    case class TxtSource(path: String) extends DependencySource
+    case class TxtSource(path: String) extends DependencySource:
+      val groupName: String = path
     object TxtSource:
       given RW[TxtSource] = macroRW
 
     case class TomlSource(path: String, group: Option[String] = None)
-        extends DependencySource
+        extends DependencySource:
+      val groupName: String = group.fold(path)(g => s"$path ($g)")
     object TomlSource:
       given RW[TomlSource] = macroRW
 

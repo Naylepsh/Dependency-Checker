@@ -28,7 +28,7 @@ object GitlabSource:
         project.sources
           .traverse(source =>
             extractFromFile(project, source.path, contentParser(source)).map(
-              dependencies => Grouped(source.path, dependencies)
+              dependencies => Grouped(source.groupName, dependencies)
             )
           )
 
