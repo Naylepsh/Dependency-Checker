@@ -12,19 +12,17 @@ import domain.dependency.DependencyReport
 import domain.semver._
 import domain.severity._
 
-object ExcelExporter {
+object ExcelExporter:
   def make[F[_]: Applicative, A](
       toSheet: A => Sheet,
       path: String
-  ): Exporter[F, A] = new Exporter[F, A] {
+  ): Exporter[F, A] = new Exporter[F, A]:
 
-    override def exportData(data: List[A]): F[Unit] = {
+    override def exportData(data: List[A]): F[Unit] =
       val workbook = Workbook().withSheets(data.map(toSheet))
       workbook.saveAsXlsx(path).pure
-    }
-  }
 
-  object dependencies {
+  object dependencies:
     def toSheet(repoDependencies: ExportProjectDependencies): Sheet =
       val rows = repoDependencies.dependenciesReports.flatMap { group =>
         val groupName =
@@ -54,7 +52,7 @@ object ExcelExporter {
 
     private val chooseStyle = determineSeverity.andThen(matchSeverityToStyle)
 
-    private def matchSeverityToStyle(severity: Severity): CellStyle = {
+    private def matchSeverityToStyle(severity: Severity): CellStyle =
       severity match
         case Severity.Unknown => CellStyle()
 
@@ -81,8 +79,3 @@ object ExcelExporter {
             fillForegroundColor = Color.Red,
             fillPattern = CellFill.Solid
           )
-    }
-
-  }
-
-}
