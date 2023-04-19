@@ -25,30 +25,30 @@ object ExcelExporter {
   }
 
   object dependencies {
-    def toSheet(repoDependencies: ExportProjectDependencies): Sheet = {
-      val headerRow = Row(style = headerStyle)
-        .withCellValues(
-          "Name",
-          "Current Version",
-          "Latest Version",
-          "Vulnerabilities",
-          "Notes"
-        )
-      val dataRows = repoDependencies.dependenciesReports
-        .flatMap(g => g.items)
-        .map(d =>
-          Row(style = chooseStyle(d)).withCellValues(
-            d.name,
-            d.currentVersion.getOrElse(""),
-            d.latestVersion,
-            d.vulnerabilities.mkString(",\n"),
-            d.notes.getOrElse("")
+    def toSheet(repoDependencies: ExportProjectDependencies): Sheet =
+      val rows = repoDependencies.dependenciesReports.flatMap { group =>
+        val groupName =
+          Row(style = headerStyle).withCellValues("Source:", group.groupName)
+        val tableDescription = Row(style = headerStyle)
+          .withCellValues(
+            "Name",
+            "Current Version",
+            "Latest Version",
+            "Vulnerabilities",
+            "Notes"
           )
-        )
-
-      Sheet(name = repoDependencies.project.name)
-        .withRows(headerRow :: dataRows: _*)
-    }
+        (groupName :: tableDescription :: group.items
+          .map(d =>
+            Row(style = chooseStyle(d)).withCellValues(
+              d.name,
+              d.currentVersion.getOrElse(""),
+              d.latestVersion,
+              d.vulnerabilities.mkString(",\n"),
+              d.notes.getOrElse("")
+            )
+          )) :+ Row() // Add pseudo "margin-bottom"
+      }
+      Sheet(name = repoDependencies.project.name).withRows(rows: _*)
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
