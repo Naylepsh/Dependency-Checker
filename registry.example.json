@@ -6,17 +6,40 @@
 			"id": "1",
 			"name": "my-whatever-project",
 			"sources": [
-				{"path": "requirements-dev.txt", "format": "txt"},
-				{"path": "requirements.txt", "format": "txt"}
+				{
+					"path": "requirements-dev.txt", 
+					"$type": "domain.registry.DependencySource.TxtSource"
+				},
+				{
+					"path": "requirements.txt", 
+					"$type": "domain.registry.DependencySource.TxtSource"
+				}
 			],
 			"enabled": true
 		},
 		{
-			"id": "1337",
-			"name": "some-other-project",
+			"id": "42",
+			"name": "toml-based-project-specific-group",
 			"branch": "main",
 			"sources": [
-				{"path": "pyproject.toml", "format": "toml"}
+				{
+					"path": "pyproject.toml", 
+					"$type": "domain.registry.DependencySource.TomlSource", 
+					"group": ["tool.poetry.dependencies"]
+				}
+			],
+			"enabled": false
+		},
+		{
+			"id": "1337",
+			"name": "toml-based-project-all-groups",
+			"branch": "main",
+			"sources": [
+				{
+					"path": "pyproject.toml", 
+					"$type": "domain.registry.DependencySource.TomlSource",
+					"group": []
+				}
 			],
 			"enabled": false
 		}

@@ -1,19 +1,17 @@
-package services
+package application
 
 import cats._
 import cats.implicits._
 import cats.effect.std._
 import org.legogroup.woof.{given, *}
-import services.sources._
-import services.exports._
-import services.reporters._
 import domain.dependency._
 import domain.project._
 import scala.annotation.tailrec
+import domain.Source
+import domain.Exporter
 
-trait DependencyService[F[_]] {
+trait DependencyService[F[_]]:
   def checkDependencies(projects: List[Project]): F[Unit]
-}
 
 object DependencyService {
   def make[F[_]: Monad: Logger: Parallel, A](
@@ -35,7 +33,8 @@ object DependencyService {
               .getOrElse(Monad[F].pure(List.empty))
               .map(dependencies => ProjectDependencies(project, dependencies))
           }
-        dependencies = projectsDependencies.map(_.dependencies).flatten
+        dependencies = projectsDependencies
+          .flatMap(_.dependencies.flatMap(_.items))
         _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
@@ -96,7 +95,12 @@ object DependencyService {
         case Nil => report
     }
 
-    val report = inner(projectDependencies.dependencies, List())
+    val report = projectDependencies.dependencies.map(dependencyGroup =>
+      Grouped(
+        dependencyGroup.groupName,
+        inner(dependencyGroup.items, List.empty)
+      )
+    )
     ExportProjectDependencies(projectDependencies.project, report)
 
 }

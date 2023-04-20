@@ -1,4 +1,4 @@
-package utils
+package infra
 
 import upickle.default.{ReadWriter => RW, macroRW}
 

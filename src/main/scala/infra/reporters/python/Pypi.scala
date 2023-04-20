@@ -1,13 +1,12 @@
-package services.reporters.python
+package infra.reporters.python
 
 import upickle.default.{ReadWriter => RW, macroRW}
 import scala.util.Try
 import domain.dependency.Dependency
 import domain.dependency.DependencyDetails
-import utils.json
+import infra.json
 
 object Pypi:
-
   case class PackageInfo(version: String)
   object PackageInfo:
     given RW[PackageInfo] = macroRW

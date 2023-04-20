@@ -1,6 +1,6 @@
 package domain
 
-object dependency {
+object dependency:
   case class Dependency(
       name: String,
       currentVersion: Option[String]
@@ -21,7 +21,7 @@ object dependency {
       vulnerabilities: List[String] = List(),
       notes: Option[String] = None
   )
-  object DependencyReport {
+  object DependencyReport:
     def apply(
         dependency: Dependency,
         details: DependencyDetails,
@@ -33,6 +33,6 @@ object dependency {
       details.vulnerabilities,
       notes
     )
-  }
 
-}
+  trait DependencyReporter[F[_]]:
+    def getDetails(dependencies: List[Dependency]): F[List[DependencyDetails]]

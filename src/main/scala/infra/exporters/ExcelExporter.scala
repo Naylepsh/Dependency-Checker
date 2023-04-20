@@ -1,4 +1,4 @@
-package services.exports
+package infra.exporters
 
 import spoiwo.model.{Row, Sheet, Font, Workbook, CellStyle}
 import spoiwo.natures.xlsx.Model2XlsxConversions._
@@ -11,48 +11,49 @@ import domain.project.ExportProjectDependencies
 import domain.dependency.DependencyReport
 import domain.semver._
 import domain.severity._
+import domain.Exporter
 
-object ExcelExporter {
+object ExcelExporter:
   def make[F[_]: Applicative, A](
       toSheet: A => Sheet,
       path: String
-  ): Exporter[F, A] = new Exporter[F, A] {
+  ): Exporter[F, A] = new Exporter[F, A]:
 
-    override def exportData(data: List[A]): F[Unit] = {
+    override def exportData(data: List[A]): F[Unit] =
       val workbook = Workbook().withSheets(data.map(toSheet))
       workbook.saveAsXlsx(path).pure
-    }
-  }
 
-  object dependencies {
-    def toSheet(repoDependencies: ExportProjectDependencies): Sheet = {
-      val headerRow = Row(style = headerStyle)
-        .withCellValues(
-          "Name",
-          "Current Version",
-          "Latest Version",
-          "Vulnerabilities",
-          "Notes"
-        )
-      val dataRows = repoDependencies.dependenciesReports.map(d =>
-        Row(style = chooseStyle(d)).withCellValues(
-          d.name,
-          d.currentVersion.getOrElse(""),
-          d.latestVersion,
-          d.vulnerabilities.mkString(",\n"),
-          d.notes.getOrElse("")
-        )
-      )
-
-      Sheet(name = repoDependencies.project.name)
-        .withRows(headerRow :: dataRows: _*)
-    }
+  object dependencies:
+    def toSheet(repoDependencies: ExportProjectDependencies): Sheet =
+      val rows = repoDependencies.dependenciesReports.flatMap { group =>
+        val groupName =
+          Row(style = headerStyle).withCellValues("Source:", group.groupName)
+        val tableDescription = Row(style = headerStyle)
+          .withCellValues(
+            "Name",
+            "Current Version",
+            "Latest Version",
+            "Vulnerabilities",
+            "Notes"
+          )
+        (groupName :: tableDescription :: group.items
+          .map(d =>
+            Row(style = chooseStyle(d)).withCellValues(
+              d.name,
+              d.currentVersion.getOrElse(""),
+              d.latestVersion,
+              d.vulnerabilities.mkString(",\n"),
+              d.notes.getOrElse("")
+            )
+          )) :+ Row() // Add pseudo "margin-bottom"
+      }
+      Sheet(name = repoDependencies.project.name).withRows(rows: _*)
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
     private val chooseStyle = determineSeverity.andThen(matchSeverityToStyle)
 
-    private def matchSeverityToStyle(severity: Severity): CellStyle = {
+    private def matchSeverityToStyle(severity: Severity): CellStyle =
       severity match
         case Severity.Unknown => CellStyle()
 
@@ -79,8 +80,3 @@ object ExcelExporter {
             fillForegroundColor = Color.Red,
             fillPattern = CellFill.Solid
           )
-    }
-
-  }
-
-}

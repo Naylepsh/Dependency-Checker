@@ -1,4 +1,4 @@
-package utils
+package infra
 
 import org.legogroup.woof.{given, *}
 import cats.effect.IO

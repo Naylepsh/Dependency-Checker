@@ -1,6 +1,5 @@
-package services.sources.python
+package infra.parsers.python
 
-import services.sources._
 import domain.dependency.Dependency
 import com.moandjiezana.toml.Toml
 import scala.util.Try
@@ -9,10 +8,19 @@ import cats._
 import cats.implicits._
 import scala.util.Success
 
-object PyProjectToml {
-  def extract(fileContents: String): Try[List[Dependency]] =
+object PyProjectToml:
+  def extract(groupName: Option[String])(
+      fileContents: String
+  ): Try[List[Dependency]] =
     val toml = new Toml().read(fileContents)
-    extract(toml).map(_.filter(_.name != "python"))
+    groupName
+      .fold(extract(toml))(extractSpecificGroupOnly(toml))
+      .map(_.filter(_.name != "python"))
+
+  private def extractSpecificGroupOnly(toml: Toml)(
+      groupName: String
+  ): Try[List[Dependency]] =
+    parseDependencies(toml, groupName)
 
   private def extract(toml: Toml): Try[List[Dependency]] =
     toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency])) {
@@ -51,4 +59,3 @@ object PyProjectToml {
     case s"""${_}version=$v,""" => v
     case s"""${_}version=$v}""" => v
     case other                  => other
-}

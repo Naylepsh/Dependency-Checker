@@ -4,7 +4,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name := "dependency-checker",
-    version := "0.1.0-SNAPSHOT",
+    version := "0.2.0",
     scalaVersion := scala3Version,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "requests" % "0.7.0",

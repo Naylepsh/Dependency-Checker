@@ -1,4 +1,4 @@
-package services.sources
+package infra.sources
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Try, Success, Failure}
@@ -6,26 +6,33 @@ import cats._
 import cats.implicits._
 import org.legogroup.woof.{given, *}
 import domain.dependency._
+import domain.project.Grouped
 import domain.registry._
-import services.GitlabApi
-import services.sources.python._
+import domain.registry.DependencySource.TxtSource
+import domain.registry.DependencySource.TomlSource
+import domain.Source
+import infra.parsers.python.RequirementsTxt
+import infra.parsers.python.PyProjectToml
+import infra.GitlabApi
 
-object GitlabSource {
+object GitlabSource:
   case class GitlabProps(host: String, token: Option[String])
 
   def make[F[_]: Monad: Logger](
       api: GitlabApi[F],
-      contentParser: Format => String => List[Dependency] = defaultContentParser
+      contentParser: DependencySource => String => List[Dependency] =
+        defaultContentParser
   ): Source[F, Project] =
-    import services.responses._
+    import infra.responses._
 
     new Source[F, Project] {
-      def extract(project: Project): F[List[Dependency]] =
+      def extract(project: Project): F[List[Grouped[Dependency]]] =
         project.sources
-          .traverse { case DependencySource(path, format) =>
-            extractFromFile(project, path, contentParser(format))
-          }
-          .map(_.flatten)
+          .traverse(source =>
+            extractFromFile(project, source.path, contentParser(source)).map(
+              dependencies => Grouped(source.groupName, dependencies)
+            )
+          )
 
       private def extractFromFile(
           project: Project,
@@ -69,10 +76,10 @@ object GitlabSource {
   private def decodeContent(encodedContent: String): Either[Throwable, String] =
     Try(new String(java.util.Base64.getDecoder.decode(encodedContent))).toEither
 
-  private def defaultContentParser(format: Format): String => List[Dependency] =
-    format match
-      case Format.Txt => RequirementsTxt.extract
-      case Format.TOML =>
-        PyProjectToml.extract.andThen(_.getOrElse(List.empty))
-
-}
+  private def defaultContentParser(
+      source: DependencySource
+  ): String => List[Dependency] =
+    source match
+      case TxtSource(path) => RequirementsTxt.extract
+      case TomlSource(path, group) =>
+        PyProjectToml.extract(group).andThen(_.getOrElse(List.empty))

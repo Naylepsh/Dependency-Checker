@@ -1,4 +1,4 @@
-package services.sources
+package infra.sources
 
 import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -9,10 +9,12 @@ import cats._
 import cats.implicits._
 import org.legogroup.woof.{given, *}
 import org.legogroup.woof.Logger.StringLocal
-import services.GitlabApi
-import services.responses._
+import infra.GitlabApi
 import domain.dependency.Dependency
 import domain.registry._
+import infra.responses.RepositoryTreeFile
+import infra.responses.RepositoryFile
+import infra.responses.RepositoryTree
 
 class GitlabSourceSpec extends AnyFlatSpec {
   import GitlabSourceSpec.{given, *}
@@ -20,7 +22,9 @@ class GitlabSourceSpec extends AnyFlatSpec {
   "Extract" should "return an empty list if failed to get the project's concrete file" in {
     GitlabSource
       .make(failingFileApi, testContentParser)
-      .extract(testProject) shouldBe empty
+      .extract(testProject)
+      .head
+      .items shouldBe empty
   }
 
   "Extract" should "return the list of dependencies" in {
@@ -31,6 +35,7 @@ class GitlabSourceSpec extends AnyFlatSpec {
       GitlabSource
         .make(dataGitlabApi(tree, file), testContentParser)
         .extract(testProject)
+        .flatMap(_.items)
 
     dependencies should contain only (testDependencies.head, testDependencies.tail.head)
   }
@@ -40,12 +45,11 @@ object GitlabSourceSpec {
   val testProject = Project(
     id = "123",
     name = "test-project",
-    sources =
-      List(DependencySource(path = "requirements.txt", format = Format.Txt))
+    sources = List(DependencySource.TxtSource(path = "requirements.txt"))
   )
   val testDependencies =
     List(Dependency("baz", None), Dependency("quux", "1.2.3".some))
-  val testContentParser = (format: Format) =>
+  val testContentParser = (sourcee: DependencySource) =>
     (content: String) => testDependencies
 
   val failingFileApi =
