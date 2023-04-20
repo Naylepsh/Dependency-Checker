@@ -1,13 +1,14 @@
 package infra.parsers.python
 
-import org.scalatest._
+import domain.dependency.*
 import org.scalatest.OptionValues.convertOptionToValuable
-import flatspec._
-import matchers._
-import domain.dependency._
+import org.scalatest.*
 
-class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
-  import RequirementsTxt._
+import flatspec.*
+import matchers.*
+
+class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers:
+  import RequirementsTxt.*
 
   "Parse requirements" should "ignore commented out depenencies" in {
     val requirements = """
@@ -64,9 +65,9 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
     val dependencies = extract(requirements)
 
     dependencies should have length 1
-    dependencies.foreach(dependency => {
+    dependencies.foreach(dependency =>
       dependency.currentVersion.value shouldNot contain(comment)
-    })
+    )
   }
 
   it should "detect * in version" in {
@@ -81,4 +82,3 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers {
       Some("1.2.*")
     ))
   }
-}

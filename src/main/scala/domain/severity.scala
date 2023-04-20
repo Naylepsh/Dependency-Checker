@@ -2,34 +2,29 @@ package domain
 
 import domain.dependency.DependencyReport
 
-object severity {
-  import semver._
+object severity:
+  import semver.*
 
-  enum Severity {
+  enum Severity:
     case Unknown, None, Low, Medium, High
-  }
 
-  def determineSeverity(dependency: DependencyReport): Severity = {
-    if (!dependency.vulnerabilities.isEmpty)
+  def determineSeverity(dependency: DependencyReport): Severity =
+    if !dependency.vulnerabilities.isEmpty then
       Severity.High
     else
       determineSeverityOnVersionDiff(dependency)
-  }
 
   private def determineSeverityOnVersionDiff(
       dependency: DependencyReport
-  ): Severity = {
+  ): Severity =
     dependency.currentVersion
-      .map(current => {
+      .map(current =>
         calculateVersionDifference(current, dependency.latestVersion)
-          .map(_ match {
+          .map(_ match
             case VersionDifference.Major => Severity.High
             case VersionDifference.Minor => Severity.Medium
             case VersionDifference.Patch => Severity.Low
-          })
+          )
           .getOrElse(Severity.None)
-      })
+      )
       .getOrElse(Severity.Unknown)
-  }
-
-}

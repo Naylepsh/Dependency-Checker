@@ -1,22 +1,29 @@
-val scala3Version = "3.2.0"
+import Dependencies.Libraries
+
+ThisBuild / scalafixDependencies += Libraries.organizeImports
+ThisBuild / scalaVersion := "3.2.0"
+
+Global / semanticdbEnabled := true
+Global / semanticdbVersion := scalafixSemanticdb.revision
 
 lazy val root = project
   .in(file("."))
   .settings(
-    name := "dependency-checker",
+    name    := "dependency-checker",
     version := "0.2.0",
-    scalaVersion := scala3Version,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "requests" % "0.7.0",
-      "com.lihaoyi" %% "upickle" % "2.0.0",
-      "com.norbitltd" %% "spoiwo" % "2.2.1",
-      "org.apache.logging.log4j" % "log4j-core" % "2.20.0",
-      "com.moandjiezana.toml" % "toml4j" % "0.7.2",
-      "org.typelevel" %% "cats-core" % "2.9.0",
-      "org.typelevel" %% "cats-effect" % "3.4.8",
-      "org.legogroup" %% "woof-core" % "0.4.7",
-      "org.typelevel" %% "discipline-scalatest" % "2.2.0" % Test
+      Libraries.requests,
+      Libraries.upickle,
+      Libraries.spoiwo,
+      Libraries.log4j,
+      Libraries.toml4j,
+      Libraries.catsCore,
+      Libraries.catsEffect,
+      Libraries.woof,
+      Libraries.disciplineScalaTest % Test
     )
   )
 
 enablePlugins(JavaAppPackaging)
+
+addCommandAlias("lint", ";scalafmtAll ;scalafixAll --rules OrganizeImports")

@@ -1,12 +1,13 @@
 package infra.parsers.python
 
-import org.scalatest._
 import org.scalatest.OptionValues.convertOptionToValuable
-import flatspec._
-import matchers._
+import org.scalatest.*
+
+import flatspec.*
+import matchers.*
 
 class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers:
-  import PyProjectToml._
+  import PyProjectToml.*
 
   "Extract without a group name" should """
     extract dependencies only from all sections containing 'dependencies' keyword""" in {
@@ -29,8 +30,8 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers:
       |build-backend = "poetry.core.masonry.api"
     """.stripMargin
 
-    val parsed = extract(None)(fileContents).get
-    val names = parsed.map(_.name)
+    val parsed   = extract(None)(fileContents).get
+    val names    = parsed.map(_.name)
     val versions = parsed.map(_.currentVersion)
 
     names should contain only ("foo", "bar", "baz")

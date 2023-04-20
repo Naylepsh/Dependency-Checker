@@ -1,14 +1,16 @@
 package domain
 
-import org.scalatest._
+import scala.util.{ Success, Try }
+
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.TryValues.convertTryToSuccessOrFailure
-import flatspec._
-import matchers._
-import scala.util.{Success, Try}
+import org.scalatest.*
 
-class SemverSpec extends AnyFlatSpec with should.Matchers {
-  import semver._
+import flatspec.*
+import matchers.*
+
+class SemverSpec extends AnyFlatSpec with should.Matchers:
+  import semver.*
 
   "calculate version difference" should "detect major differences" in {
     calculateVersionDifference(
@@ -46,4 +48,3 @@ class SemverSpec extends AnyFlatSpec with should.Matchers {
     calculateVersionDifference("^1.2.3", "1.3.3") shouldBe None
     calculateVersionDifference("~1.2.3", "1.2.4") shouldBe None
   }
-}

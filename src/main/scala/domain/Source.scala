@@ -1,6 +1,6 @@
 package domain
 
-import dependency._
+import dependency.*
 import project.Grouped
 
 trait Source[F[_], Src]:

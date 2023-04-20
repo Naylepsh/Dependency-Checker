@@ -1,17 +1,16 @@
 package infra.exporters
 
-import spoiwo.model.{Row, Sheet, Font, Workbook, CellStyle}
-import spoiwo.natures.xlsx.Model2XlsxConversions._
-import org.apache.poi.ss.usermodel.Cell
-import spoiwo.model.Color
-import spoiwo.model.enums.CellFill
-import cats._
-import cats.implicits._
-import domain.project.ExportProjectDependencies
-import domain.dependency.DependencyReport
-import domain.semver._
-import domain.severity._
+import cats.*
+import cats.implicits.*
 import domain.Exporter
+import domain.dependency.DependencyReport
+import domain.project.ExportProjectDependencies
+import domain.semver.*
+import domain.severity.*
+import org.apache.poi.ss.usermodel.Cell
+import spoiwo.model._
+import spoiwo.model.enums.CellFill
+import spoiwo.natures.xlsx.Model2XlsxConversions.*
 
 object ExcelExporter:
   def make[F[_]: Applicative, A](
@@ -47,7 +46,7 @@ object ExcelExporter:
             )
           )) :+ Row() // Add pseudo "margin-bottom"
       }
-      Sheet(name = repoDependencies.project.name).withRows(rows: _*)
+      Sheet(name = repoDependencies.project.name).withRows(rows*)
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
