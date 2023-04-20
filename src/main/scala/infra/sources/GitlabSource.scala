@@ -1,19 +1,18 @@
 package infra.sources
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.{Try, Success, Failure}
-import cats._
-import cats.implicits._
-import org.legogroup.woof.{given, *}
-import domain.dependency._
-import domain.project.Grouped
-import domain.registry._
-import domain.registry.DependencySource.TxtSource
-import domain.registry.DependencySource.TomlSource
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
+
+import cats.*
+import cats.implicits.*
 import domain.Source
-import infra.parsers.python.RequirementsTxt
-import infra.parsers.python.PyProjectToml
+import domain.dependency.*
+import domain.project.Grouped
+import domain.registry.DependencySource.{TomlSource, TxtSource}
+import domain.registry.*
 import infra.GitlabApi
+import infra.parsers.python.{PyProjectToml, RequirementsTxt}
+import org.legogroup.woof.{ *, given }
 
 object GitlabSource:
   case class GitlabProps(host: String, token: Option[String])
@@ -23,14 +22,14 @@ object GitlabSource:
       contentParser: DependencySource => String => List[Dependency] =
         defaultContentParser
   ): Source[F, Project] =
-    import infra.responses._
+    import infra.responses.*
 
-    new Source[F, Project] {
+    new Source[F, Project]:
       def extract(project: Project): F[List[Grouped[Dependency]]] =
         project.sources
           .traverse(source =>
-            extractFromFile(project, source.path, contentParser(source)).map(
-              dependencies => Grouped(source.groupName, dependencies)
+            extractFromFile(project, source.path, contentParser(source)).map(dependencies =>
+              Grouped(source.groupName, dependencies)
             )
           )
 
@@ -38,7 +37,7 @@ object GitlabSource:
           project: Project,
           filePath: String,
           contentExtractor: String => List[Dependency]
-      ): F[List[Dependency]] = {
+      ): F[List[Dependency]] =
         api
           .getFile(project.id, project.branch, filePath)
           .flatMap(_ match
@@ -59,19 +58,16 @@ object GitlabSource:
                 case Right(decodedContent) =>
                   contentExtractor(decodedContent).pure
           )
-      }
-    }
 
   private def find[A, B, C](
       xs: List[A],
       ys: Map[B, C],
       f: A => B
-  ): Option[(A, C)] = {
+  ): Option[(A, C)] =
     // Find first instance of (x, ys[f(x)]) such that f(x) is in ys
     xs
       .find(x => ys.contains(f(x)))
       .flatMap(x => ys.get(f(x)).map(y => (x, y)))
-  }
 
   private def decodeContent(encodedContent: String): Either[Throwable, String] =
     Try(new String(java.util.Base64.getDecoder.decode(encodedContent))).toEither

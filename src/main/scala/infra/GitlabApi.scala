@@ -1,10 +1,11 @@
 package infra
 
-import upickle.default.{ReadWriter => RW, macroRW}
-import infra.json
-import cats._
-import cats.implicits._
 import scala.util.Try
+
+import cats.*
+import cats.implicits.*
+import infra.json
+import upickle.default.{ ReadWriter as RW, macroRW }
 
 object responses:
   case class RepositoryTreeFile(name: String, path: String)
@@ -17,7 +18,7 @@ object responses:
   object RepositoryFile:
     given RW[RepositoryFile] = macroRW
 
-import responses._
+import responses.*
 
 trait GitlabApi[F[_]]:
   def getFile(
@@ -28,7 +29,7 @@ trait GitlabApi[F[_]]:
 
 object GitlabApi:
 
-  import responses._
+  import responses.*
 
   type RequestResult[F[_]] = ApplicativeError[F, Throwable]
   def make[F[_]: Applicative: RequestResult](
@@ -45,7 +46,7 @@ object GitlabApi:
           val response = requests.get(
             s"https://${host}/api/v4/projects/${id}/repository/files/$filePath",
             params = Map(
-              "ref" -> branch,
+              "ref"           -> branch,
               "private_token" -> token.getOrElse("")
             )
           )

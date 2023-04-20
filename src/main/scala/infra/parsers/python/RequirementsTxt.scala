@@ -1,7 +1,8 @@
 package infra.parsers.python
 
-import domain.dependency.Dependency
 import scala.util.matching.Regex
+
+import domain.dependency.Dependency
 
 object RequirementsTxt:
   def extract(fileContents: String): List[Dependency] =
@@ -10,7 +11,7 @@ object RequirementsTxt:
   private def parseLine(line: String): Option[Dependency] =
     val cleanedLine = preProcess(line)
 
-    if (shouldIgnore(cleanedLine))
+    if shouldIgnore(cleanedLine) then
       None
     else
       cleanedLine.split("==", 2).toList match
@@ -19,29 +20,29 @@ object RequirementsTxt:
         case name :: Nil =>
           dependencyNamePattern
             .findFirstIn(name)
-            .map(cleanName => {
+            .map(cleanName =>
               Dependency(
                 name = cleanName,
                 currentVersion = None
               )
-            })
+            )
 
         case name :: currentVersion :: _ =>
           dependencyNamePattern
             .findFirstIn(name)
-            .flatMap(cleanName => {
+            .flatMap(cleanName =>
               dependencyVersionPattern
                 .findFirstIn(currentVersion)
-                .map(cleanVersion => {
+                .map(cleanVersion =>
                   Dependency(
                     name = cleanName,
                     currentVersion = Some(cleanVersion)
                   )
-                })
-            })
+                )
+            )
 
   private def preProcess(line: String): String =
-    if (line.startsWith("-e"))
+    if line.startsWith("-e") then
       line.replaceFirst("-e", "")
     else
       line

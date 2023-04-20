@@ -1,9 +1,10 @@
 package domain
 
-import upickle.default.{ReadWriter => RW, macroRW, readwriter}
-import cats._
-import cats.implicits._
 import scala.util.control.NoStackTrace
+
+import cats.*
+import cats.implicits.*
+import upickle.default.{ ReadWriter as RW, macroRW, readwriter }
 
 object registry:
   sealed trait DependencySource:

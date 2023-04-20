@@ -1,7 +1,7 @@
 package infra.exporters
 
-import cats._
-import cats.implicits._
+import cats.*
+import cats.implicits.*
 import domain.Exporter
 
 object ConsoleExporter:

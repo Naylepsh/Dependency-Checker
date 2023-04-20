@@ -1,13 +1,14 @@
 package application
 
-import cats._
-import cats.implicits._
-import cats.effect._
-import org.legogroup.woof.{given, *}
-import scala.concurrent._
-import scala.util._
-import domain.dependency._
+import scala.concurrent.*
+import scala.util.*
+
+import cats.*
+import cats.effect.*
+import cats.implicits.*
+import domain.dependency.*
 import infra.reporters.python.Pypi
+import org.legogroup.woof.{ *, given }
 
 object PythonDependencyReporter:
   def forIo(using Logger[IO]): DependencyReporter[IO] =
@@ -25,10 +26,11 @@ object PythonDependencyReporter:
             val (details, exceptions) = results.flatten
               .foldLeft(
                 (List.empty[DependencyDetails], List.empty[Throwable])
-              ) { case ((results, exceptions), result) =>
-                result match
-                  case Failure(exception) => (results, exception :: exceptions)
-                  case Success(value)     => (value :: results, exceptions)
+              ) {
+                case ((results, exceptions), result) =>
+                  result match
+                    case Failure(exception) => (results, exception :: exceptions)
+                    case Success(value)     => (value :: results, exceptions)
               }
             exceptions.traverse(exc =>
               Logger[IO].error(exc.toString)

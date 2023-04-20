@@ -1,10 +1,10 @@
 package infra.reporters.python
 
-import upickle.default.{ReadWriter => RW, macroRW}
 import scala.util.Try
-import domain.dependency.Dependency
-import domain.dependency.DependencyDetails
+
+import domain.dependency.{Dependency, DependencyDetails}
 import infra.json
+import upickle.default.{ ReadWriter as RW, macroRW }
 
 object Pypi:
   case class PackageInfo(version: String)
@@ -40,14 +40,15 @@ object Pypi:
   def getDependencyDetails(dependency: Dependency): Try[DependencyDetails] =
     getLatestDependencyInfo(dependency).flatMap(response =>
       val latestVersion = response.info.version
-      val requiredPython = for
-        release <- response.releases
-          .get(latestVersion)
-          .flatMap(_.headOption)
-        value <- Option(release.requiresPython)
-      yield value
+      val requiredPython =
+        for
+          release <- response.releases
+            .get(latestVersion)
+            .flatMap(_.headOption)
+          value <- Option(release.requiresPython)
+        yield value
 
-      getVulnerabilities(dependency).map(vulnerabilities => {
+      getVulnerabilities(dependency).map(vulnerabilities =>
         DependencyDetails(
           dependency.name,
           dependency.currentVersion.getOrElse(latestVersion),
@@ -55,7 +56,7 @@ object Pypi:
           vulnerabilities.map(_.id),
           requiredPython
         )
-      })
+      )
     )
 
   private def getLatestDependencyInfo(

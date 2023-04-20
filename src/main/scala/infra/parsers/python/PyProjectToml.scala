@@ -1,12 +1,12 @@
 package infra.parsers.python
 
-import domain.dependency.Dependency
+import scala.collection.JavaConverters.*
+import scala.util.{Success, Try}
+
+import cats.*
+import cats.implicits.*
 import com.moandjiezana.toml.Toml
-import scala.util.Try
-import scala.collection.JavaConverters._
-import cats._
-import cats.implicits._
-import scala.util.Success
+import domain.dependency.Dependency
 
 object PyProjectToml:
   def extract(groupName: Option[String])(
@@ -26,7 +26,7 @@ object PyProjectToml:
     toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency])) {
       case (acc, entry) =>
         val key = entry.getKey
-        if (key.endsWith("dependencies"))
+        if key.endsWith("dependencies") then
           parseDependencies(toml, key).flatMap(dependencies =>
             acc.map(dependencies ::: _)
           )
@@ -46,11 +46,12 @@ object PyProjectToml:
       .getTable(key)
       .toMap
       .asScala
-      .map { case (name, version) =>
-        Dependency(
-          name = name,
-          currentVersion = Option(version).map(v => normalize(v.toString))
-        )
+      .map {
+        case (name, version) =>
+          Dependency(
+            name = name,
+            currentVersion = Option(version).map(v => normalize(v.toString))
+          )
       }
       .toList
   )

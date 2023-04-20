@@ -1,6 +1,6 @@
 package domain
 
-import domain.dependency._
+import domain.dependency.*
 
 object project:
   case class Project(id: String, name: String)

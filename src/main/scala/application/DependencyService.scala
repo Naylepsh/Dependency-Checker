@@ -1,37 +1,38 @@
 package application
 
-import cats._
-import cats.implicits._
-import cats.effect.std._
-import org.legogroup.woof.{given, *}
-import domain.dependency._
-import domain.project._
 import scala.annotation.tailrec
-import domain.Source
-import domain.Exporter
+
+import cats.*
+import cats.effect.std.*
+import cats.implicits.*
+import domain.dependency.*
+import domain.project.*
+import domain.{Exporter, Source}
+import org.legogroup.woof.{ *, given }
 
 trait DependencyService[F[_]]:
   def checkDependencies(projects: List[Project]): F[Unit]
 
-object DependencyService {
+object DependencyService:
   def make[F[_]: Monad: Logger: Parallel, A](
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
       exporter: Exporter[F, ExportProjectDependencies]
-  ): DependencyService[F] = new DependencyService[F] {
+  ): DependencyService[F] = new DependencyService[F]:
 
-    override def checkDependencies(projects: List[Project]): F[Unit] = {
-      for {
+    override def checkDependencies(projects: List[Project]): F[Unit] =
+      for
         _ <- Logger[F].info(
           s"Checking dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
-          .parTraverse { case project @ Project(_, _) =>
-            prepareForSource(project)
-              .map(source.extract(_))
-              .getOrElse(Monad[F].pure(List.empty))
-              .map(dependencies => ProjectDependencies(project, dependencies))
+          .parTraverse {
+            case project @ Project(_, _) =>
+              prepareForSource(project)
+                .map(source.extract(_))
+                .getOrElse(Monad[F].pure(List.empty))
+                .map(dependencies => ProjectDependencies(project, dependencies))
           }
         dependencies = projectsDependencies
           .flatMap(_.dependencies.flatMap(_.items))
@@ -39,14 +40,12 @@ object DependencyService {
           s"Checking the details of ${dependencies.length} dependencies..."
         )
         details <- reporter.getDetails(dependencies)
-        _ <- Logger[F].info("Building the report...")
+        _       <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
-        reports = projectsDependencies.map(buildReport(detailsMap))
+        reports    = projectsDependencies.map(buildReport(detailsMap))
         _ <- exporter.exportData(reports)
         _ <- Logger[F].info("Exported the results")
-      } yield ()
-    }
-  }
+      yield ()
 
   private val latestKey = "LATEST"
 
@@ -62,11 +61,12 @@ object DependencyService {
   ): DetailsMap =
     dependenciesDetails
       .groupBy(_.name)
-      .map { case (name, details) =>
-        val orderedByVersion = details.sortWith(_.ofVersion > _.ofVersion)
-        val latest = orderedByVersion.head.copy(ofVersion = latestKey)
+      .map {
+        case (name, details) =>
+          val orderedByVersion = details.sortWith(_.ofVersion > _.ofVersion)
+          val latest           = orderedByVersion.head.copy(ofVersion = latestKey)
 
-        name -> (latest :: orderedByVersion).map(d => d.ofVersion -> d).toMap
+          name -> (latest :: orderedByVersion).map(d => d.ofVersion -> d).toMap
       }
       .toMap
 
@@ -79,7 +79,7 @@ object DependencyService {
     def inner(
         dependencies: List[Dependency],
         report: List[DependencyReport]
-    ): List[DependencyReport] = {
+    ): List[DependencyReport] =
       dependencies match
         case head :: next =>
           detailsOf(head.name, head.currentVersion.getOrElse(latestKey)) match
@@ -93,7 +93,6 @@ object DependencyService {
             case None => inner(next, report)
 
         case Nil => report
-    }
 
     val report = projectDependencies.dependencies.map(dependencyGroup =>
       Grouped(
@@ -102,5 +101,3 @@ object DependencyService {
       )
     )
     ExportProjectDependencies(projectDependencies.project, report)
-
-}

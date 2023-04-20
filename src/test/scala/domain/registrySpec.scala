@@ -1,15 +1,17 @@
 package domain
 
-import org.scalatest._
-import flatspec._
-import matchers._
-import org.scalatest.TryValues.convertTryToSuccessOrFailure
 import scala.util.Try
-import registry._
+
 import infra.json
+import org.scalatest.TryValues.convertTryToSuccessOrFailure
+import org.scalatest.*
+
+import flatspec.*
+import matchers.*
+import registry.*
 
 class RegistrySpec extends AnyFlatSpec with should.Matchers:
-  import DependencySource._
+  import DependencySource.*
 
   "Parsing registry's source config" should "handle txt config" in {
     val config = """{
