@@ -2,15 +2,15 @@ import sbt._
 
 object Dependencies {
   object V {
-    val requests   = "0.7.0"
-    val upickle    = "2.0.0"
+    val requests   = "0.8.0"
+    val upickle    = "3.1.0"
     val spoiwo     = "2.2.1"
     val toml4j     = "0.7.2"
     val catsCore   = "2.9.0"
-    val catsEffect = "3.4.8"
+    val catsEffect = "3.4.9"
 
     val log4j = "2.20.0"
-    val woof  = "0.4.7"
+    val woof  = "0.6.0"
 
     val disciplineScalaTest = "2.2.0"
 
