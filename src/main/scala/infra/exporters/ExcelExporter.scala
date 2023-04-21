@@ -8,7 +8,7 @@ import domain.project.ExportProjectDependencies
 import domain.semver.*
 import domain.severity.*
 import org.apache.poi.ss.usermodel.Cell
-import spoiwo.model._
+import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
 
@@ -36,13 +36,13 @@ object ExcelExporter:
             "Notes"
           )
         (groupName :: tableDescription :: group.items
-          .map(d =>
-            Row(style = chooseStyle(d)).withCellValues(
-              d.name,
-              d.currentVersion.getOrElse(""),
-              d.latestVersion,
-              d.vulnerabilities.mkString(",\n"),
-              d.notes.getOrElse("")
+          .map(dependencyReport =>
+            Row(style = chooseStyle(dependencyReport)).withCellValues(
+              dependencyReport.name,
+              dependencyReport.currentVersion.getOrElse(""),
+              dependencyReport.latestVersion,
+              dependencyReport.vulnerabilities.mkString(",\n"),
+              dependencyReport.notes.getOrElse("")
             )
           )) :+ Row() // Add pseudo "margin-bottom"
       }
