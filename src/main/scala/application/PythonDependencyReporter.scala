@@ -7,11 +7,12 @@ import cats.*
 import cats.effect.*
 import cats.implicits.*
 import domain.dependency.*
-import infra.reporters.python.Pypi
 import org.legogroup.woof.{ *, given }
+import domain.PackageIndex
 
 object PythonDependencyReporter:
-  def forIo(using Logger[IO]): DependencyReporter[IO] =
+  def forIo(packageIndex: PackageIndex[IO])(using
+  Logger[IO]): DependencyReporter[IO] =
     new DependencyReporter[IO]:
       def getDetails(
           dependencies: List[Dependency]
@@ -20,7 +21,7 @@ object PythonDependencyReporter:
           .grouped(64)
           .toList
           .parTraverse(
-            _.traverse(d => IO.blocking(Pypi.getDependencyDetails(d)))
+            _.traverse(d => packageIndex.getDetails(d))
           )
           .flatMap(results =>
             val (details, exceptions) = results.flatten
@@ -29,8 +30,8 @@ object PythonDependencyReporter:
               ) {
                 case ((results, exceptions), result) =>
                   result match
-                    case Failure(exception) => (results, exception :: exceptions)
-                    case Success(value)     => (value :: results, exceptions)
+                    case Left(exception) => (results, exception :: exceptions)
+                    case Right(value)    => (value :: results, exceptions)
               }
             exceptions.traverse(exc =>
               Logger[IO].error(exc.toString)
