@@ -1,4 +1,4 @@
-# Dependency Checker
+# Sentinel
 
 Checks the state of your dependencies (how up/out-of-date they are and their vulnerabilities).
 The result is presented within an excel spreadsheet.
