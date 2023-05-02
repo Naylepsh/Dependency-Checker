@@ -9,7 +9,7 @@ Global / semanticdbVersion := scalafixSemanticdb.revision
 lazy val root = project
   .in(file("."))
   .settings(
-    name    := "dependency-checker",
+    name    := "sentinel",
     version := "0.2.0",
     libraryDependencies ++= Seq(
       Libraries.requests,
