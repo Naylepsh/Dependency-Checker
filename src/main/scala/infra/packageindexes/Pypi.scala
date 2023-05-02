@@ -10,6 +10,7 @@ import sttp.client3.circe.*
 import sttp.capabilities.WebSockets
 import cats.implicits.*
 import cats.{ Monad, Traverse }
+import cats.Show
 
 object Pypi:
   case class PackageInfo(version: String)
@@ -46,7 +47,7 @@ class Pypi[F[_]: Monad](backend: SttpBackend[F, WebSockets])
   import Pypi.*
 
   override def getDetails(dependency: Dependency)
-      : F[Either[Throwable, DependencyDetails]] =
+      : F[Either[String, DependencyDetails]] =
     (
       getLatestDependencyInfo(dependency),
       getVulnerabilities(dependency)
@@ -68,16 +69,16 @@ class Pypi[F[_]: Monad](backend: SttpBackend[F, WebSockets])
 
   private def getLatestDependencyInfo(
       dependency: Dependency
-  ): F[Either[Throwable, Package]] =
+  ): F[Either[String, Package]] =
     basicRequest
       .get(uri"https://pypi.org/pypi/${dependency.name}/json")
       .response(asJson[Package])
       .send(backend)
-      .map(_.body.leftMap(_.getCause()))
+      .map(_.body.leftMap(_.getMessage()))
 
   private def getVulnerabilities(
       dependency: Dependency
-  ): F[Either[Throwable, List[PackageVulnerability]]] =
+  ): F[Either[String, List[PackageVulnerability]]] =
     val coreEndpoint = "https://pypi.org/pypi"
     val endpoint = dependency.currentVersion match
       case Some(version) =>
@@ -88,7 +89,7 @@ class Pypi[F[_]: Monad](backend: SttpBackend[F, WebSockets])
       .get(uri"$endpoint/json")
       .response(asJson[VulnerabilitiesResponse])
       .send(backend)
-      .map(_.body.leftMap(_.getCause()).map(_.vulnerabilities))
+      .map(_.body.leftMap(_.getMessage()).map(_.vulnerabilities))
 
   private def cleanupVersion(version: String): String =
     version

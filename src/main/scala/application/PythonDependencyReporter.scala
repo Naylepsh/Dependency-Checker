@@ -21,19 +21,21 @@ object PythonDependencyReporter:
           .grouped(64)
           .toList
           .parTraverse(
-            _.traverse(d => packageIndex.getDetails(d))
+            _.traverse(d => packageIndex.getDetails(d)).flatTap(details =>
+              Logger[IO].debug(
+                s"Got results for ${details.length} dependencies"
+              )
+            )
           )
           .flatMap(results =>
             val (details, exceptions) = results.flatten
               .foldLeft(
-                (List.empty[DependencyDetails], List.empty[Throwable])
+                (List.empty[DependencyDetails], List.empty[String])
               ) {
                 case ((results, exceptions), result) =>
                   result match
                     case Left(exception) => (results, exception :: exceptions)
                     case Right(value)    => (value :: results, exceptions)
               }
-            exceptions.traverse(exc =>
-              Logger[IO].error(exc.toString)
-            ) *> details.pure
+            exceptions.traverse(Logger[IO].error) *> details.pure
           )
