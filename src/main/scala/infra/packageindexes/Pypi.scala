@@ -10,6 +10,8 @@ import sttp.client3.circe.*
 import sttp.capabilities.WebSockets
 import cats.implicits.*
 import cats.Monad
+import cats.effect.Sync
+import scala.concurrent.duration.*
 
 object Pypi:
   case class PackageInfo(version: String)
@@ -41,7 +43,7 @@ object Pypi:
   object VulnerabilitiesResponse:
     given Decoder[VulnerabilitiesResponse] = deriveDecoder
 
-class Pypi[F[_]: Monad](backend: SttpBackend[F, WebSockets])
+class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     extends PackageIndex[F]:
   import Pypi.*
 
@@ -72,6 +74,7 @@ class Pypi[F[_]: Monad](backend: SttpBackend[F, WebSockets])
     val infoEndpoint = uri"https://pypi.org/pypi/${dependency.name}/json"
     basicRequest
       .get(infoEndpoint)
+      .readTimeout(10.seconds)
       .response(asJson[Package])
       .send(backend)
       .map(_.body.leftMap(buildErrorMessage(infoEndpoint)))
@@ -88,6 +91,7 @@ class Pypi[F[_]: Monad](backend: SttpBackend[F, WebSockets])
 
     basicRequest
       .get(vulnerabilitiesEndpoint)
+      .readTimeout(10.seconds)
       .response(asJson[VulnerabilitiesResponse])
       .send(backend)
       .map(_.body.leftMap(
