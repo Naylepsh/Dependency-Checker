@@ -12,5 +12,6 @@ object RegistryRepository:
     new RegistryRepository[IO]:
       def get(): IO[Either[Throwable, Registry]] = IO {
         val content = Source.fromFile(pathToFile).getLines.mkString("\n")
-        decode[Registry](content).leftMap(_.getCause)
+        val decoded = decode[Registry](content)
+        decoded.leftMap(error => RuntimeException(error.getMessage()))
       }
