@@ -2,10 +2,7 @@ import sbt._
 
 object Dependencies {
   object V {
-    val requests = "0.8.0"
-    val upickle  = "3.1.0"
-    val sttp     = "3.8.15"
-
+    val sttp       = "3.8.15"
     val spoiwo     = "2.2.1"
     val toml4j     = "0.7.2"
     val catsCore   = "2.9.0"
@@ -22,9 +19,7 @@ object Dependencies {
   }
 
   object Libraries {
-    val requests = "com.lihaoyi"                   %% "requests" % V.requests
-    val upickle  = "com.lihaoyi"                   %% "upickle"  % V.upickle
-    val sttp     = "com.softwaremill.sttp.client3" %% "core"     % V.sttp
+    val sttp = "com.softwaremill.sttp.client3" %% "core" % V.sttp
     val sttpCats =
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % V.sttp
     val sttpCirce    = "com.softwaremill.sttp.client3" %% "circe"         % V.sttp

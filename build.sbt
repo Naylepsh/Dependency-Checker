@@ -12,8 +12,6 @@ lazy val root = project
     name    := "sentinel",
     version := "0.2.0",
     libraryDependencies ++= Seq(
-      Libraries.requests,
-      Libraries.upickle,
       Libraries.sttp,
       Libraries.sttpCats,
       Libraries.sttpCirce,

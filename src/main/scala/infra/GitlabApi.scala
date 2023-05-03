@@ -4,8 +4,6 @@ import scala.util.Try
 
 import cats.*
 import cats.implicits.*
-import infra.json
-import upickle.default.{ ReadWriter as RW, macroRW }
 import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
