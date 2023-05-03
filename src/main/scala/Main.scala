@@ -29,23 +29,27 @@ object Main extends IOApp.Simple:
 
       for
         given Logger[IO] <- logging.forConsoleIo()
-        registry         <- registryRepository.get()
-        prepareForSource = (project: domain.project.Project) =>
-          registry.projects.find(_.id == project.id)
-        gitlabApi = GitlabApi.make[IO](registry.host, registry.token.some)
-        service =
-          DependencyService.make[IO, Project](
-            source = GitlabSource.make(gitlabApi),
-            prepareForSource = prepareForSource,
-            reporter = PythonDependencyReporter.forIo(pypi),
-            exporter = ExcelExporter.make(
-              ExcelExporter.dependencies.toSheet,
-              exportDestination
-            )
-          )
-        _ <- service.checkDependencies(registry.projects.collect {
-          case Project(id, name, sources, true, branch) =>
-            domain.project.Project(id, name)
-        })
+        _ <- registryRepository.get().flatMap(_.fold(
+          _ => IO.unit,
+          registry =>
+            val prepareForSource = (project: domain.project.Project) =>
+              registry.projects.find(_.id == project.id)
+            val gitlabApi =
+              GitlabApi.make[IO](registry.host, registry.token.some)
+            val service =
+              DependencyService.make[IO, Project](
+                source = GitlabSource.make(gitlabApi),
+                prepareForSource = prepareForSource,
+                reporter = PythonDependencyReporter.forIo(pypi),
+                exporter = ExcelExporter.make(
+                  ExcelExporter.dependencies.toSheet,
+                  exportDestination
+                )
+              )
+            service.checkDependencies(registry.projects.collect {
+              case Project(id, name, sources, true, branch) =>
+                domain.project.Project(id, name)
+            })
+        ))
       yield ()
     }
