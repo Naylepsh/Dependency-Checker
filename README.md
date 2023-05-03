@@ -26,5 +26,5 @@ The result is presented within an excel spreadsheet.
 
 ## Usage
 
-1. Run `./target/universal/stage/bin/dependency-checker`
+1. Run `./target/universal/stage/bin/sentinel`
 2. The results will be in the same directory in `export.xlsx` file
