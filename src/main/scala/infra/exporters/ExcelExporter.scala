@@ -32,6 +32,7 @@ object ExcelExporter:
             "Name",
             "Current Version",
             "Latest Version",
+            "Latest Release Date",
             "Vulnerabilities",
             "Notes"
           )
@@ -41,6 +42,7 @@ object ExcelExporter:
               dependencyReport.name,
               dependencyReport.currentVersion.getOrElse(""),
               dependencyReport.latestVersion,
+              dependencyReport.latestReleaseDate.fold("")(_.toString),
               dependencyReport.vulnerabilities.mkString(",\n"),
               dependencyReport.notes.getOrElse("")
             )

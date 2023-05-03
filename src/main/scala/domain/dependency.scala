@@ -1,5 +1,7 @@
 package domain
 
+import com.github.nscala_time.time.Imports.*
+
 object dependency:
   case class Dependency(
       name: String,
@@ -10,6 +12,7 @@ object dependency:
       name: String,
       ofVersion: String,
       latestVersion: String,
+      latestReleaseDate: Option[DateTime],
       vulnerabilities: List[String] = List(),
       minLanguageVersion: Option[String] = None
   )
@@ -18,6 +21,7 @@ object dependency:
       name: String,
       currentVersion: Option[String],
       latestVersion: String,
+      latestReleaseDate: Option[DateTime],
       vulnerabilities: List[String] = List(),
       notes: Option[String] = None
   )
@@ -30,6 +34,7 @@ object dependency:
       dependency.name,
       dependency.currentVersion,
       details.latestVersion,
+      None,
       details.vulnerabilities,
       notes
     )
