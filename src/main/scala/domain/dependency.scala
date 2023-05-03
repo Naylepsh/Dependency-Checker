@@ -1,6 +1,7 @@
 package domain
 
 import com.github.nscala_time.time.Imports.*
+import org.joda.time.Days
 
 object dependency:
   case class Dependency(
@@ -24,7 +25,15 @@ object dependency:
       latestReleaseDate: Option[DateTime],
       vulnerabilities: List[String] = List(),
       notes: Option[String] = None
-  )
+  ):
+    // Naively assume that any package at least one release within the last year is still maintained
+    def isMaintained(now: DateTime): Option[Boolean] = latestReleaseDate.map(
+      date =>
+        Days.daysBetween(
+          date.toLocalDate(),
+          now.toLocalDate()
+        ).getDays() < 365
+    )
   object DependencyReport:
     def apply(
         dependency: Dependency,

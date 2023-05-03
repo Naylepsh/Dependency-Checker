@@ -11,9 +11,11 @@ import org.apache.poi.ss.usermodel.Cell
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
+import cats.effect.kernel.Sync
+import org.joda.time.DateTime
 
 object ExcelExporter:
-  def make[F[_]: Applicative, A](
+  def make[F[_]: Sync, A](
       toSheet: A => Sheet,
       path: String
   ): Exporter[F, A] = new Exporter[F, A]:
@@ -52,7 +54,7 @@ object ExcelExporter:
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
-    private val chooseStyle = determineSeverity.andThen(matchSeverityToStyle)
+    private val chooseStyle = determineSeverity(DateTime.now()).andThen(matchSeverityToStyle)
 
     private def matchSeverityToStyle(severity: Severity): CellStyle =
       severity match
