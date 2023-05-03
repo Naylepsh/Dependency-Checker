@@ -6,7 +6,6 @@ import cats.*
 import cats.implicits.*
 import io.circe.syntax.*
 import io.circe.*
-import io.circe.{ Decoder, HCursor }
 
 object registry:
   sealed trait DependencySource:

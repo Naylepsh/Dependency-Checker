@@ -35,7 +35,7 @@ object Main extends IOApp.Simple:
             val prepareForSource = (project: domain.project.Project) =>
               registry.projects.find(_.id == project.id)
             val gitlabApi =
-              GitlabApi.make[IO](registry.host, registry.token.some)
+              GitlabApi.make[IO](backend, registry.host, registry.token.some)
             val service =
               DependencyService.make[IO, Project](
                 source = GitlabSource.make(gitlabApi),
