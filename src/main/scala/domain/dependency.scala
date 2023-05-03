@@ -43,7 +43,7 @@ object dependency:
       dependency.name,
       dependency.currentVersion,
       details.latestVersion,
-      None,
+      details.latestReleaseDate,
       details.vulnerabilities,
       notes
     )

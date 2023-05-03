@@ -33,7 +33,7 @@ class severitySpec extends AnyFlatSpec with should.Matchers:
   }
 
 object severitySpec:
-  val oldDate    = DateTime.parse("2023-04-02")
+  val oldDate    = DateTime.parse("2022-04-02")
   val recentDate = DateTime.parse("2023-05-03")
   val recentDependency = DependencyReport(
     name = "recent-dependency",

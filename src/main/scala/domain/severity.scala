@@ -15,11 +15,11 @@ object severity:
       determineSeverityOnVersionDiff(dependency),
       dependency.isMaintained(now)
     ) match
-      case (false, _, _)                        => Severity.High
-      case (true, Severity.Unknown, Some(true)) => Severity.Medium
-      case (true, Severity.None, Some(true))    => Severity.Medium
-      case (true, Severity.Low, Some(true))     => Severity.Medium
-      case (true, versionSeverity, _)           => versionSeverity
+      case (false, _, _)                         => Severity.High
+      case (true, Severity.Unknown, Some(false)) => Severity.Medium
+      case (true, Severity.None, Some(false))    => Severity.Medium
+      case (true, Severity.Low, Some(false))     => Severity.Medium
+      case (true, versionSeverity, _)            => versionSeverity
 
   private def determineSeverityOnVersionDiff(
       dependency: DependencyReport
