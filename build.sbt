@@ -9,18 +9,22 @@ Global / semanticdbVersion := scalafixSemanticdb.revision
 lazy val root = project
   .in(file("."))
   .settings(
-    name    := "dependency-checker",
+    name    := "sentinel",
     version := "0.2.0",
     libraryDependencies ++= Seq(
-      Libraries.requests,
-      Libraries.upickle,
+      Libraries.sttp,
+      Libraries.sttpCats,
+      Libraries.sttpCirce,
+      Libraries.circe,
+      Libraries.circeGeneric,
       Libraries.spoiwo,
       Libraries.log4j,
       Libraries.toml4j,
       Libraries.catsCore,
       Libraries.catsEffect,
       Libraries.woof,
-      Libraries.disciplineScalaTest % Test
+      Libraries.scalaTestDiscipline % Test,
+      Libraries.scalaTestCatsEffect % Test
     )
   )
 

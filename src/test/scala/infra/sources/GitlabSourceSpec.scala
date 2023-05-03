@@ -4,8 +4,7 @@ import cats.*
 import cats.implicits.*
 import domain.dependency.Dependency
 import domain.registry.*
-import infra.GitlabApi
-import infra.responses.{RepositoryFile, RepositoryTree, RepositoryTreeFile}
+import infra.{ GitlabApi, RepositoryFile, RepositoryTree, RepositoryTreeFile }
 import org.legogroup.woof.Logger.StringLocal
 import org.legogroup.woof.{ *, given }
 import org.scalactic.Explicitly.*
@@ -43,7 +42,9 @@ object GitlabSourceSpec:
   val testProject = Project(
     id = "123",
     name = "test-project",
-    sources = List(DependencySource.TxtSource(path = "requirements.txt"))
+    sources = List(DependencySource.TxtSource(path = "requirements.txt")),
+    enabled = true,
+    branch = "master"
   )
   val testDependencies =
     List(Dependency("baz", None), Dependency("quux", "1.2.3".some))
@@ -51,23 +52,24 @@ object GitlabSourceSpec:
     (content: String) => testDependencies
 
   val failingFileApi =
-    makeApi(RuntimeException("Unable to get the file").asLeft)
+    makeApi("Unable to get the file".asLeft)
 
   def dataGitlabApi(tree: RepositoryTree, file: RepositoryFile) =
     makeApi(file.asRight)
 
   def makeApi(
-      fileResult: Either[Throwable, RepositoryFile]
+      fileResult: Either[String, RepositoryFile]
   ) = new GitlabApi[Id]:
     override def getFile(
         id: String,
         branch: String,
         filePath: String
-    ): Id[Either[Throwable, RepositoryFile]] = fileResult
+    ): Id[Either[String, RepositoryFile]] = fileResult
 
   given Logger[Id] = new Logger[Id]:
 
     // Theorically unsafe, but since it doesn't seem to get called then... who cares?
     override val stringLocal: StringLocal[Id] = null
 
-    override def doLog(level: LogLevel, message: String)(using LogInfo): Id[Unit] = ()
+    override def doLog(level: LogLevel, message: String)(using
+    LogInfo): Id[Unit] = ()

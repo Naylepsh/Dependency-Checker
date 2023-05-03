@@ -8,10 +8,10 @@ import cats.implicits.*
 import domain.Source
 import domain.dependency.*
 import domain.project.Grouped
-import domain.registry.DependencySource.{TomlSource, TxtSource}
+import domain.registry.DependencySource.{ TomlSource, TxtSource }
 import domain.registry.*
-import infra.GitlabApi
-import infra.parsers.python.{PyProjectToml, RequirementsTxt}
+import infra.{ GitlabApi, RepositoryFile }
+import infra.parsers.python.{ PyProjectToml, RequirementsTxt }
 import org.legogroup.woof.{ *, given }
 
 object GitlabSource:
@@ -22,14 +22,13 @@ object GitlabSource:
       contentParser: DependencySource => String => List[Dependency] =
         defaultContentParser
   ): Source[F, Project] =
-    import infra.responses.*
-
     new Source[F, Project]:
       def extract(project: Project): F[List[Grouped[Dependency]]] =
         project.sources
           .traverse(source =>
-            extractFromFile(project, source.path, contentParser(source)).map(dependencies =>
-              Grouped(source.groupName, dependencies)
+            extractFromFile(project, source.path, contentParser(source)).map(
+              dependencies =>
+                Grouped(source.groupName, dependencies)
             )
           )
 
@@ -48,7 +47,7 @@ object GitlabSource:
             }
 
             case Right(RepositoryFile(content)) =>
-              decodeContent(content) match
+              GitlabApi.decodeContent(content) match
                 case Left(_) => {
                   Logger[F].error(
                     s"Could not decode content of ${project.name}'s $filePath"
@@ -68,9 +67,6 @@ object GitlabSource:
     xs
       .find(x => ys.contains(f(x)))
       .flatMap(x => ys.get(f(x)).map(y => (x, y)))
-
-  private def decodeContent(encodedContent: String): Either[Throwable, String] =
-    Try(new String(java.util.Base64.getDecoder.decode(encodedContent))).toEither
 
   private def defaultContentParser(
       source: DependencySource

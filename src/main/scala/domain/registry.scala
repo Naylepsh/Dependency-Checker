@@ -4,43 +4,68 @@ import scala.util.control.NoStackTrace
 
 import cats.*
 import cats.implicits.*
-import upickle.default.{ ReadWriter as RW, macroRW, readwriter }
+import io.circe.syntax.*
+import io.circe.*
 
 object registry:
   sealed trait DependencySource:
     val path: String
     val groupName: String
   object DependencySource:
-    case class TxtSource(path: String) extends DependencySource:
+    case class TxtSource(path: String) extends DependencySource derives Decoder:
       val groupName: String = path
-    object TxtSource:
-      given RW[TxtSource] = macroRW
 
     case class TomlSource(path: String, group: Option[String] = None)
-        extends DependencySource:
+        extends DependencySource derives Decoder:
       val groupName: String = group.fold(path)(g => s"$path ($g)")
-    object TomlSource:
-      given RW[TomlSource] = macroRW
 
-    given RW[DependencySource] = macroRW
+    given Decoder[DependencySource] = new Decoder[DependencySource]:
+      final def apply(c: HCursor): Decoder.Result[DependencySource] =
+        // poor man's ADT discriminator impl
+        c.downField("type").as[String].flatMap {
+          t =>
+            t match
+              case "txt"  => c.as[TxtSource]
+              case "toml" => c.as[TomlSource]
+              case _ => Left(DecodingFailure(
+                  DecodingFailure.Reason.CustomReason(
+                    s"Unexpected format type $t"
+                  ),
+                  List.empty
+                ))
+        }
+
+  private case class RawProject(
+      id: String,
+      name: String,
+      sources: List[DependencySource],
+      enabled: Option[Boolean],
+      branch: Option[String]
+  ) derives Decoder
 
   case class Project(
       id: String,
       name: String,
       sources: List[DependencySource],
-      enabled: Boolean = true,
-      branch: String = "master"
+      enabled: Boolean,
+      branch: String
   )
   object Project:
-    given RW[Project] = macroRW
+    given Decoder[Project] = Decoder[RawProject].map(raw =>
+      Project(
+        raw.id,
+        raw.name,
+        raw.sources,
+        raw.enabled.getOrElse(true),
+        raw.branch.getOrElse("master")
+      )
+    )
 
   case class Registry(
       host: String,
       token: String,
       projects: List[Project]
-  )
-  object Registry:
-    given RW[Registry] = macroRW
+  ) derives Decoder
 
   trait RegistryRepository[F[_]]:
-    def get(): F[Registry]
+    def get(): F[Either[Throwable, Registry]]

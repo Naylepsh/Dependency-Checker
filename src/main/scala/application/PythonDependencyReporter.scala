@@ -7,32 +7,36 @@ import cats.*
 import cats.effect.*
 import cats.implicits.*
 import domain.dependency.*
-import infra.reporters.python.Pypi
 import org.legogroup.woof.{ *, given }
+import domain.PackageIndex
 
 object PythonDependencyReporter:
-  def forIo(using Logger[IO]): DependencyReporter[IO] =
+  def forIo(packageIndex: PackageIndex[IO])(using
+  Logger[IO]): DependencyReporter[IO] =
     new DependencyReporter[IO]:
       def getDetails(
           dependencies: List[Dependency]
       ): IO[List[DependencyDetails]] =
         dependencies
-          .grouped(64)
+          .grouped(12)
           .toList
-          .parTraverse(
-            _.traverse(d => IO.blocking(Pypi.getDependencyDetails(d)))
-          )
+          .zipWithIndex
+          .traverse {
+            case (dependencies, index) =>
+              Logger[IO].debug(s"Requesting details of $index-th batch") >>
+                dependencies.parTraverse(d => packageIndex.getDetails(d)).flatTap(
+                  _ => Logger[IO].debug(s"Got results for $index-th batch")
+                )
+          }
           .flatMap(results =>
             val (details, exceptions) = results.flatten
               .foldLeft(
-                (List.empty[DependencyDetails], List.empty[Throwable])
+                (List.empty[DependencyDetails], List.empty[String])
               ) {
                 case ((results, exceptions), result) =>
                   result match
-                    case Failure(exception) => (results, exception :: exceptions)
-                    case Success(value)     => (value :: results, exceptions)
+                    case Left(exception) => (results, exception :: exceptions)
+                    case Right(value)    => (value :: results, exceptions)
               }
-            exceptions.traverse(exc =>
-              Logger[IO].error(exc.toString)
-            ) *> details.pure
+            exceptions.traverse(Logger[IO].error) *> details.pure
           )

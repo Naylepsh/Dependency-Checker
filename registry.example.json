@@ -8,11 +8,11 @@
 			"sources": [
 				{
 					"path": "requirements-dev.txt", 
-					"$type": "domain.registry.DependencySource.TxtSource"
+					"type": "domain.registry.DependencySource.TxtSource"
 				},
 				{
 					"path": "requirements.txt", 
-					"$type": "domain.registry.DependencySource.TxtSource"
+					"type": "domain.registry.DependencySource.TxtSource"
 				}
 			],
 			"enabled": true
@@ -24,8 +24,8 @@
 			"sources": [
 				{
 					"path": "pyproject.toml", 
-					"$type": "domain.registry.DependencySource.TomlSource", 
-					"group": ["tool.poetry.dependencies"]
+					"type": "domain.registry.DependencySource.TomlSource", 
+					"group": "tool.poetry.dependencies"
 				}
 			],
 			"enabled": false
@@ -37,8 +37,7 @@
 			"sources": [
 				{
 					"path": "pyproject.toml", 
-					"$type": "domain.registry.DependencySource.TomlSource",
-					"group": []
+					"type": "domain.registry.DependencySource.TomlSource"
 				}
 			],
 			"enabled": false
