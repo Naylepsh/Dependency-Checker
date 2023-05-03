@@ -42,7 +42,9 @@ object GitlabSourceSpec:
   val testProject = Project(
     id = "123",
     name = "test-project",
-    sources = List(DependencySource.TxtSource(path = "requirements.txt"))
+    sources = List(DependencySource.TxtSource(path = "requirements.txt")),
+    enabled = true,
+    branch = "master"
   )
   val testDependencies =
     List(Dependency("baz", None), Dependency("quux", "1.2.3".some))
