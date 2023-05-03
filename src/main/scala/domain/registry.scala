@@ -35,13 +35,31 @@ object registry:
                 ))
         }
 
+  private case class RawProject(
+      id: String,
+      name: String,
+      sources: List[DependencySource],
+      enabled: Option[Boolean],
+      branch: Option[String]
+  ) derives Decoder
+
   case class Project(
       id: String,
       name: String,
       sources: List[DependencySource],
-      enabled: Boolean = true,
-      branch: String = "master"
-  ) derives Decoder
+      enabled: Boolean,
+      branch: String
+  )
+  object Project:
+    given Decoder[Project] = Decoder[RawProject].map(raw =>
+      Project(
+        raw.id,
+        raw.name,
+        raw.sources,
+        raw.enabled.getOrElse(true),
+        raw.branch.getOrElse("master")
+      )
+    )
 
   case class Registry(
       host: String,
