@@ -22,6 +22,7 @@ lazy val root = project
       Libraries.toml4j,
       Libraries.catsCore,
       Libraries.catsEffect,
+      Libraries.scalaTime,
       Libraries.woof,
       Libraries.scalaTestDiscipline % Test,
       Libraries.scalaTestCatsEffect % Test

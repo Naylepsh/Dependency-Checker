@@ -12,6 +12,7 @@ import cats.implicits.*
 import cats.Monad
 import cats.effect.Sync
 import scala.concurrent.duration.*
+import com.github.nscala_time.time.Imports.*
 
 object Pypi:
   case class PackageInfo(version: String)
@@ -47,6 +48,8 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     extends PackageIndex[F]:
   import Pypi.*
 
+  private val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+
   override def getDetails(dependency: Dependency)
       : F[Either[String, DependencyDetails]] =
     (
@@ -55,16 +58,20 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     ).tupled.map((_, _).tupled.map {
       case (packageData, vulnerabilities) =>
         val latestVersion = packageData.info.version
-        val requiredPython = packageData.releases
+        val latestInfo = packageData.releases
           .get(latestVersion)
-          .flatMap(_.headOption.flatMap(_.requires_python))
+          .flatMap(_.headOption)
+        val latestReleaseDate = latestInfo.flatMap(pkg =>
+          Either.catchNonFatal(DateTime.parse(pkg.upload_time)).toOption
+        )
 
         DependencyDetails(
           dependency.name,
           dependency.currentVersion.getOrElse(latestVersion),
           latestVersion,
+          latestReleaseDate,
           vulnerabilities.map(_.id),
-          requiredPython
+          latestInfo.flatMap(_.requires_python)
         )
     })
 

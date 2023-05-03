@@ -8,6 +8,7 @@ object Dependencies {
     val catsCore   = "2.9.0"
     val catsEffect = "3.4.9"
     val circe      = "0.14.5"
+    val scalaTime  = "2.32.0"
 
     val log4j = "2.20.0"
     val woof  = "0.6.0"
@@ -29,6 +30,7 @@ object Dependencies {
     val toml4j       = "com.moandjiezana.toml"          % "toml4j"        % V.toml4j
     val catsCore     = "org.typelevel"                 %% "cats-core"     % V.catsCore
     val catsEffect   = "org.typelevel"                 %% "cats-effect"   % V.catsEffect
+    val scalaTime    = "com.github.nscala-time"        %% "nscala-time"   % V.scalaTime
 
     // logging
     val log4j = "org.apache.logging.log4j" % "log4j-core" % V.log4j
