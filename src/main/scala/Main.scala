@@ -3,14 +3,15 @@ import scala.concurrent.*
 import scala.concurrent.duration.Duration
 import scala.io.Source
 
-import application.{ DependencyService, PythonDependencyReporter }
+import application.PythonDependencyReporter
+import application.ScanningService
 import cats.*
 import cats.effect.*
 import cats.implicits.*
 import ciris.*
 import infra.exporters.ExcelExporter
 import infra.packageindexes.Pypi
-import infra.persistance.{DependencyRepository, RegistryRepository}
+import infra.persistance.{ DependencyRepository, RegistryRepository }
 import infra.resources.database
 import infra.sources.GitlabSource
 import infra.{ GitlabApi, logging }
@@ -49,7 +50,7 @@ object Main extends IOApp.Simple:
                     registry.token.some
                   )
                 val service =
-                  DependencyService.make[IO, Project](
+                  ScanningService.make[IO, Project](
                     source = GitlabSource.make(gitlabApi),
                     prepareForSource = prepareForSource,
                     reporter = PythonDependencyReporter.forIo(Pypi(backend)),
@@ -59,7 +60,7 @@ object Main extends IOApp.Simple:
                     ),
                     repository = DependencyRepository.make(xa)
                   )
-                service.checkDependencies(registry.projects.collect {
+                service.scan(registry.projects.collect {
                   case Project(id, name, sources, true, branch) =>
                     domain.project.Project(id, name)
                 })

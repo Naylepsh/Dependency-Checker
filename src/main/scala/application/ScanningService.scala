@@ -10,22 +10,22 @@ import domain.project.*
 import domain.{ Exporter, Source }
 import org.legogroup.woof.{ *, given }
 
-trait DependencyService[F[_]]:
-  def checkDependencies(projects: List[Project]): F[Unit]
+trait ScanningService[F[_]]:
+  def scan(projects: List[Project]): F[Unit]
 
-object DependencyService:
+object ScanningService:
   def make[F[_]: Monad: Logger: Parallel, A](
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
       exporter: Exporter[F, ExportProjectDependencies],
       repository: DependencyRepository[F]
-  ): DependencyService[F] = new DependencyService[F]:
+  ): ScanningService[F] = new ScanningService[F]:
 
-    override def checkDependencies(projects: List[Project]): F[Unit] =
+    override def scan(projects: List[Project]): F[Unit] =
       for
         _ <- Logger[F].info(
-          s"Checking dependencies of ${projects.length} projects..."
+          s"Scanning dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
           .parTraverse {
