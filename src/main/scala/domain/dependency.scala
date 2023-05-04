@@ -50,3 +50,6 @@ object dependency:
 
   trait DependencyReporter[F[_]]:
     def getDetails(dependencies: List[Dependency]): F[List[DependencyDetails]]
+
+  trait DependencyRepository[F[_]]:
+    def save(dependencies: List[DependencyReport]): F[Unit]

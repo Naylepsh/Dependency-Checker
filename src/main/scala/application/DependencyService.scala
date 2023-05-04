@@ -7,7 +7,7 @@ import cats.effect.std.*
 import cats.implicits.*
 import domain.dependency.*
 import domain.project.*
-import domain.{Exporter, Source}
+import domain.{ Exporter, Source }
 import org.legogroup.woof.{ *, given }
 
 trait DependencyService[F[_]]:
@@ -27,6 +27,7 @@ object DependencyService:
           s"Checking dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
+          .take(1)
           .parTraverse {
             case project @ Project(_, _) =>
               prepareForSource(project)
@@ -43,7 +44,7 @@ object DependencyService:
         _       <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
         reports    = projectsDependencies.map(buildReport(detailsMap))
-        _ <- exporter.exportData(reports)
+        // _ <- exporter.exportData(reports)
         _ <- Logger[F].info("Exported the results")
       yield ()
 
