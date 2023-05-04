@@ -18,14 +18,18 @@ object PythonDependencyReporter:
           dependencies: List[Dependency]
       ): IO[List[DependencyDetails]] =
         dependencies
-          .grouped(12)
+          .grouped(10)
           .toList
           .zipWithIndex
           .traverse {
             case (dependencies, index) =>
               Logger[IO].debug(s"Requesting details of $index-th batch") >>
-                dependencies.parTraverse(d => packageIndex.getDetails(d)).flatTap(
-                  _ => Logger[IO].debug(s"Got results for $index-th batch")
+                dependencies.parTraverse(d =>
+                  Logger[IO].debug(
+                    s"Requesting details of ${d.name}:${d.currentVersion}"
+                  ) >> packageIndex.getDetails(d)
+                ).flatTap(_ =>
+                  Logger[IO].debug(s"Got results for $index-th batch")
                 )
           }
           .flatMap(results =>

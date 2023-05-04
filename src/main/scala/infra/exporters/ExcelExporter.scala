@@ -54,7 +54,8 @@ object ExcelExporter:
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
-    private val chooseStyle = determineSeverity(DateTime.now()).andThen(matchSeverityToStyle)
+    private val chooseStyle =
+      determineSeverity(DateTime.now()).andThen(matchSeverityToStyle)
 
     private def matchSeverityToStyle(severity: Severity): CellStyle =
       severity match
@@ -62,24 +63,24 @@ object ExcelExporter:
 
         case Severity.None =>
           CellStyle(
-            fillForegroundColor = Color.Green,
+            fillForegroundColor = Color(47, 158, 156),
             fillPattern = CellFill.Solid
           )
 
         case Severity.Low =>
           CellStyle(
-            fillForegroundColor = Color.LightGreen,
+            fillForegroundColor = Color(173, 216, 230),
             fillPattern = CellFill.Solid
           )
 
         case Severity.Medium =>
           CellStyle(
-            fillForegroundColor = Color.Yellow,
+            fillForegroundColor = Color(240, 230, 140),
             fillPattern = CellFill.Solid
           )
 
         case Severity.High =>
           CellStyle(
-            fillForegroundColor = Color.Red,
+            fillForegroundColor = Color(255, 99, 71),
             fillPattern = CellFill.Solid
           )
