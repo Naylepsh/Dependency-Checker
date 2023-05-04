@@ -3,10 +3,10 @@ package infra.resources
 import cats.*
 import cats.effect.*
 import cats.implicits.*
+import ciris.*
 import doobie.*
 import doobie.hikari.HikariTransactor
 import doobie.implicits.*
-import ciris.*
 
 object database:
   case class Config(

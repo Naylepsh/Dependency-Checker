@@ -1,15 +1,15 @@
 package infra
 
+import scala.concurrent.duration.*
 import scala.util.Try
 
 import cats.*
 import cats.implicits.*
+import io.circe.Decoder
 import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
-import io.circe.Decoder
 import sttp.model.Uri
-import scala.concurrent.duration.*
 
 case class RepositoryTreeFile(name: String, path: String) derives Decoder
 

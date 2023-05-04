@@ -4,7 +4,7 @@ import cats.*
 import cats.implicits.*
 import domain.dependency.Dependency
 import domain.registry.*
-import infra.{ GitlabApi, RepositoryFile, RepositoryTree, RepositoryTreeFile }
+import infra._
 import org.legogroup.woof.Logger.StringLocal
 import org.legogroup.woof.{ *, given }
 import org.scalactic.Explicitly.*

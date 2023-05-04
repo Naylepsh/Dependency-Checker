@@ -2,9 +2,9 @@ package domain
 
 import scala.util.Try
 
+import io.circe.parser.decode
 import org.scalatest.TryValues.convertTryToSuccessOrFailure
 import org.scalatest.*
-import io.circe.parser.decode
 
 import flatspec.*
 import matchers.*

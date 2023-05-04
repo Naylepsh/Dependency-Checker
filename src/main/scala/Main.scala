@@ -7,16 +7,15 @@ import application.{ DependencyService, PythonDependencyReporter }
 import cats.*
 import cats.effect.*
 import cats.implicits.*
+import ciris.*
 import infra.exporters.ExcelExporter
-import infra.persistance.RegistryRepository
+import infra.packageindexes.Pypi
+import infra.persistance.{DependencyRepository, RegistryRepository}
+import infra.resources.database
 import infra.sources.GitlabSource
 import infra.{ GitlabApi, logging }
 import org.legogroup.woof.{ *, given }
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
-import infra.packageindexes.Pypi
-import infra.resources.database
-import ciris.*
-import infra.persistance.DependencyRepository
 
 object Main extends IOApp.Simple:
   import domain.registry.*

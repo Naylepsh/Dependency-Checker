@@ -1,18 +1,18 @@
 package infra.packageindexes
 
-import domain.PackageIndex
-import domain.dependency.Dependency
-import domain.dependency.DependencyDetails
-import io.circe.generic.semiauto.*
-import io.circe.*
-import sttp.client3.*
-import sttp.client3.circe.*
-import sttp.capabilities.WebSockets
-import cats.implicits.*
+import scala.concurrent.duration.*
+
 import cats.Monad
 import cats.effect.Sync
-import scala.concurrent.duration.*
+import cats.implicits.*
 import com.github.nscala_time.time.Imports.*
+import domain.PackageIndex
+import domain.dependency.{Dependency, DependencyDetails}
+import io.circe.*
+import io.circe.generic.semiauto.*
+import sttp.capabilities.WebSockets
+import sttp.client3.*
+import sttp.client3.circe.*
 
 object Pypi:
   case class PackageInfo(version: String)

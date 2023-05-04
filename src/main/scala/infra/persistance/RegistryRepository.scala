@@ -2,8 +2,8 @@ package infra.persistance
 
 import scala.io.Source
 
-import cats.implicits.*
 import cats.effect.*
+import cats.implicits.*
 import domain.registry.{ Project, Registry, RegistryRepository }
 import io.circe.parser.decode
 

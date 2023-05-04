@@ -1,12 +1,12 @@
 package domain
 
+import domain.dependency.DependencyReport
+import domain.severity.determineSeverity
+import org.joda.time.DateTime
 import org.scalatest.*
 
 import flatspec.*
 import matchers.*
-import domain.severity.determineSeverity
-import org.joda.time.DateTime
-import domain.dependency.DependencyReport
 
 class severitySpec extends AnyFlatSpec with should.Matchers:
   import severitySpec.*
