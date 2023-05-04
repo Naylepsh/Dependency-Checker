@@ -17,6 +17,7 @@ import infra.sources.GitlabSource
 import infra.{ GitlabApi, logging }
 import org.legogroup.woof.{ *, given }
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
+import infra.persistance.ScanResultRepository
 
 object Main extends IOApp.Simple:
   import domain.registry.*
@@ -35,7 +36,6 @@ object Main extends IOApp.Simple:
         HttpClientCatsBackend.resource[IO]()
       ).tupled.use {
         case (xa, backend) =>
-          println(config)
           for
             given Logger[IO] <- logging.forConsoleIo()
             _ <- registryRepository.get().flatMap(_.fold(
@@ -58,8 +58,12 @@ object Main extends IOApp.Simple:
                       ExcelExporter.dependencies.toSheet,
                       exportDestination
                     ),
-                    repository = DependencyRepository.make(xa)
+                    repository = ScanResultRepository.make(
+                      xa,
+                      DependencyRepository.make(xa)
+                    )
                   )
+
                 service.scan(registry.projects.collect {
                   case Project(id, name, sources, true, branch) =>
                     domain.project.Project(id, name)

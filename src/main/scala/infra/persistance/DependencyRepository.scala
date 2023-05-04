@@ -9,57 +9,93 @@ import cats.effect.kernel.Sync
 import cats.effect.std.UUIDGen
 import cats.effect.std.UUIDGen.randomUUID
 import cats.implicits.*
-import domain.dependency.{ DependencyReport, DependencyRepository }
+import domain.dependency.{
+  Dependency,
+  DependencyReport,
+  DependencyRepository,
+  ExistingDependency
+}
 import doobie.*
 import doobie.implicits.*
-import doobie.implicits.javatimedrivernative.*
 import doobie.util.query.*
 import org.joda.time.DateTime
 
 object DependencyRepository:
-  def make[F[_]: MonadCancelThrow: UUIDGen: Sync](xa: Transactor[F])
+  private[DependencyRepository] case class ExistingDependencyScan(
+      id: UUID,
+      timestamp: DateTime,
+      dependencyId: UUID,
+      currentVersion: Option[String],
+      latestVersion: String,
+      latestReleaseDate: Option[DateTime],
+      notes: Option[String] = None
+  )
+
+  private[DependencyRepository] case class ExistingVulnerability(
+      id: UUID,
+      dependencyScanId: UUID,
+      name: String
+  )
+
+  private[DependencyRepository] case class ResultToSave(
+      dependency: ExistingDependency,
+      scan: ExistingDependencyScan,
+      vulnerabilities: List[ExistingVulnerability]
+  )
+  private[DependencyRepository] object ResultToSave:
+    def apply[F[_]: UUIDGen: Monad](
+        report: DependencyReport,
+        timestamp: DateTime
+    ): F[ResultToSave] =
+      (randomUUID, randomUUID).tupled.flatMap {
+        case (dependencyId, scanId) =>
+          val dependency =
+            ExistingDependency(dependencyId, timestamp, report.name)
+          val scan = ExistingDependencyScan(
+            scanId,
+            timestamp,
+            dependencyId,
+            report.currentVersion,
+            report.latestVersion,
+            report.latestReleaseDate,
+            report.notes
+          )
+          report.vulnerabilities
+            .traverse(vulnerability =>
+              randomUUID.map(id =>
+                ExistingVulnerability(id, scanId, vulnerability)
+              )
+            ).map(vulnerabilities =>
+              ResultToSave(dependency, scan, vulnerabilities)
+            )
+      }
+
+  def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
       : DependencyRepository[F] = new DependencyRepository[F]:
     import DependencyRepositorySQL.*
-    override def save(dependencies: List[DependencyReport]): F[Unit] =
+
+    override def save(
+        dependencies: List[DependencyReport],
+        timestamp: DateTime
+    ): F[List[ExistingDependency]] =
       for
-        now           <- Sync[F].delay(DateTime.now())
-        crawlId       <- randomUUID
-        dependencyIds <- dependencies.traverse(_ => randomUUID)
-        _             <- saveDependencies(dependencies, dependencyIds, now)
-        _             <- saveVulnerabilities(dependencies, dependencyIds)
+        resultsToSave <-
+          dependencies.traverse(dependency =>
+            ResultToSave(dependency, timestamp)
+          )
+        _ <- save(resultsToSave).transact(xa)
+      yield resultsToSave.map(_.dependency)
+
+    private def save(resultsToSave: List[ResultToSave]) =
+      for
+        _ <- insertManyDependencies(resultsToSave.map(_.dependency))
+        _ <- insertManyDependencyScans(resultsToSave.map(_.scan))
+        _ <-
+          insertManyVulnerabilities(resultsToSave.flatMap(_.vulnerabilities))
       yield ()
 
-    private def saveDependencies(
-        dependencies: List[DependencyReport],
-        dependencyIds: List[UUID],
-        now: DateTime
-    ): F[Unit] =
-      val records = dependencies.zip(dependencyIds).map {
-        case (dependency, id) => RawDependency(id, now, dependency)
-      }
-      insertManyDependencies(records).transact(xa).void
-
-    private def saveVulnerabilities(
-        dependencies: List[DependencyReport],
-        dependencyIds: List[UUID]
-    ): F[Unit] =
-      for
-        records <- dependencies.zip(dependencyIds).traverse {
-          case (dependency, dependencyId) =>
-            dependency.vulnerabilities.traverse(vuln =>
-              randomUUID.map(id => (id, vuln, dependencyId))
-            )
-        }.map(_.flatten.map(RawVulnerability.apply))
-        _ <- insertManyVulnerabilities(records).transact(xa)
-      yield ()
-
-  object DependencyRepositorySQL:
-    given Get[UUID] = Get[String].map(UUID.fromString)
-    given Put[UUID] = Put[String].contramap(_.toString)
-    given Get[DateTime] = Get[Instant]
-      .map(instant => DateTime(instant.toEpochMilli()))
-    given Put[DateTime] = Put[Instant]
-      .contramap(dt => Instant.ofEpochMilli(dt.getMillis()))
+  private object DependencyRepositorySQL:
+    import sqlmappings.given
 
     case class RawDependency(
         id: UUID,
@@ -87,39 +123,28 @@ object DependencyRepository:
         )
 
     def insertManyDependencies(
-        dependencies: List[RawDependency]
+        dependencies: List[ExistingDependency]
     ): ConnectionIO[Int] =
       val sql = """
-        INSERT INTO dependency (id, timestamp, name, currentVersion, latestVersion, latestReleaseDate, notes)
+        INSERT INTO dependency (id, timestamp, name)
+        VALUES (?, ?, ?)
+      """
+      Update[ExistingDependency](sql).updateMany(dependencies)
+
+    def insertManyDependencyScans(
+        scans: List[ExistingDependencyScan]
+    ): ConnectionIO[Int] =
+      val sql = """
+        INSERT INTO dependencyScan (id, timestamp, dependencyId, currentVersion, latestVersion, latestReleaseDate, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       """
-      Update[RawDependency](sql).updateMany(dependencies)
-
-    def insertDependency(
-        id: UUID,
-        timestamp: DateTime,
-        dependencyReport: DependencyReport
-    ): Update0 =
-      sql"""
-        INSERT INTO dependency (id, timestamp, name, currentVersion, latestVersion, latestReleaseDate, notes)
-        VALUES (
-          ${id}, 
-          ${timestamp}, 
-          ${dependencyReport.name}, 
-          ${dependencyReport.currentVersion}, 
-          ${dependencyReport.latestVersion},
-          ${dependencyReport.latestReleaseDate},
-          ${dependencyReport.notes}
-        )
-      """.update
-
-    case class RawVulnerability(id: UUID, name: String, dependencyId: UUID)
+      Update[ExistingDependencyScan](sql).updateMany(scans)
 
     def insertManyVulnerabilities(
-        vulnerabilities: List[RawVulnerability]
+        vulnerabilities: List[ExistingVulnerability]
     ): ConnectionIO[Int] =
       val sql = """
-          INSERT INTO vulnerability (id, name, dependencyId)
+          INSERT INTO vulnerability (id, name, dependencyScanId)
           VALUES (?, ?, ?)
         """
-      Update[RawVulnerability](sql).updateMany(vulnerabilities)
+      Update[ExistingVulnerability](sql).updateMany(vulnerabilities)

@@ -9,6 +9,7 @@ import domain.dependency.*
 import domain.project.*
 import domain.{ Exporter, Source }
 import org.legogroup.woof.{ *, given }
+import org.joda.time.DateTime
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
@@ -18,8 +19,8 @@ object ScanningService:
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
-      exporter: Exporter[F, ExportProjectDependencies],
-      repository: DependencyRepository[F]
+      exporter: Exporter[F, ScanResult],
+      repository: ScanResultRepository[F]
   ): ScanningService[F] = new ScanningService[F]:
 
     override def scan(projects: List[Project]): F[Unit] =
@@ -44,9 +45,7 @@ object ScanningService:
         _       <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
         reports    = projectsDependencies.map(buildReport(detailsMap))
-        _ <- repository.save(
-          reports.flatMap(_.dependenciesReports.flatMap(_.items))
-        )
+        _ <- repository.save(reports, DateTime.now())
         _ <- exporter.exportData(reports)
         _ <- Logger[F].info("Exported the results")
       yield ()
@@ -76,7 +75,7 @@ object ScanningService:
 
   private def buildReport(details: DetailsMap)(
       projectDependencies: ProjectDependencies
-  ): ExportProjectDependencies =
+  ): ScanResult =
     val detailsOf = getDetails(details)
 
     @tailrec
@@ -104,4 +103,4 @@ object ScanningService:
         inner(dependencyGroup.items, List.empty)
       )
     )
-    ExportProjectDependencies(projectDependencies.project, report)
+    ScanResult(projectDependencies.project, report)
