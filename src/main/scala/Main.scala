@@ -16,6 +16,7 @@ import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import infra.packageindexes.Pypi
 import infra.resources.database
 import ciris.*
+import infra.persistance.DependencyRepository
 
 object Main extends IOApp.Simple:
   import domain.registry.*
@@ -34,8 +35,7 @@ object Main extends IOApp.Simple:
         HttpClientCatsBackend.resource[IO]()
       ).tupled.use {
         case (xa, backend) =>
-          val pypi = Pypi(backend)
-
+          println(config)
           for
             given Logger[IO] <- logging.forConsoleIo()
             _ <- registryRepository.get().flatMap(_.fold(
@@ -53,11 +53,12 @@ object Main extends IOApp.Simple:
                   DependencyService.make[IO, Project](
                     source = GitlabSource.make(gitlabApi),
                     prepareForSource = prepareForSource,
-                    reporter = PythonDependencyReporter.forIo(pypi),
+                    reporter = PythonDependencyReporter.forIo(Pypi(backend)),
                     exporter = ExcelExporter.make(
                       ExcelExporter.dependencies.toSheet,
                       exportDestination
-                    )
+                    ),
+                    repository = DependencyRepository.make(xa)
                   )
                 service.checkDependencies(registry.projects.collect {
                   case Project(id, name, sources, true, branch) =>

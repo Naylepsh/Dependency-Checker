@@ -18,7 +18,8 @@ object DependencyService:
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
-      exporter: Exporter[F, ExportProjectDependencies]
+      exporter: Exporter[F, ExportProjectDependencies],
+      repository: DependencyRepository[F]
   ): DependencyService[F] = new DependencyService[F]:
 
     override def checkDependencies(projects: List[Project]): F[Unit] =
@@ -27,7 +28,6 @@ object DependencyService:
           s"Checking dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
-          .take(1)
           .parTraverse {
             case project @ Project(_, _) =>
               prepareForSource(project)
@@ -44,7 +44,10 @@ object DependencyService:
         _       <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
         reports    = projectsDependencies.map(buildReport(detailsMap))
-        // _ <- exporter.exportData(reports)
+        _ <- repository.save(
+          reports.flatMap(_.dependenciesReports.flatMap(_.items))
+        )
+        _ <- exporter.exportData(reports)
         _ <- Logger[F].info("Exported the results")
       yield ()
 

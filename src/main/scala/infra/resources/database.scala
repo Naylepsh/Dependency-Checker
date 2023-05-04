@@ -10,9 +10,9 @@ import ciris.*
 
 object database:
   case class Config(
+      path: String,
       username: String,
-      password: String,
-      path: String
+      password: String
   )
   object Config:
     def load[F[_]: Async] =
@@ -34,7 +34,7 @@ object database:
       ce <- ExecutionContexts.fixedThreadPool[F](32)
       xa <- HikariTransactor.newHikariTransactor[F](
         "org.sqlite.JDBC",
-        s"jdbc:sqlite:${config.path}",
+        s"jdbc:${config.path}",
         config.username,
         config.password,
         ce
