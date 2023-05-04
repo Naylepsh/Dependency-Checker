@@ -10,8 +10,8 @@ import domain.dependency.*
 import domain.project.Grouped
 import domain.registry.DependencySource.{ TomlSource, TxtSource }
 import domain.registry.*
-import infra.{ GitlabApi, RepositoryFile }
 import infra.parsers.python.{ PyProjectToml, RequirementsTxt }
+import infra.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }
 
 object GitlabSource:

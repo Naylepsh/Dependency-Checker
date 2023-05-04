@@ -1,7 +1,7 @@
 package infra.parsers.python
 
 import scala.collection.JavaConverters.*
-import scala.util.{Success, Try}
+import scala.util.{ Success, Try }
 
 import cats.*
 import cats.implicits.*

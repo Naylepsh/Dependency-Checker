@@ -1,7 +1,6 @@
 package domain
 
-import domain.dependency.DependencyDetails
-import domain.dependency.Dependency
+import domain.dependency.{Dependency, DependencyDetails}
 
 trait PackageIndex[F[_]]:
   def getDetails(dependency: Dependency): F[Either[String, DependencyDetails]]

@@ -6,9 +6,9 @@ import scala.util.*
 import cats.*
 import cats.effect.*
 import cats.implicits.*
+import domain.PackageIndex
 import domain.dependency.*
 import org.legogroup.woof.{ *, given }
-import domain.PackageIndex
 
 object PythonDependencyReporter:
   def forIo(packageIndex: PackageIndex[IO])(using

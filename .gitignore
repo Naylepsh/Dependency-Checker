@@ -9,3 +9,6 @@ target/
 registry*.json
 !registry.example.json
 *.xlsx
+
+.env
+*.sqlite

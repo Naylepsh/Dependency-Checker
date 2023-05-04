@@ -10,7 +10,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "sentinel",
-    version := "0.2.0",
+    version := "0.3.0",
     libraryDependencies ++= Seq(
       Libraries.sttp,
       Libraries.sttpCats,
@@ -23,6 +23,10 @@ lazy val root = project
       Libraries.catsCore,
       Libraries.catsEffect,
       Libraries.scalaTime,
+      Libraries.ciris,
+      Libraries.doobie,
+      Libraries.doobieHikari,
+      Libraries.sqliteJDB,
       Libraries.woof,
       Libraries.scalaTestDiscipline % Test,
       Libraries.scalaTestCatsEffect % Test

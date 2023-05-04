@@ -11,7 +11,7 @@ object semver:
       b: String
   ): Option[VersionDifference] =
     if a == b then None
-    else {
+    else
       val res =
         for
           (aSymbol, aMajor, aMinor, aPatch) <- extractVersion(a)
@@ -30,7 +30,6 @@ object semver:
           else
             None
       res.flatten
-    }
 
   private def extractVersion(
       text: String

@@ -9,6 +9,10 @@ object Dependencies {
     val catsEffect = "3.4.9"
     val circe      = "0.14.5"
     val scalaTime  = "2.32.0"
+    val ciris      = "3.1.0"
+
+    val doobie    = "1.0.0-RC1"
+    val sqliteJDB = "3.41.2.1"
 
     val log4j = "2.20.0"
     val woof  = "0.6.0"
@@ -31,6 +35,12 @@ object Dependencies {
     val catsCore     = "org.typelevel"                 %% "cats-core"     % V.catsCore
     val catsEffect   = "org.typelevel"                 %% "cats-effect"   % V.catsEffect
     val scalaTime    = "com.github.nscala-time"        %% "nscala-time"   % V.scalaTime
+    val ciris        = "is.cir"                        %% "ciris"         % V.ciris
+
+    // db
+    val doobie       = "org.tpolecat" %% "doobie-core"   % V.doobie
+    val doobieHikari = "org.tpolecat" %% "doobie-hikari" % V.doobie
+    val sqliteJDB    = "org.xerial"    % "sqlite-jdbc"   % V.sqliteJDB
 
     // logging
     val log4j = "org.apache.logging.log4j" % "log4j-core" % V.log4j

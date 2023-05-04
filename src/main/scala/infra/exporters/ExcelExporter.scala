@@ -1,18 +1,18 @@
 package infra.exporters
 
 import cats.*
+import cats.effect.kernel.Sync
 import cats.implicits.*
 import domain.Exporter
 import domain.dependency.DependencyReport
-import domain.project.ExportProjectDependencies
+import domain.project.ScanResult
 import domain.semver.*
 import domain.severity.*
 import org.apache.poi.ss.usermodel.Cell
+import org.joda.time.DateTime
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
-import cats.effect.kernel.Sync
-import org.joda.time.DateTime
 
 object ExcelExporter:
   def make[F[_]: Sync, A](
@@ -25,7 +25,7 @@ object ExcelExporter:
       workbook.saveAsXlsx(path).pure
 
   object dependencies:
-    def toSheet(repoDependencies: ExportProjectDependencies): Sheet =
+    def toSheet(repoDependencies: ScanResult): Sheet =
       val rows = repoDependencies.dependenciesReports.flatMap { group =>
         val groupName =
           Row(style = headerStyle).withCellValues("Source:", group.groupName)

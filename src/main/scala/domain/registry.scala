@@ -4,8 +4,8 @@ import scala.util.control.NoStackTrace
 
 import cats.*
 import cats.implicits.*
-import io.circe.syntax.*
 import io.circe.*
+import io.circe.syntax.*
 
 object registry:
   sealed trait DependencySource:

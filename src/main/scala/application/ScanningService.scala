@@ -7,24 +7,26 @@ import cats.effect.std.*
 import cats.implicits.*
 import domain.dependency.*
 import domain.project.*
-import domain.{Exporter, Source}
+import domain.{ Exporter, Source }
 import org.legogroup.woof.{ *, given }
+import org.joda.time.DateTime
 
-trait DependencyService[F[_]]:
-  def checkDependencies(projects: List[Project]): F[Unit]
+trait ScanningService[F[_]]:
+  def scan(projects: List[Project]): F[Unit]
 
-object DependencyService:
+object ScanningService:
   def make[F[_]: Monad: Logger: Parallel, A](
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
-      exporter: Exporter[F, ExportProjectDependencies]
-  ): DependencyService[F] = new DependencyService[F]:
+      exporter: Exporter[F, ScanResult],
+      repository: ScanResultRepository[F]
+  ): ScanningService[F] = new ScanningService[F]:
 
-    override def checkDependencies(projects: List[Project]): F[Unit] =
+    override def scan(projects: List[Project]): F[Unit] =
       for
         _ <- Logger[F].info(
-          s"Checking dependencies of ${projects.length} projects..."
+          s"Scanning dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
           .parTraverse {
@@ -43,6 +45,7 @@ object DependencyService:
         _       <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
         reports    = projectsDependencies.map(buildReport(detailsMap))
+        _ <- repository.save(reports, DateTime.now())
         _ <- exporter.exportData(reports)
         _ <- Logger[F].info("Exported the results")
       yield ()
@@ -72,7 +75,7 @@ object DependencyService:
 
   private def buildReport(details: DetailsMap)(
       projectDependencies: ProjectDependencies
-  ): ExportProjectDependencies =
+  ): ScanResult =
     val detailsOf = getDetails(details)
 
     @tailrec
@@ -100,4 +103,4 @@ object DependencyService:
         inner(dependencyGroup.items, List.empty)
       )
     )
-    ExportProjectDependencies(projectDependencies.project, report)
+    ScanResult(projectDependencies.project, report)
