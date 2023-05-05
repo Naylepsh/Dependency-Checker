@@ -50,7 +50,12 @@ object ExcelExporter:
             )
           )) :+ Row() // Add pseudo "margin-bottom"
       }
-      Sheet(name = repoDependencies.project.name).withRows(rows*)
+      Sheet(name = repoDependencies.project.name).withRows(rows*).withColumns(
+        Column(
+          index = 0,
+          autoSized = true
+        )
+      )
 
     private val headerStyle = CellStyle(font = Font(bold = true))
 
