@@ -35,18 +35,20 @@ object ExcelExporter:
             "Current Version",
             "Latest Version",
             "Latest Release Date",
+            "Vulnerability Count",
             "Vulnerabilities",
             "Notes"
           )
         (groupName :: tableDescription :: group.items
-          .map(dependencyReport =>
-            Row(style = chooseStyle(dependencyReport)).withCellValues(
-              dependencyReport.name,
-              dependencyReport.currentVersion.getOrElse(""),
-              dependencyReport.latestVersion,
-              dependencyReport.latestReleaseDate.fold("")(_.toString),
-              dependencyReport.vulnerabilities.mkString(",\n"),
-              dependencyReport.notes.getOrElse("")
+          .map(report =>
+            Row(style = chooseStyle(report)).withCellValues(
+              report.name,
+              report.currentVersion.getOrElse(""),
+              report.latestVersion,
+              report.latestReleaseDate.fold("")(_.toString),
+              report.vulnerabilities.length,
+              report.vulnerabilities.mkString(",\n"),
+              report.notes.getOrElse("")
             )
           )) :+ Row() // Add pseudo "margin-bottom"
       }
