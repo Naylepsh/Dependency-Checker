@@ -20,6 +20,10 @@ object project:
       project: Project,
       dependenciesReports: List[Grouped[DependencyReport]]
   )
+  case class ScanReport(
+      projectName: String,
+      dependenciesReports: List[Grouped[DependencyReport]]
+  )
 
   trait ScanResultRepository[F[_]]:
     def save(results: List[ScanResult], timestamp: DateTime): F[Unit]
