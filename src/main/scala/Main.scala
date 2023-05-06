@@ -5,7 +5,7 @@ import application.cli.*
 
 object Main extends CommandIOApp(
       name = "sentinel",
-      header = "whatever",
+      header = "",
       version = "0.3.0"
     ):
 
