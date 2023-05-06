@@ -27,3 +27,9 @@ object project:
 
   trait ScanResultRepository[F[_]]:
     def save(results: List[ScanResult], timestamp: DateTime): F[Unit]
+    def getScanReports(
+        projectNames: List[String],
+        timestamp: DateTime
+    ): F[List[ScanReport]]
+    def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]]
+    def getLatestScanTimestamp(): F[Option[DateTime]]

@@ -14,6 +14,7 @@ import org.legogroup.woof.{ *, given }
 import cats.data.NonEmptyList
 import domain.dependency.DependencyReport
 import domain.project.Grouped
+import cats.Applicative
 
 object ScanResultRepository:
   def make[F[_]: MonadCancelThrow: Logger](
@@ -23,7 +24,7 @@ object ScanResultRepository:
     new ScanResultRepository[F]:
       import ScanResultRepositorySQL.*
 
-      override def save(
+      def save(
           results: List[ScanResult],
           timestamp: DateTime
       ): F[Unit] =
@@ -61,14 +62,27 @@ object ScanResultRepository:
             .transact(xa)
         }
 
-  case class ProjectDependency(
+      def getLatestScanTimestamp(): F[Option[DateTime]] =
+        ScanResultRepositorySQL.getLatestScanTimestamp().option.transact(xa)
+
+      def getLatestScanReports(projectNames: List[String])
+          : F[List[ScanReport]] =
+        getLatestScanTimestamp().flatMap(
+          _.fold(
+            Applicative[F].pure(List.empty)
+          )(timestamp =>
+            getScanReports(projectNames, timestamp)
+          )
+        )
+
+  private[persistance] case class ProjectDependency(
       timestamp: DateTime,
       projectName: String,
       groupName: String,
       dependencyId: UUID
   )
 
-  object ScanResultRepositorySQL:
+  private[persistance] object ScanResultRepositorySQL:
     import sqlmappings.given
 
     def insertMany(projectDependencies: List[ProjectDependency])
@@ -145,3 +159,11 @@ object ScanResultRepository:
         fr"projectDependency.projectName",
         projectNames
       )).query[GetAllResult]
+
+    def getLatestScanTimestamp(): Query0[DateTime] =
+      sql"""
+      SELECT timestamp
+      FROM dependencyScan
+      ORDER BY timestamp
+      LIMIT 1
+      """.query[DateTime]
