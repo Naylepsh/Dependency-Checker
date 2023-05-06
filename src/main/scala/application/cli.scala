@@ -1,16 +1,24 @@
 package application
 
-import application.services.{ExportingService, PythonDependencyReporter, ScanningService}
-import cats.effect.{ExitCode, IO}
+import application.services.{
+  ExportingService,
+  PythonDependencyReporter,
+  ScanningService
+}
+import cats.effect.{ ExitCode, IO }
 import cats.implicits.*
 import com.monovore.decline.*
-import domain.project.{Project, ScanReport}
+import domain.project.{ Project, ScanReport }
 import infra.exporters.ExcelExporter
 import infra.packageindexes.Pypi
-import infra.persistance.{DependencyRepository, RegistryRepository, ScanResultRepository}
+import infra.persistance.{
+  DependencyRepository,
+  RegistryRepository,
+  ScanResultRepository
+}
 import infra.resources.database
 import infra.sources.GitlabSource
-import infra.{GitlabApi, logging}
+import infra.{ GitlabApi, logging }
 import org.legogroup.woof.{ *, given }
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 
@@ -31,9 +39,9 @@ object cli:
           case (xa, backend) =>
             for
               given Logger[IO] <- logging.forConsoleIo()
-              _ <- registryRepository.get().flatMap(_.fold(
-                _ => IO.unit,
-                registry =>
+              _ <- registryRepository.get().flatMap {
+                case Left(_) => IO.unit
+                case Right(registry) =>
                   val gitlabApi =
                     GitlabApi.make[IO](
                       backend,
@@ -56,7 +64,7 @@ object cli:
                     case domain.registry.Project(id, name, _, true, _) =>
                       domain.project.Project(id, name)
                   })
-              ))
+              }
             yield ExitCode.Success
         }
       }
