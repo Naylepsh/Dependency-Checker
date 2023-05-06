@@ -1,10 +1,10 @@
 package application.services
 
-import org.legogroup.woof.{ *, given }
-import domain.Exporter
-import domain.project.{ Project, ScanReport, ScanResultRepository }
 import cats.*
 import cats.implicits.*
+import domain.Exporter
+import domain.project.{ Project, ScanReport, ScanResultRepository }
+import org.legogroup.woof.{ *, given }
 
 trait ExportingService[F[_]]:
   def exportScanResults(projects: List[Project]): F[Unit]

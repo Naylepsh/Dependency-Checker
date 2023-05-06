@@ -1,7 +1,7 @@
-import cats.effect.{ ExitCode, IO }
-import com.monovore.decline.effect.CommandIOApp
-import com.monovore.decline.Opts
 import application.cli.*
+import cats.effect.{ ExitCode, IO }
+import com.monovore.decline.Opts
+import com.monovore.decline.effect.CommandIOApp
 
 object Main extends CommandIOApp(
       name = "sentinel",

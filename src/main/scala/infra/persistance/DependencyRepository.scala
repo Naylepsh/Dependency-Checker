@@ -9,12 +9,7 @@ import cats.effect.kernel.Sync
 import cats.effect.std.UUIDGen
 import cats.effect.std.UUIDGen.randomUUID
 import cats.implicits.*
-import domain.dependency.{
-  Dependency,
-  DependencyReport,
-  DependencyRepository,
-  ExistingDependency
-}
+import domain.dependency._
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*

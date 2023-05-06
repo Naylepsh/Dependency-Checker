@@ -7,7 +7,7 @@ import cats.effect.Sync
 import cats.implicits.*
 import com.github.nscala_time.time.Imports.*
 import domain.PackageIndex
-import domain.dependency.{Dependency, DependencyDetails}
+import domain.dependency.{ Dependency, DependencyDetails }
 import io.circe.*
 import io.circe.generic.semiauto.*
 import sttp.capabilities.WebSockets

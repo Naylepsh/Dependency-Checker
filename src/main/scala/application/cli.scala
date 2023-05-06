@@ -1,25 +1,18 @@
 package application
 
-import com.monovore.decline.*
+import application.services.{ExportingService, PythonDependencyReporter, ScanningService}
+import cats.effect.{ExitCode, IO}
 import cats.implicits.*
-import infra.persistance.RegistryRepository
-import cats.effect.IO
-import infra.resources.database
-import infra.logging
-import org.legogroup.woof.{ *, given }
+import com.monovore.decline.*
+import domain.project.{Project, ScanReport}
 import infra.exporters.ExcelExporter
-import domain.project.ScanReport
-import infra.persistance.ScanResultRepository
-import infra.persistance.DependencyRepository
-import application.services.ExportingService
-import domain.project.Project
-import sttp.client3.httpclient.cats.HttpClientCatsBackend
-import infra.GitlabApi
-import application.services.ScanningService
-import infra.sources.GitlabSource
-import application.services.PythonDependencyReporter
 import infra.packageindexes.Pypi
-import cats.effect.ExitCode
+import infra.persistance.{DependencyRepository, RegistryRepository, ScanResultRepository}
+import infra.resources.database
+import infra.sources.GitlabSource
+import infra.{GitlabApi, logging}
+import org.legogroup.woof.{ *, given }
+import sttp.client3.httpclient.cats.HttpClientCatsBackend
 
 object cli:
   case class ScanRepositories(registryPath: String)

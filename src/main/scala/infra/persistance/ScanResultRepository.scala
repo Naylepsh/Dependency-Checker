@@ -1,20 +1,19 @@
 package infra.persistance
 
-import doobie.util.transactor.Transactor
-import domain.project.{ ScanReport, ScanResult, ScanResultRepository }
-import domain.dependency.DependencyRepository
-import cats.implicits.*
-import cats.effect.MonadCancelThrow
-import org.joda.time.DateTime
 import java.util.UUID
+
+import cats.Applicative
+import cats.data.NonEmptyList
+import cats.effect.MonadCancelThrow
+import cats.implicits.*
+import domain.dependency.{DependencyReport, DependencyRepository}
+import domain.project._
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
+import doobie.util.transactor.Transactor
+import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
-import cats.data.NonEmptyList
-import domain.dependency.DependencyReport
-import domain.project.Grouped
-import cats.Applicative
 
 object ScanResultRepository:
   def make[F[_]: MonadCancelThrow: Logger](

@@ -1,8 +1,9 @@
 package domain
 
+import java.util.UUID
+
 import com.github.nscala_time.time.Imports.*
 import org.joda.time.Days
-import java.util.UUID
 
 object dependency:
   case class Dependency(
@@ -59,4 +60,7 @@ object dependency:
   )
 
   trait DependencyRepository[F[_]]:
-    def save(dependencies: List[DependencyReport], timestamp: DateTime): F[List[ExistingDependency]]
+    def save(
+        dependencies: List[DependencyReport],
+        timestamp: DateTime
+    ): F[List[ExistingDependency]]

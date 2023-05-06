@@ -1,13 +1,11 @@
 package infra.persistance
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.*
-
+import domain.dependency.DependencyReport
+import domain.project.{Grouped, ScanReport}
 import infra.persistance.ScanResultRepository.ScanResultRepositorySQL.GetAllResult
 import org.joda.time.DateTime
-import domain.project.ScanReport
-import domain.project.Grouped
-import domain.dependency.DependencyReport
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.*
 
 class ScanResultRepositorySpec extends AnyFlatSpec with should.Matchers:
   import ScanResultRepositorySpec.*

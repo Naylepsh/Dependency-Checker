@@ -1,10 +1,11 @@
 package infra.persistance
 
+import java.time.Instant
+import java.util.UUID
+
 import doobie.*
 import doobie.implicits.javatimedrivernative.*
-import java.util.UUID
 import org.joda.time.DateTime
-import java.time.Instant
 
 object sqlmappings:
   given Get[UUID]     = Get[String].map(UUID.fromString)

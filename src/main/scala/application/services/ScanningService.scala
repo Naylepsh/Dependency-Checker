@@ -8,8 +8,8 @@ import cats.implicits.*
 import domain.dependency.*
 import domain.project.*
 import domain.{ Exporter, Source }
-import org.legogroup.woof.{ *, given }
 import org.joda.time.DateTime
+import org.legogroup.woof.{ *, given }
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
