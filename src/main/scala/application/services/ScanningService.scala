@@ -28,13 +28,12 @@ object ScanningService:
           s"Scanning dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
-          .parTraverse {
-            case project =>
-              prepareForSource(project)
-                .map(source.extract(_))
-                .getOrElse(Monad[F].pure(List.empty))
-                .map(dependencies => ProjectDependencies(project, dependencies))
-          }
+          .parTraverse(project =>
+            prepareForSource(project)
+              .map(source.extract(_))
+              .getOrElse(Monad[F].pure(List.empty))
+              .map(dependencies => ProjectDependencies(project, dependencies))
+          )
         dependencies = projectsDependencies
           .flatMap(_.dependencies.flatMap(_.items))
         _ <- Logger[F].info(
