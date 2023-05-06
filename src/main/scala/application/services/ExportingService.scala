@@ -30,8 +30,6 @@ object ExportingService:
       intendedOrder: List[Project],
       reports: List[ScanReport]
   ): List[ScanReport] =
-    intendedOrder.map(project =>
+    intendedOrder.flatMap(project =>
       reports.find(_.projectName == project.name)
-    ).collect {
-      case Some(report) => report
-    }
+    )
