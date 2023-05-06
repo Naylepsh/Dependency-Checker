@@ -108,8 +108,10 @@ object cli:
         )
       }
 
-  val exportLocationOpt   = Opts.argument[String]("export-path")
-  val registryLocationOpt = Opts.argument[String]("registry-path")
+  val exportLocationOpt =
+    Opts.option[String]("export-path", "Path to save the export to")
+  val registryLocationOpt =
+    Opts.option[String]("registry-path", "Path to JSON registry")
 
   val scanOpts = Opts.subcommand(
     name = "scan",
