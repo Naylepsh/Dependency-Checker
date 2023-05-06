@@ -1,4 +1,4 @@
-package application
+package application.services
 
 import scala.concurrent.*
 import scala.util.*

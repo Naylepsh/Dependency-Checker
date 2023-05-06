@@ -24,6 +24,8 @@ lazy val root = project
       Libraries.catsEffect,
       Libraries.scalaTime,
       Libraries.ciris,
+      Libraries.decline,
+      Libraries.declineCatsEffect,
       Libraries.doobie,
       Libraries.doobieHikari,
       Libraries.sqliteJDB,

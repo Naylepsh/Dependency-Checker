@@ -1,4 +1,4 @@
-package application
+package application.services
 
 import scala.annotation.tailrec
 
@@ -19,7 +19,6 @@ object ScanningService:
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
-      exporter: Exporter[F, ScanResult],
       repository: ScanResultRepository[F]
   ): ScanningService[F] = new ScanningService[F]:
 
@@ -46,8 +45,6 @@ object ScanningService:
         detailsMap = buildDetailsMap(details)
         reports    = projectsDependencies.map(buildReport(detailsMap))
         _ <- repository.save(reports, DateTime.now())
-        _ <- exporter.exportData(reports)
-        _ <- Logger[F].info("Exported the results")
       yield ()
 
   private val latestKey = "LATEST"

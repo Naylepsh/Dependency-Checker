@@ -13,6 +13,7 @@ import org.joda.time.DateTime
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
+import domain.project.ScanReport
 
 object ExcelExporter:
   def make[F[_]: Sync, A](
@@ -25,7 +26,7 @@ object ExcelExporter:
       workbook.saveAsXlsx(path).pure
 
   object dependencies:
-    def toSheet(repoDependencies: ScanResult): Sheet =
+    def toSheet(repoDependencies: ScanReport): Sheet =
       val rows = repoDependencies.dependenciesReports.flatMap { group =>
         val groupName =
           Row(style = headerStyle).withCellValues("Source:", group.groupName)
@@ -52,7 +53,7 @@ object ExcelExporter:
             )
           )) :+ Row() // Add pseudo "margin-bottom"
       }
-      Sheet(name = repoDependencies.project.name).withRows(rows*).withColumns(
+      Sheet(name = repoDependencies.projectName).withRows(rows*).withColumns(
         Column(
           index = 0,
           autoSized = true

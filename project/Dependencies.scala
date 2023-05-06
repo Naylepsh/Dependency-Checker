@@ -10,6 +10,7 @@ object Dependencies {
     val circe      = "0.14.5"
     val scalaTime  = "2.32.0"
     val ciris      = "3.1.0"
+    val decline    = "2.4.1"
 
     val doobie    = "1.0.0-RC1"
     val sqliteJDB = "3.41.2.1"
@@ -27,15 +28,17 @@ object Dependencies {
     val sttp = "com.softwaremill.sttp.client3" %% "core" % V.sttp
     val sttpCats =
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % V.sttp
-    val sttpCirce    = "com.softwaremill.sttp.client3" %% "circe"         % V.sttp
-    val circe        = "io.circe"                      %% "circe-core"    % V.circe
-    val circeGeneric = "io.circe"                      %% "circe-generic" % V.circe
-    val spoiwo       = "com.norbitltd"                 %% "spoiwo"        % V.spoiwo
-    val toml4j       = "com.moandjiezana.toml"          % "toml4j"        % V.toml4j
-    val catsCore     = "org.typelevel"                 %% "cats-core"     % V.catsCore
-    val catsEffect   = "org.typelevel"                 %% "cats-effect"   % V.catsEffect
-    val scalaTime    = "com.github.nscala-time"        %% "nscala-time"   % V.scalaTime
-    val ciris        = "is.cir"                        %% "ciris"         % V.ciris
+    val sttpCirce         = "com.softwaremill.sttp.client3" %% "circe"          % V.sttp
+    val circe             = "io.circe"                      %% "circe-core"     % V.circe
+    val circeGeneric      = "io.circe"                      %% "circe-generic"  % V.circe
+    val spoiwo            = "com.norbitltd"                 %% "spoiwo"         % V.spoiwo
+    val toml4j            = "com.moandjiezana.toml"          % "toml4j"         % V.toml4j
+    val catsCore          = "org.typelevel"                 %% "cats-core"      % V.catsCore
+    val catsEffect        = "org.typelevel"                 %% "cats-effect"    % V.catsEffect
+    val scalaTime         = "com.github.nscala-time"        %% "nscala-time"    % V.scalaTime
+    val ciris             = "is.cir"                        %% "ciris"          % V.ciris
+    val decline           = "com.monovore"                  %% "decline"        % V.decline
+    val declineCatsEffect = "com.monovore"                  %% "decline-effect" % V.decline
 
     // db
     val doobie       = "org.tpolecat" %% "doobie-core"   % V.doobie
