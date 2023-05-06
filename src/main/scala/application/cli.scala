@@ -41,8 +41,6 @@ object cli:
               _ <- registryRepository.get().flatMap(_.fold(
                 _ => IO.unit,
                 registry =>
-                  val prepareForSource = (project: domain.project.Project) =>
-                    registry.projects.find(_.id == project.id)
                   val gitlabApi =
                     GitlabApi.make[IO](
                       backend,
@@ -52,7 +50,8 @@ object cli:
                   val service =
                     ScanningService.make[IO, domain.registry.Project](
                       source = GitlabSource.make(gitlabApi),
-                      prepareForSource = prepareForSource,
+                      prepareForSource = (project: domain.project.Project) =>
+                        registry.projects.find(_.id == project.id),
                       reporter = PythonDependencyReporter.forIo(Pypi(backend)),
                       repository = ScanResultRepository.make(
                         xa,
@@ -61,13 +60,7 @@ object cli:
                     )
 
                   service.scan(registry.projects.collect {
-                    case domain.registry.Project(
-                          id,
-                          name,
-                          sources,
-                          true,
-                          branch
-                        ) =>
+                    case domain.registry.Project(id, name, _, true, _) =>
                       domain.project.Project(id, name)
                   })
               ))
