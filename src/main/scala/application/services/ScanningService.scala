@@ -29,7 +29,7 @@ object ScanningService:
         )
         projectsDependencies <- projects
           .parTraverse {
-            case project @ Project(_, _) =>
+            case project =>
               prepareForSource(project)
                 .map(source.extract(_))
                 .getOrElse(Monad[F].pure(List.empty))
