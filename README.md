@@ -35,7 +35,7 @@ Run `./target/universal/stage/bin/sentinel scan --registry-path=/path/to/registr
 Run:
 
 ```
-target/universal/stage/bin/sentinel export \
+./target/universal/stage/bin/sentinel export \
   --registry-path=/path/to/registry.json \
   --export-path=/path/to/export.xlsx
 ```
