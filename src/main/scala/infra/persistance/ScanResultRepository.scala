@@ -6,8 +6,8 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
-import domain.dependency.{DependencyReport, DependencyRepository}
-import domain.project._
+import domain.dependency.{ DependencyReport, DependencyRepository }
+import domain.project.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
@@ -54,12 +54,12 @@ object ScanResultRepository:
           projectNames: List[String],
           timestamp: DateTime
       ): F[List[ScanReport]] =
-        NonEmptyList.fromList(projectNames).fold(List.empty.pure) { names =>
+        NonEmptyList.fromList(projectNames).fold(List.empty.pure)(names =>
           getAll(names, timestamp)
             .to[List]
             .map(GetAllResult.toDomain)
             .transact(xa)
-        }
+        )
 
       def getLatestScanTimestamp(): F[Option[DateTime]] =
         ScanResultRepositorySQL.getLatestScanTimestamp().option.transact(xa)
@@ -69,7 +69,7 @@ object ScanResultRepository:
         for
           _         <- Logger[F].info("Starting...")
           timestamp <- getLatestScanTimestamp()
-          _         <- Logger[F].info(s"Timestamp: $timestamp")
+          _         <- Logger[F].info(s"Last scan happened at $timestamp")
           reports <-
             timestamp.fold(Applicative[F].pure(List.empty))(timestamp =>
               getScanReports(projectNames, timestamp)
