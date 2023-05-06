@@ -67,13 +67,16 @@ object ScanResultRepository:
 
       def getLatestScanReports(projectNames: List[String])
           : F[List[ScanReport]] =
-        getLatestScanTimestamp().flatMap(
-          _.fold(
-            Applicative[F].pure(List.empty)
-          )(timestamp =>
-            getScanReports(projectNames, timestamp)
-          )
-        )
+        for
+          _         <- Logger[F].info("Starting...")
+          timestamp <- getLatestScanTimestamp()
+          _         <- Logger[F].info(s"Timestamp: $timestamp")
+          reports <-
+            timestamp.fold(Applicative[F].pure(List.empty))(timestamp =>
+              getScanReports(projectNames, timestamp)
+            )
+          _ <- Logger[F].info(s"Reports count: ${reports.length}")
+        yield reports
 
   private[persistance] case class ProjectDependency(
       timestamp: DateTime,
@@ -89,9 +92,9 @@ object ScanResultRepository:
         : ConnectionIO[Int] =
       val sql = """
       INSERT INTO projectDependency (
+        timestamp,
         projectName,
         groupName,
-        timestamp,
         dependencyId)
       VALUES (?, ?, ?, ?)
       """
@@ -140,22 +143,22 @@ object ScanResultRepository:
         timestamp: DateTime
     ): Query0[GetAllResult] =
       (sql"""
-      SELECT
-        projectDependency.projectName,
-        projectDependency.groupName,
-        dependency.id,
-        dependency.name,
-        dependencyScan.currentVersion,
-        dependencyScan.latestVersion,
-        dependencyScan.latestReleaseDate,
-        dependencyScan.notes,
-        vulnerability.name,
-      FROM projectDependency
-      JOIN dependency ON dependency.id = projectDependency.dependencyId 
-      JOIN dependencyScan ON dependencyScan.dependencyId = dependency.id
-          AND dependencyScan.timestamp = $timestamp
-      LEFT JOIN vulnerability ON vulnerability.dependencyScanId = dependencyScan.id
-      WHERE """ ++ Fragments.in(
+        SELECT
+          projectDependency.projectName,
+          projectDependency.groupName,
+          dependency.id,
+          dependency.name,
+          dependencyScan.currentVersion,
+          dependencyScan.latestVersion,
+          dependencyScan.latestReleaseDate,
+          dependencyScan.notes,
+          vulnerability.name
+        FROM projectDependency
+        JOIN dependency ON dependency.id = projectDependency.dependencyId 
+        JOIN dependencyScan ON dependencyScan.dependencyId = dependency.id
+            AND dependencyScan.timestamp = $timestamp
+        LEFT JOIN vulnerability ON vulnerability.dependencyScanId = dependencyScan.id
+        WHERE """ ++ Fragments.in(
         fr"projectDependency.projectName",
         projectNames
       )).query[GetAllResult]
@@ -164,6 +167,6 @@ object ScanResultRepository:
       sql"""
       SELECT timestamp
       FROM dependencyScan
-      ORDER BY timestamp
+      ORDER BY timestamp DESC
       LIMIT 1
       """.query[DateTime]
