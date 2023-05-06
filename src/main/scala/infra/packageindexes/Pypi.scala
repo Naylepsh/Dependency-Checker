@@ -15,34 +15,24 @@ import sttp.client3.*
 import sttp.client3.circe.*
 
 object Pypi:
-  case class PackageInfo(version: String)
-  object PackageInfo:
-    given Decoder[PackageInfo] = deriveDecoder
+  case class PackageInfo(version: String) derives Decoder
 
   case class PackageRelease(
       upload_time: String,
       requires_python: Option[String]
-  )
-  object PackageRelease:
-    given Decoder[PackageRelease] = deriveDecoder
+  ) derives Decoder
 
-  case class PackageVulnerability(id: String, details: String)
-  object PackageVulnerability:
-    given Decoder[PackageVulnerability] = deriveDecoder
+  case class PackageVulnerability(id: String, details: String) derives Decoder
 
   case class Package(
       info: PackageInfo,
       releases: Map[String, List[PackageRelease]],
       vulnerabilities: List[PackageVulnerability]
-  )
-  object Package:
-    given Decoder[Package] = deriveDecoder
+  ) derives Decoder
 
   case class VulnerabilitiesResponse(
       vulnerabilities: List[PackageVulnerability]
-  )
-  object VulnerabilitiesResponse:
-    given Decoder[VulnerabilitiesResponse] = deriveDecoder
+  ) derives Decoder
 
 class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     extends PackageIndex[F]:

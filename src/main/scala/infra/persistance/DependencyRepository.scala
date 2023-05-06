@@ -9,13 +9,37 @@ import cats.effect.kernel.Sync
 import cats.effect.std.UUIDGen
 import cats.effect.std.UUIDGen.randomUUID
 import cats.implicits.*
-import domain.dependency._
+import domain.dependency.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import org.joda.time.DateTime
 
 object DependencyRepository:
+  def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
+      : DependencyRepository[F] = new DependencyRepository[F]:
+    import DependencyRepositorySQL.*
+
+    override def save(
+        dependencies: List[DependencyReport],
+        timestamp: DateTime
+    ): F[List[ExistingDependency]] =
+      for
+        resultsToSave <-
+          dependencies.traverse(dependency =>
+            ResultToSave(dependency, timestamp)
+          )
+        _ <- save(resultsToSave).transact(xa)
+      yield resultsToSave.map(_.dependency)
+
+    private def save(resultsToSave: List[ResultToSave]) =
+      for
+        _ <- insertManyDependencies(resultsToSave.map(_.dependency))
+        _ <- insertManyDependencyScans(resultsToSave.map(_.scan))
+        _ <-
+          insertManyVulnerabilities(resultsToSave.flatMap(_.vulnerabilities))
+      yield ()
+
   private[DependencyRepository] case class ExistingDependencyScan(
       id: UUID,
       timestamp: DateTime,
@@ -64,30 +88,6 @@ object DependencyRepository:
               ResultToSave(dependency, scan, vulnerabilities)
             )
       }
-
-  def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
-      : DependencyRepository[F] = new DependencyRepository[F]:
-    import DependencyRepositorySQL.*
-
-    override def save(
-        dependencies: List[DependencyReport],
-        timestamp: DateTime
-    ): F[List[ExistingDependency]] =
-      for
-        resultsToSave <-
-          dependencies.traverse(dependency =>
-            ResultToSave(dependency, timestamp)
-          )
-        _ <- save(resultsToSave).transact(xa)
-      yield resultsToSave.map(_.dependency)
-
-    private def save(resultsToSave: List[ResultToSave]) =
-      for
-        _ <- insertManyDependencies(resultsToSave.map(_.dependency))
-        _ <- insertManyDependencyScans(resultsToSave.map(_.scan))
-        _ <-
-          insertManyVulnerabilities(resultsToSave.flatMap(_.vulnerabilities))
-      yield ()
 
   private object DependencyRepositorySQL:
     import sqlmappings.given
