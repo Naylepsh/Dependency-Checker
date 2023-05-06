@@ -81,9 +81,9 @@ object cli:
         ).use(xa =>
           for
             given Logger[IO] <- logging.forConsoleIo()
-            _ <- registryRepository.get().flatMap(_.fold(
-              _ => IO.unit,
-              registry =>
+            _ <- registryRepository.get().flatMap {
+              case Left(_) => IO.unit
+              case Right(registry) =>
                 val exporter = ExcelExporter.make[IO, ScanReport](
                   ExcelExporter.dependencies.toSheet,
                   command.exportPath
@@ -97,7 +97,7 @@ object cli:
                 service.exportScanResults(registry.projects.map(project =>
                   Project(project.id, project.name)
                 ))
-            ))
+            }
           yield ExitCode.Success
         )
       }
