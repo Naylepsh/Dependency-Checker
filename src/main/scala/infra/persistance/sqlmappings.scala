@@ -7,9 +7,8 @@ import org.joda.time.DateTime
 import java.time.Instant
 
 object sqlmappings:
-  given Get[UUID] = Get[String].map(UUID.fromString)
-  given Put[UUID] = Put[String].contramap(_.toString)
-  given Get[DateTime] = Get[Instant]
-    .map(instant => DateTime(instant.toEpochMilli()))
+  given Get[UUID]     = Get[String].map(UUID.fromString)
+  given Put[UUID]     = Put[String].contramap(_.toString)
+  given Get[DateTime] = Get[String].map(DateTime.parse)
   given Put[DateTime] = Put[Instant]
     .contramap(dt => Instant.ofEpochMilli(dt.getMillis()))

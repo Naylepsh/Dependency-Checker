@@ -26,5 +26,16 @@ The result is presented within an excel spreadsheet.
 
 ## Usage
 
-1. Run `./target/universal/stage/bin/sentinel`
-2. The results will be in the same directory in `export.xlsx` file
+### Scanning
+
+Run `./target/universal/stage/bin/sentinel scan --registry-path=/path/to/registry.json`
+
+### Exporting
+
+Run:
+
+```
+./target/universal/stage/bin/sentinel export \
+  --registry-path=/path/to/registry.json \
+  --export-path=/path/to/export.xlsx
+```
