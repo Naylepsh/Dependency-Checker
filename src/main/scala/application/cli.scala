@@ -74,6 +74,10 @@ object cli:
     def run(command: ExportScanReports): IO[ExitCode] =
       val registryRepository =
         RegistryRepository.fileBased(command.registryPath)
+      val exporter = ExcelExporter.make[IO, ScanReport](
+        ExcelExporter.dependencies.toSheet,
+        command.exportPath
+      )
 
       database.Config.load[IO].flatMap { config =>
         database.makeTransactorResource[IO](config).evalTap(
@@ -84,10 +88,6 @@ object cli:
             _ <- registryRepository.get().flatMap {
               case Left(_) => IO.unit
               case Right(registry) =>
-                val exporter = ExcelExporter.make[IO, ScanReport](
-                  ExcelExporter.dependencies.toSheet,
-                  command.exportPath
-                )
                 val repository = ScanResultRepository.make(
                   xa,
                   DependencyRepository.make(xa)
