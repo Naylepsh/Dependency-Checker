@@ -139,7 +139,7 @@ object DependencyRepository:
         vulnerabilities: List[ExistingVulnerability]
     ): ConnectionIO[Int] =
       val sql = """
-          INSERT INTO vulnerability (id, name, dependencyScanId)
+          INSERT INTO vulnerability (id, dependencyScanId, name)
           VALUES (?, ?, ?)
         """
       Update[ExistingVulnerability](sql).updateMany(vulnerabilities)
