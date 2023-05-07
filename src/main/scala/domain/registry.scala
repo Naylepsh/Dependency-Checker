@@ -63,7 +63,6 @@ object registry:
 
   case class Registry(
       host: String,
-      token: String,
       projects: List[Project]
   ) derives Decoder
 

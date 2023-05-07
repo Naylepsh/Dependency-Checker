@@ -1,6 +1,5 @@
 {
 	"host": "gitlab.my-host.com",
-	"token": "very-secret-token-here",
 	"projects": [
 		{
 			"id": "1",

@@ -14,18 +14,6 @@ object database:
       username: String,
       password: String
   )
-  object Config:
-    def load[F[_]: Async] =
-      databaseConfig.load[F]
-
-  private val databaseConfig =
-    (
-      env("DATABASE_PATH"),
-      env("DATABASE_USER"),
-      env("DATABASE_PASSWORD")
-    ).parMapN {
-      (path, user, password) => Config(path, user, password)
-    }
 
   def makeTransactorResource[F[_]: Async](
       config: Config

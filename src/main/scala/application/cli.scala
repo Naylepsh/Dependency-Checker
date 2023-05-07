@@ -18,6 +18,7 @@ import infra.persistance.{
   ScanResultRepository
 }
 import infra.resources.database
+import application.config.AppConfig
 import infra.sources.GitlabSource
 import infra.{ GitlabApi, logging }
 import org.legogroup.woof.{ *, given }
@@ -30,9 +31,9 @@ object cli:
       val registryRepository =
         RegistryRepository.fileBased(command.registryPath)
 
-      database.Config.load[IO].flatMap { config =>
+      AppConfig.load[IO].flatMap { config =>
         (
-          database.makeTransactorResource[IO](config).evalTap(
+          database.makeTransactorResource[IO](config.databaseConfig).evalTap(
             database.checkSQLiteConnection
           ),
           HttpClientCatsBackend.resource[IO]()
@@ -47,7 +48,7 @@ object cli:
                     GitlabApi.make[IO](
                       backend,
                       registry.host,
-                      registry.token.some
+                      config.gitlabToken
                     )
                   val service =
                     ScanningService.make[IO, domain.registry.Project](
@@ -77,8 +78,8 @@ object cli:
         RegistryRepository.fileBased(command.registryPath)
       val exporter = ExcelExporter.make[IO](command.exportPath)
 
-      database.Config.load[IO].flatMap { config =>
-        database.makeTransactorResource[IO](config).evalTap(
+      AppConfig.load[IO].flatMap { config =>
+        database.makeTransactorResource[IO](config.databaseConfig).evalTap(
           database.checkSQLiteConnection
         ).use(xa =>
           for
