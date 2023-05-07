@@ -16,8 +16,7 @@ import spoiwo.natures.xlsx.Model2XlsxConversions.*
 object ExcelExporter:
   def make[F[_]: Sync: Time](
       path: String
-  ): Exporter[F, ScanReport] = new Exporter[F, ScanReport]:
-
+  ): Exporter[F, ScanReport] = new:
     override def exportData(data: List[ScanReport]): F[Unit] =
       Time[F].currentDateTime
         .map(now =>

@@ -17,7 +17,7 @@ import org.joda.time.DateTime
 
 object DependencyRepository:
   def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
-      : DependencyRepository[F] = new DependencyRepository[F]:
+      : DependencyRepository[F] = new:
     import DependencyRepositorySQL.*
 
     override def save(

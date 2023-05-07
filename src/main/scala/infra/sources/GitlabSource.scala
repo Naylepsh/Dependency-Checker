@@ -21,42 +21,41 @@ object GitlabSource:
       api: GitlabApi[F],
       contentParser: DependencySource => String => List[Dependency] =
         defaultContentParser
-  ): Source[F, Project] =
-    new Source[F, Project]:
-      def extract(project: Project): F[List[Grouped[Dependency]]] =
-        project.sources
-          .traverse(source =>
-            extractFromFile(project, source.path, contentParser(source)).map(
-              dependencies =>
-                Grouped(source.groupName, dependencies)
-            )
+  ): Source[F, Project] = new:
+    def extract(project: Project): F[List[Grouped[Dependency]]] =
+      project.sources
+        .traverse(source =>
+          extractFromFile(project, source.path, contentParser(source)).map(
+            dependencies =>
+              Grouped(source.groupName, dependencies)
           )
+        )
 
-      private def extractFromFile(
-          project: Project,
-          filePath: String,
-          contentExtractor: String => List[Dependency]
-      ): F[List[Dependency]] =
-        api
-          .getFile(project.id, project.branch, filePath)
-          .flatMap(_ match
-            case Left(reason) => {
-              Logger[F].error(
-                s"Could not get the file contents of ${project.name} and $filePath due to $reason"
-              ) *> List.empty.pure
-            }
+    private def extractFromFile(
+        project: Project,
+        filePath: String,
+        contentExtractor: String => List[Dependency]
+    ): F[List[Dependency]] =
+      api
+        .getFile(project.id, project.branch, filePath)
+        .flatMap(_ match
+          case Left(reason) => {
+            Logger[F].error(
+              s"Could not get the file contents of ${project.name} and $filePath due to $reason"
+            ) *> List.empty.pure
+          }
 
-            case Right(RepositoryFile(content)) =>
-              GitlabApi.decodeContent(content) match
-                case Left(_) => {
-                  Logger[F].error(
-                    s"Could not decode content of ${project.name}'s $filePath"
-                  ) *> List.empty.pure
-                }
+          case Right(RepositoryFile(content)) =>
+            GitlabApi.decodeContent(content) match
+              case Left(_) => {
+                Logger[F].error(
+                  s"Could not decode content of ${project.name}'s $filePath"
+                ) *> List.empty.pure
+              }
 
-                case Right(decodedContent) =>
-                  contentExtractor(decodedContent).pure
-          )
+              case Right(decodedContent) =>
+                contentExtractor(decodedContent).pure
+        )
 
   private def find[A, B, C](
       xs: List[A],

@@ -96,10 +96,12 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
       ).map(_.vulnerabilities))
 
   private def cleanupVersion(version: String): String =
+    /**
+     * We don't really know when the repo was last deployed,
+     * so it's safer to assume the lowest possible version
+     */
     version
-      // This is a temporary hack, for ~/^ version shoud be bumped to the latest appropriate one
       .replaceAll("[\\^~]", "")
-      // Another hack, * should take the latest available version, not 0
       .replaceAll("\\*", "0")
 
   private def buildErrorMessage(url: sttp.model.Uri)(
