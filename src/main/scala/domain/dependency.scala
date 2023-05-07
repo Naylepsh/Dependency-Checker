@@ -28,13 +28,16 @@ object dependency:
       vulnerabilities: List[String] = List(),
       notes: Option[String] = None
   ):
-    // Naively assume that any package at least one release within the last year is still maintained
+    /**
+     * Naively assume that any package that had at least one release
+     * within the last 3 years is still maintained
+     */
     def isMaintained(now: DateTime): Option[Boolean] = latestReleaseDate.map(
       date =>
         Days.daysBetween(
           date.toLocalDate(),
           now.toLocalDate()
-        ).getDays() < 365
+        ).getDays() < 3 * 365
     )
   object DependencyReport:
     def apply(
