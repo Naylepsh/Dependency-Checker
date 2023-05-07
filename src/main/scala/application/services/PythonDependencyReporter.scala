@@ -4,43 +4,52 @@ import scala.concurrent.*
 import scala.util.*
 
 import cats.*
-import cats.effect.*
 import cats.implicits.*
 import domain.PackageIndex
 import domain.dependency.*
 import org.legogroup.woof.{ *, given }
 
 object PythonDependencyReporter:
-  def forIo(packageIndex: PackageIndex[IO])(using
-  Logger[IO]): DependencyReporter[IO] =
-    new DependencyReporter[IO]:
+  def make[F[_]: Logger: Parallel: Monad](
+      packageIndex: PackageIndex[F]
+  ): DependencyReporter[F] =
+    new DependencyReporter[F]:
       def getDetails(
           dependencies: List[Dependency]
-      ): IO[List[DependencyDetails]] =
+      ): F[List[DependencyDetails]] =
         dependencies
           .grouped(10)
           .toList
           .zipWithIndex
-          .traverse {
-            case (dependencies, index) =>
-              Logger[IO].debug(s"Requesting details of $index-th batch") >>
-                dependencies.parTraverse(d =>
-                  Logger[IO].debug(
-                    s"Requesting details of ${d.name}:${d.currentVersion}"
-                  ) >> packageIndex.getDetails(d)
-                ).flatTap(_ =>
-                  Logger[IO].debug(s"Got results for $index-th batch")
-                )
-          }
-          .flatMap(results =>
-            val (details, exceptions) = results.flatten
-              .foldLeft(
-                (List.empty[DependencyDetails], List.empty[String])
-              ) {
-                case ((results, exceptions), result) =>
-                  result match
-                    case Left(exception) => (results, exception :: exceptions)
-                    case Right(value)    => (value :: results, exceptions)
-              }
-            exceptions.traverse(Logger[IO].error) *> details.pure
+          .traverse(getDetailsOfBatch)
+          .flatMap(combineBatchesResults)
+
+      private def getDetailsOfBatch(
+          dependencies: List[Dependency],
+          batchIndex: Int
+      ): F[List[Either[String, DependencyDetails]]] =
+        Logger[F].debug(s"Requesting details of $batchIndex-th batch")
+          .flatMap(_ =>
+            dependencies
+              .parTraverse(d =>
+                Logger[F]
+                  .debug(s"Requesting details of ${d.name}:${d.currentVersion}")
+                  .flatMap(_ => packageIndex.getDetails(d))
+              ).flatTap(_ =>
+                Logger[F].debug(s"Got results for $batchIndex-th batch")
+              )
           )
+
+      private def combineBatchesResults(
+          batchesResults: List[List[Either[String, DependencyDetails]]]
+      ): F[List[DependencyDetails]] =
+        val (details, exceptions) = batchesResults.flatten
+          .foldLeft(
+            (List.empty[DependencyDetails], List.empty[String])
+          ) {
+            case ((results, exceptions), result) =>
+              result match
+                case Left(exception) => (results, exception :: exceptions)
+                case Right(value)    => (value :: results, exceptions)
+          }
+        exceptions.traverse(Logger[F].error) *> details.pure

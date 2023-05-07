@@ -7,6 +7,7 @@ import application.services.{
 }
 import cats.effect.{ ExitCode, IO }
 import cats.implicits.*
+import cats.effect.implicits.*
 import com.monovore.decline.*
 import domain.project.{ Project, ScanReport }
 import infra.exporters.ExcelExporter
@@ -53,7 +54,7 @@ object cli:
                       source = GitlabSource.make(gitlabApi),
                       prepareForSource = (project: domain.project.Project) =>
                         registry.projects.find(_.id == project.id),
-                      reporter = PythonDependencyReporter.forIo(Pypi(backend)),
+                      reporter = PythonDependencyReporter.make(Pypi(backend)),
                       repository = ScanResultRepository.make(
                         xa,
                         DependencyRepository.make(xa)
