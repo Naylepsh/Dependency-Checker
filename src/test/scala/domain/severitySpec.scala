@@ -13,9 +13,12 @@ class severitySpec extends AnyFlatSpec with should.Matchers:
   import severity.*
 
   "Severity" should "be high when there's a vulnerability" in {
-    determineSeverity(recentDate)(recentDependency.copy(vulnerabilities =
-      List("some-spooky-numbers-here")
-    )) shouldBe Severity.High
+    determineSeverity(
+      recentDate,
+      recentDependency.copy(vulnerabilities =
+        List("some-spooky-numbers-here")
+      )
+    ) shouldBe Severity.High
   }
 
   it should "be at least medium when it's possibly unmaintained" in {
@@ -23,7 +26,7 @@ class severitySpec extends AnyFlatSpec with should.Matchers:
       recentDependency.copy(latestReleaseDate = Some(oldDate))
     val olderVersion        = latestVersionButOld.copy(currentVersion = Some("1.2.0"))
     val unknownVersion      = latestVersionButOld.copy(currentVersion = None)
-    val determineSeverityOf = determineSeverity(recentDate)
+    val determineSeverityOf = determineSeverity.curried(recentDate)
 
     List(
       determineSeverityOf(latestVersionButOld),

@@ -10,12 +10,13 @@ import domain.project.*
 import domain.{ Exporter, Source }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
+import domain.Time
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
 
 object ScanningService:
-  def make[F[_]: Monad: Logger: Parallel, A](
+  def make[F[_]: Monad: Logger: Parallel: Time, A](
       source: Source[F, A],
       prepareForSource: Project => Option[A],
       reporter: DependencyReporter[F],
@@ -43,7 +44,8 @@ object ScanningService:
         _       <- Logger[F].info("Building the report...")
         detailsMap = buildDetailsMap(details)
         reports    = projectsDependencies.map(buildReport(detailsMap))
-        _ <- repository.save(reports, DateTime.now())
+        now <- Time[F].currentDateTime
+        _   <- repository.save(reports, now)
       yield ()
 
   private val latestKey = "LATEST"

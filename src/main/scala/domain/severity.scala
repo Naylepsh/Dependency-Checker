@@ -9,7 +9,7 @@ object severity:
   enum Severity:
     case Unknown, None, Low, Medium, High
 
-  def determineSeverity(now: DateTime)(dependency: DependencyReport): Severity =
+  def determineSeverity(now: DateTime, dependency: DependencyReport): Severity =
     (
       dependency.vulnerabilities.isEmpty,
       determineSeverityOnVersionDiff(dependency),
