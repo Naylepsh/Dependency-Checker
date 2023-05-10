@@ -24,13 +24,17 @@ class severitySpec extends AnyFlatSpec with should.Matchers:
   it should "be at least medium when it's possibly unmaintained" in {
     val latestVersionButOld =
       recentDependency.copy(latestReleaseDate = Some(oldDate))
-    val olderVersion        = latestVersionButOld.copy(currentVersion = Some("1.2.0"))
+    val sameMinorVersion =
+      latestVersionButOld.copy(currentVersion = Some("1.23.0"))
+    val sameMajorVersion =
+      latestVersionButOld.copy(currentVersion = Some("1.2.34"))
     val unknownVersion      = latestVersionButOld.copy(currentVersion = None)
     val determineSeverityOf = determineSeverity.curried(recentDate)
 
     List(
       determineSeverityOf(latestVersionButOld),
-      determineSeverityOf(olderVersion),
+      determineSeverityOf(sameMinorVersion),
+      determineSeverityOf(sameMajorVersion),
       determineSeverityOf(unknownVersion)
     ) should contain noneOf (Severity.Unknown, Severity.None, Severity.Low)
   }
@@ -40,8 +44,8 @@ object severitySpec:
   val recentDate = DateTime.parse("2023-05-03")
   val recentDependency = DependencyReport(
     name = "recent-dependency",
-    currentVersion = Some("1.2.3"),
-    latestVersion = "1.2.3",
+    currentVersion = Some("1.23.4"),
+    latestVersion = "1.23.4",
     latestReleaseDate = Some(DateTime.parse("2023-05-02")),
     vulnerabilities = List.empty
   )
