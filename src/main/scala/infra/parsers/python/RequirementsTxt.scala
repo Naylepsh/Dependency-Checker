@@ -41,11 +41,16 @@ object RequirementsTxt:
                 )
             )
 
-  private def preProcess(line: String): String =
+  private val preProcess = stripFlags andThen normalizeVersionSpecification
+
+  private def stripFlags(line: String): String =
     if line.startsWith("-e") then
       line.replaceFirst("-e", "")
     else
       line
+
+  private def normalizeVersionSpecification(line: String): String =
+    line.replaceFirst(">=", "==^")
 
   private def shouldIgnore(line: String): Boolean =
     line.startsWith("#") || line.startsWith("-") || line.contains("git+")
@@ -54,6 +59,6 @@ object RequirementsTxt:
     "[-._a-zA-Z0-9]+".r
 
   private val dependencyVersionPattern: Regex =
-    "[-*._a-zA-Z0-9]+".r
+    "[-*._^~a-zA-Z0-9]+".r
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
