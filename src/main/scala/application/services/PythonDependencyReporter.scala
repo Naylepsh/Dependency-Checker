@@ -11,14 +11,15 @@ import org.legogroup.woof.{ *, given }
 
 object PythonDependencyReporter:
   def make[F[_]: Logger: Parallel: Monad](
-      packageIndex: PackageIndex[F]
+      packageIndex: PackageIndex[F],
+      parallelGroupSize: Int
   ): DependencyReporter[F] =
     new DependencyReporter[F]:
       def getDetails(
           dependencies: List[Dependency]
       ): F[List[DependencyDetails]] =
         dependencies
-          .grouped(10)
+          .grouped(parallelGroupSize)
           .toList
           .zipWithIndex
           .traverse(getDetailsOfBatch)

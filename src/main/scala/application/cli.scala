@@ -30,6 +30,7 @@ object cli:
     def run(command: ScanRepositories): IO[ExitCode] =
       val registryRepository =
         RegistryRepository.fileBased(command.registryPath)
+      val parallelGroupSize = 10
 
       AppConfig.load[IO].flatMap { config =>
         (
@@ -55,7 +56,11 @@ object cli:
                       source = GitlabSource.make(gitlabApi),
                       prepareForSource = (project: domain.project.Project) =>
                         registry.projects.find(_.id == project.id),
-                      reporter = PythonDependencyReporter.make(Pypi(backend)),
+                      reporter =
+                        PythonDependencyReporter.make(
+                          Pypi(backend),
+                          parallelGroupSize
+                        ),
                       repository = ScanResultRepository.make(
                         xa,
                         DependencyRepository.make(xa)
