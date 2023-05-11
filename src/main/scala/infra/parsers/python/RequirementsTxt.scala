@@ -50,7 +50,9 @@ object RequirementsTxt:
       line
 
   private def normalizeVersionSpecification(line: String): String =
-    line.replaceFirst(">=", "==^")
+    line
+      .replaceFirst(">=", "==^")
+      .replaceFirst("~=", "==~")
 
   private def shouldIgnore(line: String): Boolean =
     line.startsWith("#") || line.startsWith("-") || line.contains("git+")
