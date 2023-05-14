@@ -60,8 +60,12 @@ object ScanResultRepository:
           .transact(xa)
       )
 
-    def getLatestScanTimestamp(): F[Option[DateTime]] =
-      ScanResultRepositorySQL.getLatestScanTimestamp().option.transact(xa)
+    def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
+      if limit > 0 then
+        ScanResultRepositorySQL.getLatestScansTimestamps(limit).to[
+          List
+        ].transact(xa)
+      else List.empty.pure
 
     def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]] =
       for
@@ -160,10 +164,10 @@ object ScanResultRepository:
         projectNames
       )).query[GetAllResult]
 
-    def getLatestScanTimestamp(): Query0[DateTime] =
+    def getLatestScansTimestamps(limit: Int): Query0[DateTime] =
       sql"""
       SELECT timestamp
       FROM dependencyScan
       ORDER BY timestamp DESC
-      LIMIT 1
+      LIMIT $limit
       """.query[DateTime]
