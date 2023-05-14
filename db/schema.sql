@@ -4,7 +4,8 @@ CREATE TABLE dependency (
   timestamp timestamp not null,
   name text not null
 );
-CREATE TABLE dependencyScan (
+CREATE TABLE dependencyScan
+(
   id uuid primary key,
   timestamp timestamp not null,
   currentVersion text,
@@ -12,21 +13,35 @@ CREATE TABLE dependencyScan (
   latestReleaseDate timestamp,
   notes text,
   dependencyId uuid not null,
-  foreign key (dependencyId) references dependency (id)
+
+  CONSTRAINT fk_dependency_id
+    FOREIGN KEY (dependencyId)
+    REFERENCES dependency (id)
+    ON DELETE CASCADE
 );
-CREATE TABLE projectDependency (
+CREATE TABLE projectDependency
+(
   projectName text not null,
   groupName text not null,
   timestamp timestamp not null,
   dependencyId uuid not null,
-  foreign key (dependencyId) references dependency (id)
+
+  CONSTRAINT fk_dependency_id
+    FOREIGN KEY (dependencyId)
+    REFERENCES dependency (id)
+    ON DELETE CASCADE
 );
-CREATE TABLE vulnerability (
+CREATE TABLE vulnerability
+(
   id uuid primary key,
   name text not null,
   dependencyScanId uuid not null,
-  foreign key (dependencyScanId) references dependencyScan (id)
+  CONSTRAINT fk_dependency_id
+    FOREIGN KEY (dependencyScanId)
+    REFERENCES dependencyScan (id)
+    ON DELETE CASCADE
 );
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('20230504143135');
+  ('20230504143135'),
+  ('20230514114834');
