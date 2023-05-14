@@ -10,7 +10,4 @@ object Main extends CommandIOApp(
     ):
 
   def main: Opts[IO[ExitCode]] =
-    (scanOpts orElse exportOpts).map {
-      case command @ ScanRepositories(_)     => ScanRepositories.run(command)
-      case command @ ExportScanReports(_, _) => ExportScanReports.run(command)
-    }
+    (scanOpts orElse listScansOpts orElse exportOpts).map(_.run())

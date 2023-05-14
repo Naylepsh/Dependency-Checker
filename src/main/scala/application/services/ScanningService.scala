@@ -14,6 +14,7 @@ import domain.Time
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
+  def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time, A](
@@ -23,7 +24,7 @@ object ScanningService:
       repository: ScanResultRepository[F]
   ): ScanningService[F] = new ScanningService[F]:
 
-    override def scan(projects: List[Project]): F[Unit] =
+    def scan(projects: List[Project]): F[Unit] =
       for
         _ <- Logger[F].info(
           s"Scanning dependencies of ${projects.length} projects..."
@@ -47,6 +48,9 @@ object ScanningService:
         now <- Time[F].currentDateTime
         _   <- repository.save(reports, now)
       yield ()
+
+    def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
+      repository.getLatestScansTimestamps(limit)
 
   private val latestKey = "LATEST"
 

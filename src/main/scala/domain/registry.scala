@@ -65,6 +65,8 @@ object registry:
       host: String,
       projects: List[Project]
   ) derives Decoder
+  object Registry:
+    val empty: Registry = Registry(host = "N/A", projects = List.empty)
 
   trait RegistryRepository[F[_]]:
     def get(): F[Either[Throwable, Registry]]
