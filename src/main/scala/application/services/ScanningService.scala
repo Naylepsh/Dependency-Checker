@@ -8,7 +8,7 @@ import cats.effect.std.*
 import cats.implicits.*
 import domain.dependency.*
 import domain.project.*
-import domain.{Exporter, Source, Time}
+import domain.{ Exporter, Source, Time }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 
@@ -27,7 +27,7 @@ object ScanningService:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
       Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
         >> repository.delete(timestamps)
-        >> Logger[F].info("Successfully deleted the scan")
+        >> Logger[F].info("Successfully deleted the scan(s)")
 
     def scan(projects: List[Project]): F[Unit] =
       for
