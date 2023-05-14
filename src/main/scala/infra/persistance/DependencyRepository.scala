@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.UUID
 
 import cats.*
+import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.effect.kernel.Sync
 import cats.effect.std.UUIDGen
@@ -14,7 +15,6 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import org.joda.time.DateTime
-import cats.data.NonEmptyList
 
 object DependencyRepository:
   def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])

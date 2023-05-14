@@ -3,11 +3,11 @@ package infra.exporters
 import cats.*
 import cats.effect.kernel.Sync
 import cats.implicits.*
-import domain.{ Exporter, Time }
 import domain.dependency.DependencyReport
 import domain.project.{ ScanReport, ScanResult }
 import domain.semver.*
 import domain.severity.*
+import domain.{ Exporter, Time }
 import org.joda.time.DateTime
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill

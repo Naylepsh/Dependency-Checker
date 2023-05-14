@@ -1,10 +1,10 @@
 package domain
 
+import cats.*
+import cats.data.NonEmptyList
+import cats.implicits.*
 import domain.dependency.*
 import org.joda.time.DateTime
-import cats.*
-import cats.implicits.*
-import cats.data.NonEmptyList
 
 object project:
   case class Project(id: String, name: String)

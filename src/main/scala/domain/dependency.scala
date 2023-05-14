@@ -2,9 +2,9 @@ package domain
 
 import java.util.UUID
 
+import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.*
 import org.joda.time.Days
-import cats.data.NonEmptyList
 
 object dependency:
   case class Dependency(

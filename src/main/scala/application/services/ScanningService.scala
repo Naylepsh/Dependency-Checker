@@ -3,15 +3,14 @@ package application.services
 import scala.annotation.tailrec
 
 import cats.*
+import cats.data.NonEmptyList
 import cats.effect.std.*
 import cats.implicits.*
 import domain.dependency.*
 import domain.project.*
-import domain.{ Exporter, Source }
+import domain.{Exporter, Source, Time}
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
-import domain.Time
-import cats.data.NonEmptyList
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
