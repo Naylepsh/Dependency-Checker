@@ -166,7 +166,7 @@ object ScanResultRepository:
 
     def getLatestScansTimestamps(limit: Int): Query0[DateTime] =
       sql"""
-      SELECT timestamp
+      SELECT DISTINCT timestamp
       FROM dependencyScan
       ORDER BY timestamp DESC
       LIMIT $limit

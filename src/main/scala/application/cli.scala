@@ -30,6 +30,9 @@ import sttp.capabilities.WebSockets
 import doobie.util.transactor.Transactor
 
 object cli:
+  trait Command[F[_]]:
+    def run(): F[ExitCode]
+
   private def resources(config: AppConfig) =
     (
       database.makeTransactorResource[IO](config.databaseConfig).evalTap(
@@ -63,11 +66,10 @@ object cli:
 
   private val parallelGroupSize = 10
 
-  case class ScanRepositories(registryPath: String)
-  object ScanRepositories:
-    def run(command: ScanRepositories): IO[ExitCode] =
+  case class ScanRepositories(registryPath: String) extends Command[IO]:
+    def run(): IO[ExitCode] =
       val registryRepository =
-        RegistryRepository.fileBased(command.registryPath)
+        RegistryRepository.fileBased(registryPath)
 
       AppConfig.load[IO].flatMap { config =>
         resources(config).use {
@@ -94,11 +96,10 @@ object cli:
         }
       }
 
-  case class ListLatestScans(limit: Int)
-  object ListLatestScans:
-    def run(command: ListLatestScans): IO[ExitCode] =
-      val registry = Registry.empty
+  case class ListLatestScans(limit: Int) extends Command[IO]:
+    val registry = Registry.empty
 
+    def run(): IO[ExitCode] =
       AppConfig.load[IO].flatMap { config =>
         resources(config).use {
           case (xa, backend) =>
@@ -111,7 +112,7 @@ object cli:
                 backend,
                 xa
               )
-              timestamps <- service.getLatestScansTimestamps(command.limit)
+              timestamps <- service.getLatestScansTimestamps(limit)
               _ <- Console[IO].println(
                 s"Latest ${timestamps.length} scan timestamps:"
               )
@@ -123,11 +124,11 @@ object cli:
       }
 
   case class ExportScanReports(exportPath: String, registryPath: String)
-  object ExportScanReports:
-    def run(command: ExportScanReports): IO[ExitCode] =
+      extends Command[IO]:
+    def run(): IO[ExitCode] =
       val registryRepository =
-        RegistryRepository.fileBased(command.registryPath)
-      val exporter = ExcelExporter.make[IO](command.exportPath)
+        RegistryRepository.fileBased(registryPath)
+      val exporter = ExcelExporter.make[IO](exportPath)
 
       AppConfig.load[IO].flatMap { config =>
         database.makeTransactorResource[IO](config.databaseConfig).evalTap(
@@ -164,7 +165,7 @@ object cli:
     help = "Scan the projects' dependencies"
   )(registryLocationOpt.map(ScanRepositories.apply))
 
-  val listScans = Opts.subcommand(
+  val listScansOpts = Opts.subcommand(
     name = "list-scans",
     help = "List the timestamp of the latest scans"
   )(limitOpt.map(ListLatestScans.apply))
