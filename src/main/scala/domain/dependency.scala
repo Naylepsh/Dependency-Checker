@@ -2,6 +2,7 @@ package domain
 
 import java.util.UUID
 
+import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.*
 import org.joda.time.Days
 
@@ -67,3 +68,4 @@ object dependency:
         dependencies: List[DependencyReport],
         timestamp: DateTime
     ): F[List[ExistingDependency]]
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit]

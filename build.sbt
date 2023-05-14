@@ -10,7 +10,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "sentinel",
-    version := "0.3.0",
+    version := "0.4.0",
     libraryDependencies ++= Seq(
       Libraries.sttp,
       Libraries.sttpCats,

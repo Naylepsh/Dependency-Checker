@@ -3,18 +3,19 @@ package application.services
 import scala.annotation.tailrec
 
 import cats.*
+import cats.data.NonEmptyList
 import cats.effect.std.*
 import cats.implicits.*
 import domain.dependency.*
 import domain.project.*
-import domain.{ Exporter, Source }
+import domain.{ Exporter, Source, Time }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
-import domain.Time
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
+  def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time, A](
@@ -23,6 +24,10 @@ object ScanningService:
       reporter: DependencyReporter[F],
       repository: ScanResultRepository[F]
   ): ScanningService[F] = new ScanningService[F]:
+    def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
+      Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
+        >> repository.delete(timestamps)
+        >> Logger[F].info("Successfully deleted the scan(s)")
 
     def scan(projects: List[Project]): F[Unit] =
       for

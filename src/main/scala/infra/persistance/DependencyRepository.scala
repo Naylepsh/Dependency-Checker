@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.UUID
 
 import cats.*
+import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.effect.kernel.Sync
 import cats.effect.std.UUIDGen
@@ -20,7 +21,10 @@ object DependencyRepository:
       : DependencyRepository[F] = new:
     import DependencyRepositorySQL.*
 
-    override def save(
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
+      deleteByTimestamps(timestamps).run.transact(xa).void
+
+    def save(
         dependencies: List[DependencyReport],
         timestamp: DateTime
     ): F[List[ExistingDependency]] =
@@ -143,3 +147,9 @@ object DependencyRepository:
           VALUES (?, ?, ?)
         """
       Update[ExistingVulnerability](sql).updateMany(vulnerabilities)
+
+    def deleteByTimestamps(timestamps: NonEmptyList[DateTime]): Update0 =
+      (sql"""
+      DELETE 
+      FROM dependency
+      WHERE """ ++ Fragments.in(fr"timestamp", timestamps)).update

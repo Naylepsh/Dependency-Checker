@@ -6,8 +6,11 @@ import com.monovore.decline.effect.CommandIOApp
 object Main extends CommandIOApp(
       name = "sentinel",
       header = "",
-      version = "0.3.0"
+      version = "0.4.0"
     ):
 
   def main: Opts[IO[ExitCode]] =
-    (scanOpts orElse listScansOpts orElse exportOpts).map(_.run())
+    (scanOpts
+      orElse listScansOpts
+      orElse deleteScansOpts
+      orElse exportOpts).map(_.run())

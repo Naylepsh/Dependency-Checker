@@ -1,7 +1,7 @@
 package domain
 
-import org.joda.time.DateTime
 import cats.effect.kernel.Sync
+import org.joda.time.DateTime
 
 trait Time[F[_]]:
   def currentDateTime: F[DateTime]

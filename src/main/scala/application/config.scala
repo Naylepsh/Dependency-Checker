@@ -1,9 +1,9 @@
 package application
 
-import ciris.*
-import cats.implicits.*
-import infra.resources.database
 import cats.effect.kernel.Async
+import cats.implicits.*
+import ciris.*
+import infra.resources.database
 
 object config:
   case class AppConfig(

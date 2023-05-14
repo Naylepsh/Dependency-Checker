@@ -17,7 +17,7 @@ object database:
 
   def makeTransactorResource[F[_]: Async](
       config: Config
-  ): Resource[F, HikariTransactor[F]] =
+  ): Resource[F, Transactor[F]] =
     for
       ce <- ExecutionContexts.fixedThreadPool[F](32)
       xa <- HikariTransactor.newHikariTransactor[F](
@@ -27,7 +27,11 @@ object database:
         config.password,
         ce
       )
-    yield xa
+      sqliteXa = Transactor.before.modify(
+        xa,
+        sql"PRAGMA foreign_keys=ON".update.run *> _
+      )
+    yield sqliteXa
 
   def checkSQLiteConnection[F[_]: MonadCancelThrow](
       xa: Transactor[F]
