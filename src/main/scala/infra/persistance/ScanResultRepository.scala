@@ -22,6 +22,9 @@ object ScanResultRepository:
   ): ScanResultRepository[F] = new:
     import ScanResultRepositorySQL.*
 
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
+      dependencyRepository.delete(timestamps)
+
     def save(
         results: List[ScanResult],
         timestamp: DateTime

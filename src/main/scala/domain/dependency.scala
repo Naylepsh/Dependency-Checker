@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.github.nscala_time.time.Imports.*
 import org.joda.time.Days
+import cats.data.NonEmptyList
 
 object dependency:
   case class Dependency(
@@ -67,3 +68,4 @@ object dependency:
         dependencies: List[DependencyReport],
         timestamp: DateTime
     ): F[List[ExistingDependency]]
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit]

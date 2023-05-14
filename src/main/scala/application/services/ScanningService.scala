@@ -11,10 +11,12 @@ import domain.{ Exporter, Source }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import domain.Time
+import cats.data.NonEmptyList
 
 trait ScanningService[F[_]]:
   def scan(projects: List[Project]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
+  def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time, A](
@@ -23,6 +25,10 @@ object ScanningService:
       reporter: DependencyReporter[F],
       repository: ScanResultRepository[F]
   ): ScanningService[F] = new ScanningService[F]:
+    def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
+      Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
+        >> repository.delete(timestamps)
+        >> Logger[F].info("Successfully deleted the scan")
 
     def scan(projects: List[Project]): F[Unit] =
       for

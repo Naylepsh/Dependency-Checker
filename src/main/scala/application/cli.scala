@@ -28,6 +28,8 @@ import domain.registry.Registry
 import sttp.client3.SttpBackend
 import sttp.capabilities.WebSockets
 import doobie.util.transactor.Transactor
+import cats.data.NonEmptyList
+import org.joda.time.DateTime
 
 object cli:
   trait Command[F[_]]:
@@ -123,6 +125,28 @@ object cli:
         }
       }
 
+  case class DeleteScans(timestamps: NonEmptyList[DateTime])
+      extends Command[IO]:
+    val registry = Registry.empty
+
+    def run(): IO[ExitCode] =
+      AppConfig.load[IO].flatMap { config =>
+        resources(config).use {
+          case (xa, backend) =>
+            for
+              given Logger[IO] <- logging.forConsoleIo()
+              service = makeScanningService(
+                registry,
+                config.gitlabToken,
+                parallelGroupSize,
+                backend,
+                xa
+              )
+              timestamps <- service.deleteScans(timestamps)
+            yield ExitCode.Success
+        }
+      }
+
   case class ExportScanReports(exportPath: String, registryPath: String)
       extends Command[IO]:
     def run(): IO[ExitCode] =
@@ -159,6 +183,24 @@ object cli:
     Opts.option[String]("registry-path", "Path to JSON registry")
   val limitOpt =
     Opts.option[Int]("scan-limit", "Numbers of latest scans to consider")
+  val scanTimestampsOpts: Opts[NonEmptyList[DateTime]] = Opts.option[String](
+    "timestamps",
+    "Comma-separated list of timestamps"
+  ).mapValidated(input =>
+    input
+      .split(",")
+      .toList
+      .traverse(str =>
+        Either
+          .catchNonFatal(DateTime.parse(str))
+          .leftMap(_.toString).toValidatedNel
+      )
+      .andThen(timestamps =>
+        NonEmptyList
+          .fromList(timestamps)
+          .toValidNel("Empty sequence is not valid")
+      )
+  )
 
   val scanOpts = Opts.subcommand(
     name = "scan",
@@ -169,6 +211,11 @@ object cli:
     name = "list-scans",
     help = "List the timestamp of the latest scans"
   )(limitOpt.map(ListLatestScans.apply))
+
+  val deleteScansOpts = Opts.subcommand(
+    name = "delete-scans",
+    help = "Delete the scans by their timestamps"
+  )(scanTimestampsOpts.map(DeleteScans.apply))
 
   val exportOpts = Opts.subcommand(
     name = "export",

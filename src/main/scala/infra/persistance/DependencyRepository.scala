@@ -14,13 +14,17 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import org.joda.time.DateTime
+import cats.data.NonEmptyList
 
 object DependencyRepository:
   def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
       : DependencyRepository[F] = new:
     import DependencyRepositorySQL.*
 
-    override def save(
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
+      deleteByTimestamps(timestamps).run.transact(xa).void
+
+    def save(
         dependencies: List[DependencyReport],
         timestamp: DateTime
     ): F[List[ExistingDependency]] =
@@ -143,3 +147,9 @@ object DependencyRepository:
           VALUES (?, ?, ?)
         """
       Update[ExistingVulnerability](sql).updateMany(vulnerabilities)
+
+    def deleteByTimestamps(timestamps: NonEmptyList[DateTime]): Update0 =
+      (sql"""
+      DELETE 
+      FROM dependency
+      WHERE """ ++ Fragments.in(fr"timestamp", timestamps)).update

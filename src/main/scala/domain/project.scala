@@ -4,6 +4,7 @@ import domain.dependency.*
 import org.joda.time.DateTime
 import cats.*
 import cats.implicits.*
+import cats.data.NonEmptyList
 
 object project:
   case class Project(id: String, name: String)
@@ -37,3 +38,4 @@ object project:
     def getLatestScanTimestamp(): F[Option[DateTime]] =
       getLatestScansTimestamps(1).map(_.headOption)
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
