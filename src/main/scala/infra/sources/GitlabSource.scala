@@ -5,9 +5,8 @@ import scala.util.{ Failure, Success, Try }
 
 import cats.*
 import cats.implicits.*
-import domain.Source
+import domain.{ Grouped, Source }
 import domain.dependency.*
-import domain.project.Grouped
 import domain.registry.DependencySource.{ TomlSource, TxtSource }
 import domain.registry.*
 import infra.parsers.python.{ PyProjectToml, RequirementsTxt }
