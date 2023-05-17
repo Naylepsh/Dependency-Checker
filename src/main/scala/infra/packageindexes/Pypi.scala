@@ -14,26 +14,6 @@ import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
 
-object Pypi:
-  case class PackageInfo(version: String) derives Decoder
-
-  case class PackageRelease(
-      upload_time: String,
-      requires_python: Option[String]
-  ) derives Decoder
-
-  case class PackageVulnerability(id: String, details: String) derives Decoder
-
-  case class Package(
-      info: PackageInfo,
-      releases: Map[String, List[PackageRelease]],
-      vulnerabilities: List[PackageVulnerability]
-  ) derives Decoder
-
-  case class VulnerabilitiesResponse(
-      vulnerabilities: List[PackageVulnerability]
-  ) derives Decoder
-
 class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     extends PackageIndex[F]:
   import Pypi.*
@@ -111,3 +91,23 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
       ]
   ): String =
     s"url: ${url.toString}, ${exception.getMessage()}"
+
+object Pypi:
+  case class PackageInfo(version: String) derives Decoder
+
+  case class PackageRelease(
+      upload_time: String,
+      requires_python: Option[String]
+  ) derives Decoder
+
+  case class PackageVulnerability(id: String, details: String) derives Decoder
+
+  case class Package(
+      info: PackageInfo,
+      releases: Map[String, List[PackageRelease]],
+      vulnerabilities: List[PackageVulnerability]
+  ) derives Decoder
+
+  case class VulnerabilitiesResponse(
+      vulnerabilities: List[PackageVulnerability]
+  ) derives Decoder
