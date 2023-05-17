@@ -56,17 +56,7 @@ object GitlabSource:
                 contentExtractor(decodedContent).pure
         )
 
-  private def find[A, B, C](
-      xs: List[A],
-      ys: Map[B, C],
-      f: A => B
-  ): Option[(A, C)] =
-    // Find first instance of (x, ys[f(x)]) such that f(x) is in ys
-    xs
-      .find(x => ys.contains(f(x)))
-      .flatMap(x => ys.get(f(x)).map(y => (x, y)))
-
-  private def defaultContentParser(
+  def defaultContentParser(
       source: DependencySource
   ): String => List[Dependency] =
     source match
