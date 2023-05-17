@@ -14,10 +14,8 @@ import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
 
 object ExcelExporter:
-  def make[F[_]: Sync: Time](
-      path: String
-  ): Exporter[F, ScanReport] = new:
-    override def exportData(data: List[ScanReport]): F[Unit] =
+  def make[F[_]: Sync: Time](path: String): Exporter[F, ScanReport] = new:
+    def exportData(data: List[ScanReport]): F[Unit] =
       Time[F].currentDateTime
         .map(now =>
           Workbook().withSheets(legendSheet :: data.map(toSheet(now)))
@@ -25,7 +23,7 @@ object ExcelExporter:
         .flatMap(_.saveAsXlsx(path).pure)
 
     private def toSheet(now: DateTime)(repoDependencies: ScanReport): Sheet =
-      val rows = repoDependencies.dependenciesReports.flatMap { group =>
+      val rows = repoDependencies.dependenciesReports.flatMap(group =>
         val groupName =
           Row(style = headerStyle).withCellValues("Source:", group.groupName)
         val tableDescription = Row(style = headerStyle).withCellValues(columns)
@@ -41,7 +39,7 @@ object ExcelExporter:
               report.notes.getOrElse("")
             )
           )) :+ Row() // Add pseudo "margin-bottom"
-      }
+      )
       Sheet(name = repoDependencies.projectName)
         .withRows(rows)
         .withColumns(columns.map(_ => Column(autoSized = true)))
