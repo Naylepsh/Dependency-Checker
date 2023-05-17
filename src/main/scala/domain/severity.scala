@@ -27,11 +27,11 @@ object severity:
     dependency.currentVersion
       .map(current =>
         calculateVersionDifference(current, dependency.latestVersion)
-          .map(_ match
+          .map {
             case VersionDifference.Major => Severity.High
             case VersionDifference.Minor => Severity.Medium
             case VersionDifference.Patch => Severity.Low
-          )
+          }
           .getOrElse(Severity.None)
       )
       .getOrElse(Severity.Unknown)
