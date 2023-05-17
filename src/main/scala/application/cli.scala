@@ -38,7 +38,7 @@ object cli:
   private def resources(config: AppConfig) =
     (
       database
-        .makeTransactorResource[IO](config.databaseConfig)
+        .makeSqliteTransactorResource[IO](config.databaseConfig)
         .evalTap(database.checkSQLiteConnection),
       HttpClientCatsBackend.resource[IO]()
     ).tupled
@@ -157,7 +157,9 @@ object cli:
       val exporter = ExcelExporter.make[IO](exportPath)
 
       AppConfig.load[IO].flatMap { config =>
-        database.makeTransactorResource[IO](config.databaseConfig).evalTap(
+        database.makeSqliteTransactorResource[IO](
+          config.databaseConfig
+        ).evalTap(
           database.checkSQLiteConnection
         ).use(xa =>
           for

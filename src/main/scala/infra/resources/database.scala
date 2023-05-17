@@ -15,7 +15,7 @@ object database:
       password: String
   )
 
-  def makeTransactorResource[F[_]: Async](
+  def makeSqliteTransactorResource[F[_]: Async](
       config: Config
   ): Resource[F, Transactor[F]] =
     for
