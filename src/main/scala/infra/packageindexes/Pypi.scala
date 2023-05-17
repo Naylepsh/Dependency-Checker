@@ -25,25 +25,24 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     (
       getLatestDependencyInfo(dependency),
       getVulnerabilities(dependency)
-    ).tupled.map((_, _).tupled.map {
-      case (packageData, vulnerabilities) =>
-        val latestVersion = packageData.info.version
-        val latestInfo = packageData.releases
-          .get(latestVersion)
-          .flatMap(_.headOption)
-        val latestReleaseDate = latestInfo.flatMap(pkg =>
-          Either.catchNonFatal(DateTime.parse(pkg.upload_time)).toOption
-        )
+    ).tupled.map((_, _).tupled.map((packageData, vulnerabilities) =>
+      val latestVersion = packageData.info.version
+      val latestInfo = packageData.releases
+        .get(latestVersion)
+        .flatMap(_.headOption)
+      val latestReleaseDate = latestInfo.flatMap(pkg =>
+        Either.catchNonFatal(DateTime.parse(pkg.upload_time)).toOption
+      )
 
-        DependencyDetails(
-          dependency.name,
-          dependency.currentVersion.getOrElse(latestVersion),
-          latestVersion,
-          latestReleaseDate,
-          vulnerabilities.map(_.id),
-          latestInfo.flatMap(_.requires_python)
-        )
-    })
+      DependencyDetails(
+        dependency.name,
+        dependency.currentVersion.getOrElse(latestVersion),
+        latestVersion,
+        latestReleaseDate,
+        vulnerabilities.map(_.id),
+        latestInfo.flatMap(_.requires_python)
+      )
+    ))
 
   private def getLatestDependencyInfo(
       dependency: Dependency
