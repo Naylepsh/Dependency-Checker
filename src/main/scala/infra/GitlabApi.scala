@@ -42,7 +42,7 @@ object GitlabApi:
         "private_token" -> token.getOrElse("")
       )
       val projectFileEndpoint =
-        uri"https://${host}/api/v4/projects/${id}/repository/files/$filePath?$queryParams"
+        uri"https://$host/api/v4/projects/$id/repository/files/$filePath?$queryParams"
 
       basicRequest
         .get(projectFileEndpoint)
