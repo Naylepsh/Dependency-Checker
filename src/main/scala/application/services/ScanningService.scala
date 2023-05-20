@@ -43,6 +43,7 @@ object ScanningService:
           )
         dependencies = projectsDependencies
           .flatMap(_.dependencies.flatMap(_.items))
+          .distinct
         _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
