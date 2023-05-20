@@ -70,28 +70,27 @@ object DependencyRepository:
         report: DependencyReport,
         timestamp: DateTime
     ): F[ResultToSave] =
-      (randomUUID, randomUUID).tupled.flatMap {
-        case (dependencyId, scanId) =>
-          val dependency =
-            ExistingDependency(dependencyId, timestamp, report.name)
-          val scan = ExistingDependencyScan(
-            scanId,
-            timestamp,
-            dependencyId,
-            report.currentVersion,
-            report.latestVersion,
-            report.latestReleaseDate,
-            report.notes
-          )
-          report.vulnerabilities
-            .traverse(vulnerability =>
-              randomUUID.map(id =>
-                ExistingVulnerability(id, scanId, vulnerability)
-              )
-            ).map(vulnerabilities =>
-              ResultToSave(dependency, scan, vulnerabilities)
+      (randomUUID, randomUUID).tupled.flatMap((dependencyId, scanId) =>
+        val dependency =
+          ExistingDependency(dependencyId, timestamp, report.name)
+        val scan = ExistingDependencyScan(
+          scanId,
+          timestamp,
+          dependencyId,
+          report.currentVersion,
+          report.latestVersion,
+          report.latestReleaseDate,
+          report.notes
+        )
+        report.vulnerabilities
+          .traverse(vulnerability =>
+            randomUUID.map(id =>
+              ExistingVulnerability(id, scanId, vulnerability)
             )
-      }
+          ).map(vulnerabilities =>
+            ResultToSave(dependency, scan, vulnerabilities)
+          )
+      )
 
   private object DependencyRepositorySQL:
     import sqlmappings.given

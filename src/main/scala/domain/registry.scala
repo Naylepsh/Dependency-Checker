@@ -19,7 +19,7 @@ object registry:
         extends DependencySource derives Decoder:
       val groupName: String = group.fold(path)(g => s"$path ($g)")
 
-    given Decoder[DependencySource] = new Decoder[DependencySource]:
+    given Decoder[DependencySource] with
       final def apply(c: HCursor): Decoder.Result[DependencySource] =
         // poor man's ADT discriminator impl
         c.downField("type").as[String].flatMap {

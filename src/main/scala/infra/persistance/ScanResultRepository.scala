@@ -66,9 +66,9 @@ object ScanResultRepository:
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       if limit > 0 then
-        ScanResultRepositorySQL.getLatestScansTimestamps(limit).to[
-          List
-        ].transact(xa)
+        ScanResultRepositorySQL.getLatestScansTimestamps(limit)
+          .to[List]
+          .transact(xa)
       else List.empty.pure
 
     def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]] =
@@ -118,30 +118,31 @@ object ScanResultRepository:
     )
     object GetAllResult:
       def toDomain(results: List[GetAllResult]): List[ScanReport] =
-        results.groupBy(_.projectName).map {
-          case (projectName, projectResults) =>
-            val reports = projectResults.groupBy(_.groupName).map {
-              case (groupName, groupResults) =>
-                val dependencies = groupResults.groupBy(_.dependencyId).map {
-                  case (dependencyId, results) =>
-                    val vulnerabilities = results
-                      .filter(_.dependencyVulnerability.isDefined)
-                      .map(_.dependencyVulnerability.get)
-                    // Safe, because groupBy guaranteed results to be non-empty
-                    val result = results.head
-                    DependencyReport(
-                      result.dependencyName,
-                      result.dependencyCurrentVersion,
-                      result.dependencyLatestVersion,
-                      result.dependencyLatestReleaseDate,
-                      vulnerabilities,
-                      result.dependencyNotes
-                    )
-                }.toList
-                Grouped(groupName, dependencies)
-            }
-            ScanReport(projectName, reports.toList)
-        }.toList
+        results.groupBy(_.projectName).map((projectName, projectResults) =>
+          val reports = projectResults
+            .groupBy(_.groupName)
+            .map((groupName, groupResults) =>
+              val dependencies = groupResults
+                .groupBy(_.dependencyId)
+                .map((dependencyId, results) =>
+                  val vulnerabilities = results
+                    .filter(_.dependencyVulnerability.isDefined)
+                    .map(_.dependencyVulnerability.get)
+                  // Safe, because groupBy guaranteed results to be non-empty
+                  val result = results.head
+                  DependencyReport(
+                    result.dependencyName,
+                    result.dependencyCurrentVersion,
+                    result.dependencyLatestVersion,
+                    result.dependencyLatestReleaseDate,
+                    vulnerabilities,
+                    result.dependencyNotes
+                  )
+                ).toList
+              Grouped(groupName, dependencies)
+            )
+          ScanReport(projectName, reports.toList)
+        ).toList
 
     def getAll(
         projectNames: NonEmptyList[String],

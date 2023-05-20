@@ -52,10 +52,9 @@ object ExcelExporter:
           ("Low", Severity.Low),
           ("Medium", Severity.Medium),
           ("High", Severity.High)
-        ).map {
-          case (label, severity) =>
-            Row().withCells(Cell(label, style = matchSeverityToStyle(severity)))
-        }
+        ).map((label, severity) =>
+          Row().withCells(Cell(label, style = matchSeverityToStyle(severity)))
+        )
       )
       .withColumns(Column(autoSized = true))
 
