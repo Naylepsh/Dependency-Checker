@@ -22,8 +22,8 @@ object ScanReportExcelExporter:
         )
         .flatMap(_.saveAsXlsx(path).pure)
 
-    private def toSheet(now: DateTime)(repoDependencies: ScanReport): Sheet =
-      val rows = repoDependencies.dependenciesReports.flatMap(group =>
+    private def toSheet(now: DateTime)(scan: ScanReport): Sheet =
+      val rows = scan.dependenciesReports.flatMap(group =>
         val groupName =
           Row(style = headerStyle).withCellValues("Source:", group.groupName)
         val tableDescription = Row(style = headerStyle).withCellValues(columns)
@@ -40,7 +40,7 @@ object ScanReportExcelExporter:
             )
           )) :+ Row() // Add pseudo "margin-bottom"
       )
-      Sheet(name = repoDependencies.projectName)
+      Sheet(name = scan.projectName)
         .withRows(rows)
         .withColumns(columns.map(_ => Column(autoSized = true)))
 
