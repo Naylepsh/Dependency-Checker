@@ -1,11 +1,11 @@
 package application.services
 
 import cats.Monad
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{ Invalid, Valid }
 import cats.implicits.*
 import domain.Exporter
 import domain.delta.ScanDelta
-import domain.project.{Project, ScanResultRepository}
+import domain.project.{ Project, ScanResultRepository }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 
@@ -49,6 +49,9 @@ object ScanDeltaExportService:
 
         errors.traverse(Logger[F].error)
           *> exporter.exportData(orderScans(projects, validScans))
+          *> Logger[F].info(
+            s"Successfully exported deltas of ${validScans.length} scans"
+          )
       )
 
   private def orderScans(
