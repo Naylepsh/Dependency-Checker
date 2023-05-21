@@ -1,15 +1,13 @@
 package application.services
 
-import domain.project.Project
+import cats.Monad
+import cats.data.Validated.{Invalid, Valid}
+import cats.implicits.*
 import domain.Exporter
 import domain.delta.ScanDelta
-import domain.project.ScanResultRepository
+import domain.project.{Project, ScanResultRepository}
 import org.joda.time.DateTime
-import cats.implicits.*
-import cats.Monad
 import org.legogroup.woof.{ *, given }
-import cats.data.Validated.Valid
-import cats.data.Validated.Invalid
 
 trait ScanDeltaExportService[F[_]]:
   def exportDeltas(

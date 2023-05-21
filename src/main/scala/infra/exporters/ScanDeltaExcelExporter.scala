@@ -1,14 +1,12 @@
 package infra.exporters
 
-import cats.implicits.*
 import cats.effect.kernel.Sync
-import domain.Exporter
-import domain.delta.ScanDelta
+import cats.implicits.*
+import domain.delta.{DependencyDelta, ScanDelta}
+import domain.{Exporter, Grouped}
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
-import domain.delta.DependencyDelta
-import domain.Grouped
 
 object ScanDeltaExcelExporter:
   def make[F[_]: Sync](path: String): Exporter[F, ScanDelta] = new:

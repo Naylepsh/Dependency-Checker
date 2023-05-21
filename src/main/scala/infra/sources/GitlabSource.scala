@@ -5,10 +5,10 @@ import scala.util.{ Failure, Success, Try }
 
 import cats.*
 import cats.implicits.*
-import domain.{ Grouped, Source }
 import domain.dependency.*
 import domain.registry.DependencySource.{ TomlSource, TxtSource }
 import domain.registry.*
+import domain.{ Grouped, Source }
 import infra.parsers.python.{ PyProjectToml, RequirementsTxt }
 import infra.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }

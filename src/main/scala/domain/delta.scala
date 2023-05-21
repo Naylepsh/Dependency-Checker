@@ -1,8 +1,8 @@
 package domain
 
-import domain.project.ScanReport
 import cats.data.ValidatedNel
 import cats.implicits.*
+import domain.project.ScanReport
 
 object delta:
   import domain.dependency.DependencyReport

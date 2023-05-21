@@ -1,7 +1,7 @@
 package domain
 
-import org.scalatest.*
 import cats.implicits.*
+import org.scalatest.*
 
 import flatspec.*
 import matchers.*

@@ -31,7 +31,6 @@ object project:
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
 
-
   case class ScanReport(
       projectName: String,
       dependenciesReports: List[Grouped[DependencyReport]]
