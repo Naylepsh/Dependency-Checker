@@ -18,10 +18,6 @@ object project:
       project: Project,
       dependenciesReports: List[Grouped[DependencyReport]]
   )
-  case class ScanReport(
-      projectName: String,
-      dependenciesReports: List[Grouped[DependencyReport]]
-  )
 
   trait ScanResultRepository[F[_]: Functor]:
     def save(results: List[ScanResult], timestamp: DateTime): F[Unit]
@@ -34,3 +30,9 @@ object project:
       getLatestScansTimestamps(1).map(_.headOption)
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
+
+
+  case class ScanReport(
+      projectName: String,
+      dependenciesReports: List[Grouped[DependencyReport]]
+  )

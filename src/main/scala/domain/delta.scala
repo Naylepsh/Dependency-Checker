@@ -7,23 +7,62 @@ import cats.implicits.*
 object delta:
   import domain.dependency.DependencyReport
 
-  case class DependencyShort(
-      currentVersion: Option[String],
-      latestVersion: String,
-      vulnerabilityCount: Int
-  )
-  object DependencyShort:
-    def apply(report: DependencyReport): DependencyShort =
-      DependencyShort(
-        report.currentVersion,
-        report.latestVersion,
-        report.vulnerabilities.length
-      )
+  sealed trait PropertyDelta
+  object PropertyDelta:
+    case class CurrentVersion(left: Option[String], right: Option[String])
+        extends PropertyDelta
+    case class LatestVersion(left: String, right: String) extends PropertyDelta
+    case class VulnerabilityCount(left: Int, right: Int)  extends PropertyDelta
+
+  case class TotalDelta(
+      currentVersion: Option[PropertyDelta.CurrentVersion],
+      latestVersion: Option[PropertyDelta.LatestVersion],
+      vulnerabilityCount: Option[PropertyDelta.VulnerabilityCount]
+  ):
+    val isEmpty =
+      currentVersion.isEmpty
+        || latestVersion.isEmpty
+        || vulnerabilityCount.isEmpty
+
+  object TotalDelta:
+    private[delta] def apply(
+        left: DependencyReport,
+        right: DependencyReport
+    ): TotalDelta =
+      val currentVersion = (left.currentVersion, right.currentVersion) match
+        case (Some(x), Some(y)) if x != y =>
+          PropertyDelta.CurrentVersion(
+            left.currentVersion,
+            right.currentVersion
+          ).some
+        case (None, Some(_)) | (Some(_), None) =>
+          PropertyDelta.CurrentVersion(
+            left.currentVersion,
+            right.currentVersion
+          ).some
+        case _ => None
+
+      val latestVersion = if left.latestVersion != right.latestVersion then
+        PropertyDelta.LatestVersion(
+          left.latestVersion,
+          right.latestVersion
+        ).some
+      else None
+
+      val leftVulnCount  = left.vulnerabilities.length
+      val rightVulnCount = right.vulnerabilities.length
+      val vulnerabilityCount = if leftVulnCount != rightVulnCount then
+        PropertyDelta.VulnerabilityCount(
+          leftVulnCount,
+          rightVulnCount
+        ).some
+      else None
+
+      TotalDelta(currentVersion, latestVersion, vulnerabilityCount)
 
   case class DependencyDelta(
       name: String,
-      left: DependencyShort,
-      right: DependencyShort
+      delta: TotalDelta
   )
   object DependencyDelta:
     def apply(
@@ -32,11 +71,7 @@ object delta:
     ): Either[String, DependencyDelta] =
       Either.cond(
         left.name == right.name,
-        DependencyDelta(
-          left.name,
-          DependencyShort(left),
-          DependencyShort(right)
-        ),
+        DependencyDelta(left.name, TotalDelta(left, right)),
         s"Left (${left.name}) and Right (${right.name}) are different dependencies"
       )
 

@@ -13,7 +13,7 @@ import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
 
-object ExcelExporter:
+object ScanReportExcelExporter:
   def make[F[_]: Sync: Time](path: String): Exporter[F, ScanReport] = new:
     def exportData(data: List[ScanReport]): F[Unit] =
       Time[F].currentDateTime

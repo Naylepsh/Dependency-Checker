@@ -15,7 +15,7 @@ import com.monovore.decline.*
 import domain.project.{ Project, ScanReport }
 import domain.registry.Registry
 import doobie.util.transactor.Transactor
-import infra.exporters.ExcelExporter
+import infra.exporters.ScanReportExcelExporter
 import infra.packageindexes.Pypi
 import infra.persistance.{
   DependencyRepository,
@@ -154,7 +154,7 @@ object cli:
     def run(): IO[ExitCode] =
       val registryRepository =
         RegistryRepository.fileBased(registryPath)
-      val exporter = ExcelExporter.make[IO](exportPath)
+      val exporter = ScanReportExcelExporter.make[IO](exportPath)
 
       AppConfig.load[IO].flatMap { config =>
         database.makeSqliteTransactorResource[IO](
