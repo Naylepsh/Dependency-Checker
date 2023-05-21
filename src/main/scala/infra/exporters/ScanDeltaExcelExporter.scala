@@ -2,8 +2,8 @@ package infra.exporters
 
 import cats.effect.kernel.Sync
 import cats.implicits.*
-import domain.delta.{DependencyDelta, ScanDelta}
-import domain.{Exporter, Grouped}
+import domain.delta.{ DependencyDelta, ScanDelta }
+import domain.{ Exporter, Grouped }
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
@@ -35,7 +35,7 @@ object ScanDeltaExcelExporter:
         Row(style = headerStyle).withCellValues(
           "Source:",
           group.groupName
-        ) :: groupRows
+        ) :: tableDescription :: groupRows
 
     private def makeDeltaRow(delta: DependencyDelta): Row =
       val (currentVersionLeft, currentVersionRight) =
@@ -65,6 +65,8 @@ object ScanDeltaExcelExporter:
         Cell(vulnerabilityCountRight)
       )
 
+  private val tableDescription =
+    Row(style = headerStyle).withCellValues(columns)
   private val columns = List(
     "Name",
     "Current Version (left)",
