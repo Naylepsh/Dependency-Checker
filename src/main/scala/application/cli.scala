@@ -2,7 +2,7 @@ package application
 
 import application.config.AppConfig
 import application.services.{
-  ExportingService,
+  ScanReportExportService,
   PythonDependencyReporter,
   ScanningService
 }
@@ -171,7 +171,7 @@ object cli:
                   xa,
                   DependencyRepository.make(xa)
                 )
-                val service = ExportingService.make(exporter, repository)
+                val service = ScanReportExportService.make(exporter, repository)
 
                 service.exportScanResults(registry.projects.map(project =>
                   Project(project.id, project.name)

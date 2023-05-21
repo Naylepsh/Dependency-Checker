@@ -6,14 +6,14 @@ import domain.Exporter
 import domain.project.{ Project, ScanReport, ScanResultRepository }
 import org.legogroup.woof.{ *, given }
 
-trait ExportingService[F[_]]:
+trait ScanReportExportService[F[_]]:
   def exportScanResults(projects: List[Project]): F[Unit]
 
-object ExportingService:
+object ScanReportExportService:
   def make[F[_]: Monad: Logger](
       exporter: Exporter[F, ScanReport],
       repository: ScanResultRepository[F]
-  ): ExportingService[F] = new ExportingService[F]:
+  ): ScanReportExportService[F] = new ScanReportExportService[F]:
 
     def exportScanResults(projects: List[Project]): F[Unit] =
       for
