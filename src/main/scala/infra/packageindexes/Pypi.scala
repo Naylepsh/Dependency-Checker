@@ -14,26 +14,6 @@ import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
 
-object Pypi:
-  case class PackageInfo(version: String) derives Decoder
-
-  case class PackageRelease(
-      upload_time: String,
-      requires_python: Option[String]
-  ) derives Decoder
-
-  case class PackageVulnerability(id: String, details: String) derives Decoder
-
-  case class Package(
-      info: PackageInfo,
-      releases: Map[String, List[PackageRelease]],
-      vulnerabilities: List[PackageVulnerability]
-  ) derives Decoder
-
-  case class VulnerabilitiesResponse(
-      vulnerabilities: List[PackageVulnerability]
-  ) derives Decoder
-
 class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     extends PackageIndex[F]:
   import Pypi.*
@@ -45,25 +25,24 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     (
       getLatestDependencyInfo(dependency),
       getVulnerabilities(dependency)
-    ).tupled.map((_, _).tupled.map {
-      case (packageData, vulnerabilities) =>
-        val latestVersion = packageData.info.version
-        val latestInfo = packageData.releases
-          .get(latestVersion)
-          .flatMap(_.headOption)
-        val latestReleaseDate = latestInfo.flatMap(pkg =>
-          Either.catchNonFatal(DateTime.parse(pkg.upload_time)).toOption
-        )
+    ).tupled.map((_, _).tupled.map((packageData, vulnerabilities) =>
+      val latestVersion = packageData.info.version
+      val latestInfo = packageData.releases
+        .get(latestVersion)
+        .flatMap(_.headOption)
+      val latestReleaseDate = latestInfo.flatMap(pkg =>
+        Either.catchNonFatal(DateTime.parse(pkg.upload_time)).toOption
+      )
 
-        DependencyDetails(
-          dependency.name,
-          dependency.currentVersion.getOrElse(latestVersion),
-          latestVersion,
-          latestReleaseDate,
-          vulnerabilities.map(_.id),
-          latestInfo.flatMap(_.requires_python)
-        )
-    })
+      DependencyDetails(
+        dependency.name,
+        dependency.currentVersion.getOrElse(latestVersion),
+        latestVersion,
+        latestReleaseDate,
+        vulnerabilities.map(_.id),
+        latestInfo.flatMap(_.requires_python)
+      )
+    ))
 
   private def getLatestDependencyInfo(
       dependency: Dependency
@@ -111,3 +90,23 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
       ]
   ): String =
     s"url: ${url.toString}, ${exception.getMessage()}"
+
+object Pypi:
+  case class PackageInfo(version: String) derives Decoder
+
+  case class PackageRelease(
+      upload_time: String,
+      requires_python: Option[String]
+  ) derives Decoder
+
+  case class PackageVulnerability(id: String, details: String) derives Decoder
+
+  case class Package(
+      info: PackageInfo,
+      releases: Map[String, List[PackageRelease]],
+      vulnerabilities: List[PackageVulnerability]
+  ) derives Decoder
+
+  case class VulnerabilitiesResponse(
+      vulnerabilities: List[PackageVulnerability]
+  ) derives Decoder

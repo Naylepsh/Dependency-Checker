@@ -13,19 +13,17 @@ import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*
 
-object ExcelExporter:
-  def make[F[_]: Sync: Time](
-      path: String
-  ): Exporter[F, ScanReport] = new:
-    override def exportData(data: List[ScanReport]): F[Unit] =
+object ScanReportExcelExporter:
+  def make[F[_]: Sync: Time](path: String): Exporter[F, ScanReport] = new:
+    def exportData(data: List[ScanReport]): F[Unit] =
       Time[F].currentDateTime
         .map(now =>
           Workbook().withSheets(legendSheet :: data.map(toSheet(now)))
         )
         .flatMap(_.saveAsXlsx(path).pure)
 
-    private def toSheet(now: DateTime)(repoDependencies: ScanReport): Sheet =
-      val rows = repoDependencies.dependenciesReports.flatMap { group =>
+    private def toSheet(now: DateTime)(scan: ScanReport): Sheet =
+      val rows = scan.dependenciesReports.flatMap(group =>
         val groupName =
           Row(style = headerStyle).withCellValues("Source:", group.groupName)
         val tableDescription = Row(style = headerStyle).withCellValues(columns)
@@ -41,8 +39,8 @@ object ExcelExporter:
               report.notes.getOrElse("")
             )
           )) :+ Row() // Add pseudo "margin-bottom"
-      }
-      Sheet(name = repoDependencies.projectName)
+      )
+      Sheet(name = scan.projectName)
         .withRows(rows)
         .withColumns(columns.map(_ => Column(autoSized = true)))
 
@@ -54,10 +52,9 @@ object ExcelExporter:
           ("Low", Severity.Low),
           ("Medium", Severity.Medium),
           ("High", Severity.High)
-        ).map {
-          case (label, severity) =>
-            Row().withCells(Cell(label, style = matchSeverityToStyle(severity)))
-        }
+        ).map((label, severity) =>
+          Row().withCells(Cell(label, style = matchSeverityToStyle(severity)))
+        )
       )
       .withColumns(Column(autoSized = true))
 

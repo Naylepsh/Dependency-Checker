@@ -6,9 +6,9 @@ import cats.*
 import cats.data.NonEmptyList
 import cats.effect.std.*
 import cats.implicits.*
+import domain._
 import domain.dependency.*
 import domain.project.*
-import domain.{ Exporter, Source, Time }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 
@@ -43,6 +43,7 @@ object ScanningService:
           )
         dependencies = projectsDependencies
           .flatMap(_.dependencies.flatMap(_.items))
+          .distinct
         _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )

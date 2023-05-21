@@ -9,11 +9,6 @@ import org.joda.time.DateTime
 object project:
   case class Project(id: String, name: String)
 
-  case class Grouped[A](
-      groupName: String,
-      items: List[A]
-  )
-
   case class ProjectDependencies(
       project: Project,
       dependencies: List[Grouped[Dependency]]
@@ -21,10 +16,6 @@ object project:
 
   case class ScanResult(
       project: Project,
-      dependenciesReports: List[Grouped[DependencyReport]]
-  )
-  case class ScanReport(
-      projectName: String,
       dependenciesReports: List[Grouped[DependencyReport]]
   )
 
@@ -39,3 +30,8 @@ object project:
       getLatestScansTimestamps(1).map(_.headOption)
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
+
+  case class ScanReport(
+      projectName: String,
+      dependenciesReports: List[Grouped[DependencyReport]]
+  )

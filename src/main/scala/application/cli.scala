@@ -1,12 +1,8 @@
 package application
 
 import application.config.AppConfig
-import application.services.{
-  ExportingService,
-  PythonDependencyReporter,
-  ScanningService
-}
-import cats.data.NonEmptyList
+import application.services._
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.effect.implicits.*
 import cats.effect.std.Console
 import cats.effect.{ ExitCode, IO }
@@ -15,7 +11,7 @@ import com.monovore.decline.*
 import domain.project.{ Project, ScanReport }
 import domain.registry.Registry
 import doobie.util.transactor.Transactor
-import infra.exporters.ExcelExporter
+import infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
 import infra.packageindexes.Pypi
 import infra.persistance.{
   DependencyRepository,
@@ -38,7 +34,7 @@ object cli:
   private def resources(config: AppConfig) =
     (
       database
-        .makeTransactorResource[IO](config.databaseConfig)
+        .makeSqliteTransactorResource[IO](config.databaseConfig)
         .evalTap(database.checkSQLiteConnection),
       HttpClientCatsBackend.resource[IO]()
     ).tupled
@@ -97,7 +93,7 @@ object cli:
           RegistryRepository.fileBased(registryPath)
 
         registryRepository.get().flatMap {
-          case Left(_) => IO.unit
+          case Left(_) => ExitCode.Error.pure
           case Right(registry) =>
             val service = makeScanningService(
               context,
@@ -108,8 +104,8 @@ object cli:
             service.scan(registry.projects.collect {
               case domain.registry.Project(id, name, _, true, _) =>
                 domain.project.Project(id, name)
-            })
-        }.as(ExitCode.Success)
+            }).as(ExitCode.Success)
+        }
       }
 
   case class ListLatestScans(limit: Int) extends Command[IO]:
@@ -149,15 +145,45 @@ object cli:
         service.deleteScans(timestamps).as(ExitCode.Success)
       }
 
+  case class ExportScanDelta(
+      exportPath: String,
+      registryPath: String,
+      leftTimestamp: DateTime,
+      rightTimestamp: DateTime
+  ) extends Command[IO]:
+    def run(): IO[ExitCode] =
+      withContext { context =>
+        RegistryRepository.fileBased(registryPath).get().flatMap {
+          case Left(_) => ExitCode.Error.pure
+          case Right(registry) =>
+            val repository = ScanResultRepository.make(
+              context.xa,
+              DependencyRepository.make(context.xa)
+            )
+            val exporter = ScanDeltaExcelExporter.make[IO](exportPath)
+            val service  = ScanDeltaExportService.make(exporter, repository)
+
+            service.exportDeltas(
+              registry.projects.map(project =>
+                Project(project.id, project.name)
+              ),
+              leftTimestamp,
+              rightTimestamp
+            ).as(ExitCode.Success)
+        }
+      }
+
   case class ExportScanReports(exportPath: String, registryPath: String)
       extends Command[IO]:
     def run(): IO[ExitCode] =
       val registryRepository =
         RegistryRepository.fileBased(registryPath)
-      val exporter = ExcelExporter.make[IO](exportPath)
+      val exporter = ScanReportExcelExporter.make[IO](exportPath)
 
       AppConfig.load[IO].flatMap { config =>
-        database.makeTransactorResource[IO](config.databaseConfig).evalTap(
+        database.makeSqliteTransactorResource[IO](
+          config.databaseConfig
+        ).evalTap(
           database.checkSQLiteConnection
         ).use(xa =>
           for
@@ -169,7 +195,7 @@ object cli:
                   xa,
                   DependencyRepository.make(xa)
                 )
-                val service = ExportingService.make(exporter, repository)
+                val service = ScanReportExportService.make(exporter, repository)
 
                 service.exportScanResults(registry.projects.map(project =>
                   Project(project.id, project.name)
@@ -178,6 +204,11 @@ object cli:
           yield ExitCode.Success
         )
       }
+
+  private def validateTimestamp(str: String): ValidatedNel[String, DateTime] =
+    Either
+      .catchNonFatal(DateTime.parse(str))
+      .leftMap(_.toString).toValidatedNel
 
   val exportLocationOpt =
     Opts.option[String]("export-path", "Path to save the export to")
@@ -192,17 +223,15 @@ object cli:
     input
       .split(",")
       .toList
-      .traverse(str =>
-        Either
-          .catchNonFatal(DateTime.parse(str))
-          .leftMap(_.toString).toValidatedNel
-      )
+      .traverse(validateTimestamp)
       .andThen(timestamps =>
         NonEmptyList
           .fromList(timestamps)
           .toValidNel("Empty sequence is not valid")
       )
   )
+  def timestampOpt(paramName: String): Opts[DateTime] =
+    Opts.option[String](paramName, "Timestamp").mapValidated(validateTimestamp)
 
   val scanOpts = Opts.subcommand(
     name = "scan",
@@ -219,7 +248,17 @@ object cli:
     help = "Delete the scans by their timestamps"
   )(scanTimestampsOpts.map(DeleteScans.apply))
 
-  val exportOpts = Opts.subcommand(
-    name = "export",
+  val exportScanOpts = Opts.subcommand(
+    name = "export-scan",
     help = "Export the results of the latest scan to an excel file"
   )((exportLocationOpt, registryLocationOpt).mapN(ExportScanReports.apply))
+
+  val exportDeltaOpts = Opts.subcommand(
+    name = "export-delta",
+    help = "Export the difference between two scans to an excel file"
+  )((
+    exportLocationOpt,
+    registryLocationOpt,
+    timestampOpt("left-timestamp"),
+    timestampOpt("right-timestamp")
+  ).mapN(ExportScanDelta.apply))

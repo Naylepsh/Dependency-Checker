@@ -13,4 +13,5 @@ object Main extends CommandIOApp(
     (scanOpts
       orElse listScansOpts
       orElse deleteScansOpts
-      orElse exportOpts).map(_.run())
+      orElse exportScanOpts
+      orElse exportDeltaOpts).map(_.run())

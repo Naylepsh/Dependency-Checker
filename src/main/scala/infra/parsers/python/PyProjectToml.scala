@@ -23,20 +23,19 @@ object PyProjectToml:
     parseDependencies(toml, groupName)
 
   private def extract(toml: Toml): Try[List[Dependency]] =
-    toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency])) {
-      case (acc, entry) =>
-        val key = entry.getKey
-        if key.endsWith("dependencies") then
-          parseDependencies(toml, key).flatMap(dependencies =>
-            acc.map(dependencies ::: _)
-          )
-        else
-          acc.map(
-            _ ::: Try(entry.getValue.asInstanceOf[Toml])
-              .flatMap(extract)
-              .getOrElse(List.empty)
-          )
-    }
+    toml.entrySet.asScala.foldLeft(Try(List.empty[Dependency]))((acc, entry) =>
+      val key = entry.getKey
+      if key.endsWith("dependencies") then
+        parseDependencies(toml, key).flatMap(dependencies =>
+          acc.map(dependencies ::: _)
+        )
+      else
+        acc.map(
+          _ ::: Try(entry.getValue.asInstanceOf[Toml])
+            .flatMap(extract)
+            .getOrElse(List.empty)
+        )
+    )
 
   private def parseDependencies(
       toml: Toml,
@@ -46,13 +45,9 @@ object PyProjectToml:
       .getTable(key)
       .toMap
       .asScala
-      .map {
-        case (name, version) =>
-          Dependency(
-            name = name,
-            currentVersion = Option(version).map(v => normalize(v.toString))
-          )
-      }
+      .map((name, version) =>
+        Dependency(name, Option(version).map(v => normalize(v.toString)))
+      )
       .toList
   )
 

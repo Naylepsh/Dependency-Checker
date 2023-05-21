@@ -31,26 +31,25 @@ object GitlabApi:
       backend: SttpBackend[F, WebSockets],
       host: String,
       token: Option[String]
-  ): GitlabApi[F] =
-    new GitlabApi[F]:
-      def getFile(
-          id: String,
-          branch: String,
-          filePath: String
-      ): F[Either[String, RepositoryFile]] =
-        val queryParams = Map(
-          "ref"           -> branch,
-          "private_token" -> token.getOrElse("")
-        )
-        val projectFileEndpoint =
-          uri"https://${host}/api/v4/projects/${id}/repository/files/$filePath?$queryParams"
+  ): GitlabApi[F] = new:
+    def getFile(
+        id: String,
+        branch: String,
+        filePath: String
+    ): F[Either[String, RepositoryFile]] =
+      val queryParams = Map(
+        "ref"           -> branch,
+        "private_token" -> token.getOrElse("")
+      )
+      val projectFileEndpoint =
+        uri"https://$host/api/v4/projects/$id/repository/files/$filePath?$queryParams"
 
-        basicRequest
-          .get(projectFileEndpoint)
-          .readTimeout(10.seconds)
-          .response(asJson[RepositoryFile])
-          .send(backend)
-          .map(_.body.leftMap(buildErrorMessage(projectFileEndpoint)))
+      basicRequest
+        .get(projectFileEndpoint)
+        .readTimeout(10.seconds)
+        .response(asJson[RepositoryFile])
+        .send(backend)
+        .map(_.body.leftMap(buildErrorMessage(projectFileEndpoint)))
 
   def decodeContent(encodedContent: String): Either[Throwable, String] =
     Either.catchNonFatal(

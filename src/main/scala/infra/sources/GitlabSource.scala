@@ -5,11 +5,10 @@ import scala.util.{ Failure, Success, Try }
 
 import cats.*
 import cats.implicits.*
-import domain.Source
 import domain.dependency.*
-import domain.project.Grouped
 import domain.registry.DependencySource.{ TomlSource, TxtSource }
 import domain.registry.*
+import domain.{ Grouped, Source }
 import infra.parsers.python.{ PyProjectToml, RequirementsTxt }
 import infra.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }
@@ -25,10 +24,8 @@ object GitlabSource:
     def extract(project: Project): F[List[Grouped[Dependency]]] =
       project.sources
         .traverse(source =>
-          extractFromFile(project, source.path, contentParser(source)).map(
-            dependencies =>
-              Grouped(source.groupName, dependencies)
-          )
+          extractFromFile(project, source.path, contentParser(source))
+            .map(dependencies => Grouped(source.groupName, dependencies))
         )
 
     private def extractFromFile(
@@ -38,36 +35,24 @@ object GitlabSource:
     ): F[List[Dependency]] =
       api
         .getFile(project.id, project.branch, filePath)
-        .flatMap(_ match
-          case Left(reason) => {
+        .flatMap {
+          case Left(reason) =>
             Logger[F].error(
               s"Could not get the file contents of ${project.name} and $filePath due to $reason"
             ) *> List.empty.pure
-          }
 
           case Right(RepositoryFile(content)) =>
             GitlabApi.decodeContent(content) match
-              case Left(_) => {
+              case Left(_) =>
                 Logger[F].error(
                   s"Could not decode content of ${project.name}'s $filePath"
                 ) *> List.empty.pure
-              }
 
               case Right(decodedContent) =>
                 contentExtractor(decodedContent).pure
-        )
+        }
 
-  private def find[A, B, C](
-      xs: List[A],
-      ys: Map[B, C],
-      f: A => B
-  ): Option[(A, C)] =
-    // Find first instance of (x, ys[f(x)]) such that f(x) is in ys
-    xs
-      .find(x => ys.contains(f(x)))
-      .flatMap(x => ys.get(f(x)).map(y => (x, y)))
-
-  private def defaultContentParser(
+  def defaultContentParser(
       source: DependencySource
   ): String => List[Dependency] =
     source match
