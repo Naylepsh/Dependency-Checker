@@ -65,8 +65,6 @@ object ScanDeltaExcelExporter:
         Cell(vulnerabilityCountRight)
       )
 
-  private val tableDescription =
-    Row(style = headerStyle).withCellValues(columns)
   private val columns = List(
     "Name",
     "Current Version (left)",
@@ -76,6 +74,8 @@ object ScanDeltaExcelExporter:
     "Vulnerability Count (left)",
     "Vulnerability Count (right)"
   )
-  private val headerStyle       = CellStyle(font = Font(bold = true))
+  private val tableDescription =
+    Row(style = headerStyle).withCellValues(columns)
+  private def headerStyle       = CellStyle(font = Font(bold = true))
   private val notApplicable     = "-"
   private val notApplicablePair = (notApplicable, notApplicable)
