@@ -21,8 +21,8 @@ object delta:
   ):
     val isEmpty =
       currentVersion.isEmpty
-        || latestVersion.isEmpty
-        || vulnerabilityCount.isEmpty
+        && latestVersion.isEmpty
+        && vulnerabilityCount.isEmpty
 
   object TotalDelta:
     private[delta] def apply(
