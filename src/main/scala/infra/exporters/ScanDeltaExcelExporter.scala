@@ -44,12 +44,8 @@ object ScanDeltaExcelExporter:
           .map(d =>
             val style = matchCurrentVersionDeltaToStyle(d)
             (
-              d.left
-                .map(Cell(_, style = style))
-                .getOrElse(notApplicableCell),
-              d.right
-                .map(Cell(_, style = style))
-                .getOrElse(notApplicableCell)
+              Cell(d.left.getOrElse(notApplicable), style = style),
+              Cell(d.right.getOrElse(notApplicable), style = style)
             )
           )
           .getOrElse(notApplicableCellPair)
