@@ -5,8 +5,8 @@ import scala.util.*
 
 import cats.*
 import cats.implicits.*
-import domain.PackageIndex
-import domain.dependency.*
+import core.domain.PackageIndex
+import core.domain.dependency.*
 import org.legogroup.woof.{ *, given }
 
 object PythonDependencyReporter:

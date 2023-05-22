@@ -1,6 +1,6 @@
-package domain
+package core.domain
 
-import domain.dependency.DependencyReport
+import dependency.DependencyReport
 import org.joda.time.DateTime
 
 object severity:

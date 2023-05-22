@@ -1,7 +1,7 @@
-package domain
+package core.domain
 
-import domain.dependency.DependencyReport
-import domain.severity.determineSeverity
+import dependency.DependencyReport
+import severity.determineSeverity
 import org.joda.time.DateTime
 import org.scalatest.*
 

@@ -1,4 +1,4 @@
-package domain
+package core.domain
 
 import cats.effect.kernel.Sync
 import org.joda.time.DateTime

@@ -1,11 +1,11 @@
-package domain
+package core.domain
 
 import cats.data.ValidatedNel
 import cats.implicits.*
-import domain.project.ScanReport
+import project.ScanReport
 
 object delta:
-  import domain.dependency.DependencyReport
+  import dependency.DependencyReport
 
   sealed trait PropertyDelta
   object PropertyDelta:

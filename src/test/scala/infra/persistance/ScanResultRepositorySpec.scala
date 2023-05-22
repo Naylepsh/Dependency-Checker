@@ -1,8 +1,8 @@
 package infra.persistance
 
-import domain.Grouped
-import domain.dependency.DependencyReport
-import domain.project.ScanReport
+import core.domain.Grouped
+import core.domain.dependency.DependencyReport
+import core.domain.project.ScanReport
 import infra.persistance.ScanResultRepository.ScanResultRepositorySQL.GetAllResult
 import org.joda.time.DateTime
 import org.scalatest.flatspec.AnyFlatSpec

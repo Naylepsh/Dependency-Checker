@@ -1,4 +1,4 @@
-package domain
+package core.domain
 
 import dependency.*
 

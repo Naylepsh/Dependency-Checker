@@ -8,8 +8,8 @@ import cats.effect.std.Console
 import cats.effect.{ ExitCode, IO }
 import cats.implicits.*
 import com.monovore.decline.*
-import domain.project.{ Project, ScanReport }
-import domain.registry.Registry
+import core.domain.project.{ Project, ScanReport }
+import core.domain.registry.Registry
 import doobie.util.transactor.Transactor
 import infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
 import infra.packageindexes.Pypi
@@ -56,7 +56,7 @@ object cli:
       context.config.gitlabToken
     )
     val source = GitlabSource.make(gitlabApi)
-    val prepareProjectForSource = (project: domain.project.Project) =>
+    val prepareProjectForSource = (project: core.domain.project.Project) =>
       registry.projects.find(_.id == project.id)
     val reporter =
       PythonDependencyReporter.make(Pypi(context.backend), parallelGroupSize)
@@ -66,7 +66,7 @@ object cli:
         DependencyRepository.make(context.xa)
       )
 
-    ScanningService.make[IO, domain.registry.Project](
+    ScanningService.make[IO, core.domain.registry.Project](
       source,
       prepareProjectForSource,
       reporter,
@@ -102,8 +102,8 @@ object cli:
             )
 
             service.scan(registry.projects.collect {
-              case domain.registry.Project(id, name, _, true, _) =>
-                domain.project.Project(id, name)
+              case core.domain.registry.Project(id, name, _, true, _) =>
+                core.domain.project.Project(id, name)
             }).as(ExitCode.Success)
         }
       }

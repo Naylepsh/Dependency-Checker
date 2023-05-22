@@ -1,9 +1,9 @@
-package domain
+package core.domain
 
 import cats.*
 import cats.data.NonEmptyList
 import cats.implicits.*
-import domain.dependency.*
+import dependency.*
 import org.joda.time.DateTime
 
 object project:

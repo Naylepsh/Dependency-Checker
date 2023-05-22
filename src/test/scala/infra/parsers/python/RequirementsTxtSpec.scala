@@ -1,6 +1,6 @@
 package infra.parsers.python
 
-import domain.dependency.*
+import core.domain.dependency.*
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.*
 

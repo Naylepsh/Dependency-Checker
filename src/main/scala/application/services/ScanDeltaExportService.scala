@@ -3,9 +3,9 @@ package application.services
 import cats.Monad
 import cats.data.Validated.{ Invalid, Valid }
 import cats.implicits.*
-import domain.Exporter
-import domain.delta.ScanDelta
-import domain.project.{ Project, ScanResultRepository }
+import core.domain.Exporter
+import core.domain.delta.ScanDelta
+import core.domain.project.{ Project, ScanResultRepository }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 

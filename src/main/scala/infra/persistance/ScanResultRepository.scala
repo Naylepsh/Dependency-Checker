@@ -6,9 +6,9 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
-import domain.Grouped
-import domain.dependency.{ DependencyReport, DependencyRepository }
-import domain.project.*
+import core.domain.Grouped
+import core.domain.dependency.{ DependencyReport, DependencyRepository }
+import core.domain.project.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*

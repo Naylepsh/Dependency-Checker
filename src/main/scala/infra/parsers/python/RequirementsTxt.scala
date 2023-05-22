@@ -2,7 +2,7 @@ package infra.parsers.python
 
 import scala.util.matching.Regex
 
-import domain.dependency.Dependency
+import core.domain.dependency.Dependency
 
 object RequirementsTxt:
   def extract(fileContents: String): List[Dependency] =

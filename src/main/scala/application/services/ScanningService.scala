@@ -6,9 +6,9 @@ import cats.*
 import cats.data.NonEmptyList
 import cats.effect.std.*
 import cats.implicits.*
-import domain._
-import domain.dependency.*
-import domain.project.*
+import core.domain._
+import core.domain.dependency.*
+import core.domain.project.*
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 

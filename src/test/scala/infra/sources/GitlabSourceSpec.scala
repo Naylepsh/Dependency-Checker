@@ -2,8 +2,8 @@ package infra.sources
 
 import cats.*
 import cats.implicits.*
-import domain.dependency.Dependency
-import domain.registry.*
+import core.domain.dependency.Dependency
+import core.domain.registry.*
 import infra.*
 import org.legogroup.woof.Logger.StringLocal
 import org.legogroup.woof.{ *, given }

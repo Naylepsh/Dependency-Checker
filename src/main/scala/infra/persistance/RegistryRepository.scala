@@ -5,7 +5,7 @@ import scala.io.Source
 import cats.Applicative
 import cats.effect.*
 import cats.implicits.*
-import domain.registry.{ Project, Registry, RegistryRepository }
+import core.domain.registry.{ Project, Registry, RegistryRepository }
 import io.circe.parser.decode
 
 object RegistryRepository:

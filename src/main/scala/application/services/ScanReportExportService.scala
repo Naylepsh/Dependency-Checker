@@ -2,8 +2,8 @@ package application.services
 
 import cats.*
 import cats.implicits.*
-import domain.Exporter
-import domain.project.{ Project, ScanReport, ScanResultRepository }
+import core.domain.Exporter
+import core.domain.project.{ Project, ScanReport, ScanResultRepository }
 import org.legogroup.woof.{ *, given }
 
 trait ScanReportExportService[F[_]]:

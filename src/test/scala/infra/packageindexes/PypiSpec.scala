@@ -2,7 +2,7 @@ package infra.packageindexes
 
 import cats.effect.*
 import cats.effect.testing.scalatest.AsyncIOSpec
-import domain.dependency.Dependency
+import core.domain.dependency.Dependency
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.httpclient.cats.HttpClientCatsBackend

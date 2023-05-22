@@ -6,7 +6,7 @@ import scala.util.{ Success, Try }
 import cats.*
 import cats.implicits.*
 import com.moandjiezana.toml.Toml
-import domain.dependency.Dependency
+import core.domain.dependency.Dependency
 
 object PyProjectToml:
   def extract(groupName: Option[String])(
