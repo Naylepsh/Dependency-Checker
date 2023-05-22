@@ -1,4 +1,4 @@
-package application
+package core.application
 
 import cats.effect.kernel.Async
 import cats.implicits.*

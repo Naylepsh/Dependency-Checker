@@ -1,7 +1,7 @@
-package application
+package core.application
 
-import application.config.AppConfig
-import application.services._
+import config.AppConfig
+import services._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.effect.implicits.*
 import cats.effect.std.Console
