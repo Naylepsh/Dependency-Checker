@@ -93,16 +93,16 @@ object ScanDeltaExcelExporter:
 
   private def matchLatestVersionDeltaToStyle(delta: PropertyDelta.LatestVersion)
       : CellStyle =
-    if delta.left < delta.right then Styles.upwardChange
+    if delta.left < delta.right then Styles.downwardChange
     else if delta.left == delta.right then Styles.noChange
-    else Styles.downwardChange
+    else Styles.upwardChange
 
   private def matchVulnerabilityCountDeltaToStyle(
       delta: PropertyDelta.VulnerabilityCount
   ): CellStyle =
-    if delta.left < delta.right then Styles.upwardChange
+    if delta.left < delta.right then Styles.downwardChange
     else if delta.left == delta.right then Styles.noChange
-    else Styles.downwardChange
+    else Styles.upwardChange
 
   private object Styles:
     val noChange = CellStyle(
