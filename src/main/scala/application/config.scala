@@ -3,7 +3,7 @@ package application
 import cats.effect.kernel.Async
 import cats.implicits.*
 import ciris.*
-import infra.resources.database
+import core.infra.resources.database
 
 object config:
   case class AppConfig(

@@ -11,16 +11,16 @@ import com.monovore.decline.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
 import doobie.util.transactor.Transactor
-import infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
-import infra.packageindexes.Pypi
-import infra.persistance.{
+import core.infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
+import core.infra.packageindexes.Pypi
+import core.infra.persistance.{
   DependencyRepository,
   RegistryRepository,
   ScanResultRepository
 }
-import infra.resources.database
-import infra.sources.GitlabSource
-import infra.{ GitlabApi, logging }
+import core.infra.resources.database
+import core.infra.sources.GitlabSource
+import core.infra.{ GitlabApi, logging }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import sttp.capabilities.WebSockets
