@@ -1,7 +1,8 @@
 package core.domain
 
-import dependency.DependencyReport
 import org.joda.time.DateTime
+
+import dependency.DependencyReport
 
 object severity:
   import semver.*

@@ -6,7 +6,7 @@ import cats.*
 import cats.data.NonEmptyList
 import cats.effect.std.*
 import cats.implicits.*
-import core.domain._
+import core.domain.*
 import core.domain.dependency.*
 import core.domain.project.*
 import org.joda.time.DateTime

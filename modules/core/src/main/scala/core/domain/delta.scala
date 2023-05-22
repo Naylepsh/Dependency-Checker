@@ -2,6 +2,7 @@ package core.domain
 
 import cats.data.ValidatedNel
 import cats.implicits.*
+
 import project.ScanReport
 
 object delta:

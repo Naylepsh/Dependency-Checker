@@ -1,8 +1,6 @@
 package core.application
 
-import config.AppConfig
-import services._
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{ NonEmptyList, ValidatedNel }
 import cats.effect.implicits.*
 import cats.effect.std.Console
 import cats.effect.{ ExitCode, IO }
@@ -10,8 +8,7 @@ import cats.implicits.*
 import com.monovore.decline.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
-import doobie.util.transactor.Transactor
-import core.infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
+import core.infra.exporters.{ ScanDeltaExcelExporter, ScanReportExcelExporter }
 import core.infra.packageindexes.Pypi
 import core.infra.persistance.{
   DependencyRepository,
@@ -21,11 +18,15 @@ import core.infra.persistance.{
 import core.infra.resources.database
 import core.infra.sources.GitlabSource
 import core.infra.{ GitlabApi, logging }
+import doobie.util.transactor.Transactor
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import sttp.capabilities.WebSockets
 import sttp.client3.SttpBackend
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
+
+import config.AppConfig
+import services.*
 
 object cli:
   trait Command[F[_]]:

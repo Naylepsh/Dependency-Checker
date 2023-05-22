@@ -1,10 +1,10 @@
 package core.domain
 
-import dependency.DependencyReport
-import severity.determineSeverity
 import org.joda.time.DateTime
 import org.scalatest.*
 
+import dependency.DependencyReport
+import severity.determineSeverity
 import flatspec.*
 import matchers.*
 

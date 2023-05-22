@@ -3,8 +3,9 @@ package core.domain
 import cats.*
 import cats.data.NonEmptyList
 import cats.implicits.*
-import dependency.*
 import org.joda.time.DateTime
+
+import dependency.*
 
 object project:
   case class Project(id: String, name: String)
