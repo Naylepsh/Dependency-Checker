@@ -17,7 +17,7 @@ object registry:
 
     case class TomlSource(path: String, group: Option[String] = None)
         extends DependencySource derives Decoder:
-      val groupName: String = group.fold(path)(g => s"$path ($g)")
+      val groupName: String = group.fold(path)(g => s"$path:$g")
 
     given Decoder[DependencySource] with
       final def apply(c: HCursor): Decoder.Result[DependencySource] =

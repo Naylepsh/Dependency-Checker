@@ -17,12 +17,32 @@ type RepositoryTree = List[RepositoryTreeFile]
 
 case class RepositoryFile(content: String) derives Decoder
 
+enum Action:
+  case Create, Delete, Move, Update, Chmod
+
+case class CommitAction(
+    action: Action,
+    filePath: String,
+    contnet: String
+)
+
 trait GitlabApi[F[_]]:
   def getFile(
       id: String,
       branch: String,
       filePath: String
   ): F[Either[String, RepositoryFile]]
+  def createBranch(projectId: String, branch: String): F[Either[String, Unit]]
+  def createCommit(
+      projectId: String,
+      commitMessage: String,
+      actions: List[CommitAction]
+  ): F[Either[String, Unit]]
+  def createMergeRequest(
+      projectId: String,
+      sourceBranch: String,
+      targetBranch: String
+  ): F[Either[String, Unit]]
 
 object GitlabApi:
   type RequestResult[F[_]] = ApplicativeError[F, Throwable]
@@ -32,6 +52,24 @@ object GitlabApi:
       host: String,
       token: Option[String]
   ): GitlabApi[F] = new:
+
+    override def createMergeRequest(
+        projectId: String,
+        sourceBranch: String,
+        targetBranch: String
+    ): F[Either[String, Unit]] = ???
+
+    override def createCommit(
+        projectId: String,
+        commitMessage: String,
+        actions: List[CommitAction]
+    ): F[Either[String, Unit]] = ???
+
+    override def createBranch(
+        id: String,
+        branch: String
+    ): F[Either[String, Unit]] = ???
+
     def getFile(
         id: String,
         branch: String,

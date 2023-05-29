@@ -45,6 +45,15 @@ lazy val core = project
   .in(file("modules/core"))
   .settings(commonSettings: _*)
 
+lazy val scanning = project
+  .in(file("modules/scanning"))
+  .settings(commonSettings: _*)
+
+lazy val upkeep = project
+  .in(file("modules/upkeep"))
+  .settings(commonSettings: _*)
+  .dependsOn(core)
+
 enablePlugins(JavaAppPackaging)
 
 addCommandAlias("lint", ";scalafmtAll ;scalafixAll --rules OrganizeImports")
