@@ -23,10 +23,9 @@ object domain:
       .map(line =>
         val index                = line.indexOf(name)
         val indexOfCharAfterName = index + name.length
-        val isLineNameAndVersion =
-          index == 0 && line.length > indexOfCharAfterName && versionComparisonSymbols.contains(
-            line(indexOfCharAfterName)
-          )
+        val isLineNameAndVersion = index == 0
+          && line.length > indexOfCharAfterName
+          && versionComparisonSymbols.contains(line(indexOfCharAfterName))
         if isLineNameAndVersion then
           line.replace(from, to)
         else
