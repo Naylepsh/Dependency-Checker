@@ -38,7 +38,7 @@ object domain:
   )
 
   trait UpkeepRepository[F[_], A]:
-    def save(): F[Unit]
+    def save(request: UpkeepRequest[A]): F[Unit]
     def isPending(request: UpkeepRequest[A]): F[Boolean]
 
   private val NEWLINE = "\n"
