@@ -1,7 +1,5 @@
 package upkeep
 
-import org.joda.time.DateTime
-
 object domain:
   case class UpdateDependency[A](
       projectId: A,
