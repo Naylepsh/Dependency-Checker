@@ -20,8 +20,22 @@ object domain:
   ): String =
     fileContent
       .split(NEWLINE)
-      .map(line => if line.contains(name) then line.replace(from, to) else line)
+      .map(line =>
+        val index                = line.indexOf(name)
+        val indexOfCharAfterName = index + name.length
+        val isLineNameAndVersion =
+          index == 0 && line.length > indexOfCharAfterName && versionComparisonSymbols.contains(
+            line(indexOfCharAfterName)
+          )
+        if isLineNameAndVersion then
+          line.replace(from, to)
+        else
+          line
+      )
       .mkString(NEWLINE)
+
+  private val versionComparisonSymbols = List('=', '>', '^', '~')
+  private val NEWLINE                  = "\n"
 
   trait UpkeepService[F[_], A]:
     def updateProject(command: UpdateDependency[A]): F[Either[String, Unit]]
@@ -40,5 +54,3 @@ object domain:
   trait UpkeepRepository[F[_], A]:
     def save(request: UpkeepRequest[A]): F[Unit]
     def isPending(request: UpkeepRequest[A]): F[Boolean]
-
-  private val NEWLINE = "\n"
