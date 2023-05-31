@@ -15,9 +15,8 @@ object UpkeepRepository:
       xa: Transactor[F]
   ): UpkeepRepository[F, String] = new:
     override def save(request: UpkeepRequest[String]): F[Unit] =
-      UUIDGen.randomUUID.flatMap(id =>
+      UUIDGen.randomUUID.flatMap: id =>
         UpkeepRepositorySQL.insert(id, request).run.transact(xa).void
-      )
 
     override def isPending(
         projectId: String,

@@ -94,24 +94,25 @@ object application:
           : F[List[Either[String, Unit]]] =
         repository
           .getAffectedProjects(dependencyName)
-          .flatMap(_.traverse(project =>
-            upkeepRepository.isPending(
-              project.projectId,
-              project.name,
-              project.to
-            ).flatMap {
-              case true => ().asRight.pure
-              case false =>
-                updateProjectInner(project).flatMap {
-                  case Left(reason) => reason.asLeft.pure
-                  case Right(mergeRequest) =>
-                    upkeepRepository.save(UpkeepRequest(
-                      project.projectId,
-                      project.name,
-                      project.to,
-                      mergeRequest.webUrl
-                    )).map(_.asRight)
-                }
+          .flatMap: projects =>
+            projects.traverse(updateProjectIfHaventAttemptedBefore)
 
-            }
-          ))
+      private def updateProjectIfHaventAttemptedBefore(
+          project: UpdateDependency[String]
+      ) =
+        upkeepRepository.isPending(
+          project.projectId,
+          project.name,
+          project.to
+        ).flatMap: isPending =>
+          if isPending then
+            ().asRight.pure
+          else
+            updateProjectInner(project).flatMap: result =>
+              result.traverse: mr =>
+                upkeepRepository.save(UpkeepRequest(
+                  project.projectId,
+                  project.name,
+                  project.to,
+                  mr.webUrl
+                ))

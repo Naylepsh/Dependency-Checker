@@ -18,7 +18,7 @@ object domain:
   ): String =
     fileContent
       .split(NEWLINE)
-      .map(line =>
+      .map: line =>
         val index                = line.indexOf(name)
         val indexOfCharAfterName = index + name.length
         val isLineNameAndVersion = index == 0
@@ -28,7 +28,6 @@ object domain:
           line.replace(from, to)
         else
           line
-      )
       .mkString(NEWLINE)
 
   private val versionComparisonSymbols = List('=', '>', '^', '~')

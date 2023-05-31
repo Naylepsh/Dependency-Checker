@@ -40,7 +40,7 @@ object ProjectDependencyRepository:
           .get()
           .map(_.map(_.projects).getOrElse(List.empty))
       yield raws.flatMap(raw =>
-        projects.find(_.name == raw.projectName).map(project =>
+        projects.find(_.name == raw.projectName).map: project =>
           UpdateDependency(
             project.id,
             project.branch,
@@ -49,7 +49,6 @@ object ProjectDependencyRepository:
             raw.from,
             raw.to
           )
-        )
       )
 
 object ProjectDependencyRepositorySQL:
