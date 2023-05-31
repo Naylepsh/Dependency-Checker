@@ -45,9 +45,14 @@ object domain:
   case class UpkeepRequest[A](
       projectId: A,
       dependencyName: String,
-      updateToVersion: String
+      updateToVersion: String,
+      url: String
   )
 
   trait UpkeepRepository[F[_], A]:
     def save(request: UpkeepRequest[A]): F[Unit]
-    def isPending(request: UpkeepRequest[A]): F[Boolean]
+    def isPending(
+      projectId: A,
+      dependencyName: String,
+      updateToVersion: String,
+    ): F[Boolean]

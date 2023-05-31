@@ -19,7 +19,10 @@ object application:
         upkeepRepository: UpkeepRepository[F, String]
     ): UpkeepService[F, String] = new:
       override def updateProject(command: UpdateDependency[String])
-          : F[Either[String, Unit]] =
+          : F[Either[String, Unit]] = updateProjectInner(command).map(_.void)
+
+      private def updateProjectInner(command: UpdateDependency[String])
+          : F[Either[String, core.infra.CreateMergeRequestResponse]] =
         val targetBranch = s"sentinel/${command.name}-${command.to}"
         (for
           file <- EitherT(api.getFile(
@@ -35,12 +38,12 @@ object application:
           newContent =
             replaceDependency(content, command.name, command.from, command.to)
           _ <- EitherT(api.createBranch(command.projectId, targetBranch))
-          _ <- EitherT(api.createMergeRequest(
+          mergeRequest <- EitherT(api.createMergeRequest(
             command.projectId,
             command.sourceBranch,
             targetBranch
           ))
-        yield ()).value.flatTap {
+        yield mergeRequest).value.flatTap {
           case Left(reason) => Logger[F].error(reason)
           case Right(_)     => ().pure
         }
@@ -50,15 +53,23 @@ object application:
         repository
           .getAffectedProjects(dependencyName)
           .flatMap(_.traverse(project =>
-            val upkeepRequest = UpkeepRequest(
+            upkeepRepository.isPending(
               project.projectId,
               project.name,
               project.to
-            )
-            upkeepRepository.isPending(upkeepRequest).flatMap {
+            ).flatMap {
               case true => ().asRight.pure
               case false =>
-                updateProject(project)
-                  *> upkeepRepository.save(upkeepRequest).map(_.asRight)
+                updateProjectInner(project).flatMap {
+                  case Left(reason) => reason.asLeft.pure
+                  case Right(mergeRequest) =>
+                    upkeepRepository.save(UpkeepRequest(
+                      project.projectId,
+                      project.name,
+                      project.to,
+                      mergeRequest.webUrl
+                    )).map(_.asRight)
+                }
+
             }
           ))

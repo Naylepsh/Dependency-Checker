@@ -10,12 +10,17 @@ import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
 import sttp.model.Uri
+import io.circe.derivation.{ Configuration, ConfiguredDecoder }
 
 case class RepositoryTreeFile(name: String, path: String) derives Decoder
 
 type RepositoryTree = List[RepositoryTreeFile]
 
 case class RepositoryFile(content: String) derives Decoder
+
+case class CreateMergeRequestResponse(
+    webUrl: String
+)
 
 enum Action:
   case Create, Delete, Move, Update, Chmod
@@ -42,7 +47,7 @@ trait GitlabApi[F[_]]:
       projectId: String,
       sourceBranch: String,
       targetBranch: String
-  ): F[Either[String, Unit]]
+  ): F[Either[String, CreateMergeRequestResponse]]
 
 object GitlabApi:
   type RequestResult[F[_]] = ApplicativeError[F, Throwable]
@@ -52,12 +57,15 @@ object GitlabApi:
       host: String,
       token: Option[String]
   ): GitlabApi[F] = new:
+    given Configuration = Configuration.default.withSnakeCaseMemberNames
+    given ConfiguredDecoder[CreateMergeRequestResponse] =
+      ConfiguredDecoder.derived
 
     override def createMergeRequest(
         projectId: String,
         sourceBranch: String,
         targetBranch: String
-    ): F[Either[String, Unit]] = ???
+    ): F[Either[String, CreateMergeRequestResponse]] = ???
 
     override def createCommit(
         projectId: String,
