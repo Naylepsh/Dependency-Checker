@@ -23,40 +23,47 @@ object application:
 
       private def updateProjectInner(command: UpdateDependency[String])
           : F[Either[String, core.infra.CreateMergeRequestResponse]] =
-        val targetBranch = s"sentinel/${command.name}-${command.to}"
         (for
-          file <- EitherT(api.getFile(
-            command.projectId,
-            command.sourceBranch,
-            command.filePath
-          ))
-          content <- EitherT(
-            GitlabApi.decodeContent(file.content)
-              .leftMap(_.toString)
-              .pure
-          )
+          file    <- getFile(command)
+          content <- decodeContent(file.content)
           newContent =
             replaceDependency(content, command.name, command.from, command.to)
           result <- if newContent == content then
-            EitherT(
-              s"Failed to change the content for ${command.projectId}, ${command.name}, ${command.to}".asLeft.pure
-            )
+            makeFailedToChangeContentError(command)
           else
-            submitUpdate(
-              command,
-              targetBranch,
-              content
-            )
+            val targetBranch = s"sentinel/${command.name}-${command.to}"
+            submitUpdate(command, targetBranch, content)
         yield result).value.flatTap {
           case Left(reason) => Logger[F].error(reason)
           case Right(_)     => ().pure
         }
 
+      private def getFile(command: UpdateDependency[String]) =
+        EitherT(api.getFile(
+          command.projectId,
+          command.sourceBranch,
+          command.filePath
+        ))
+
+      private def decodeContent(encodedContent: String) =
+        EitherT(
+          GitlabApi.decodeContent(encodedContent)
+            .leftMap(_.toString)
+            .pure
+        )
+
+      private def makeFailedToChangeContentError(
+          command: UpdateDependency[String]
+      ) =
+        EitherT(
+          s"Failed to change the content for ${command.projectId}, ${command.name}, ${command.to}".asLeft.pure
+        )
+
       private def submitUpdate(
           command: UpdateDependency[String],
           targetBranch: String,
           content: String
-      ): EitherT[F, String, core.infra.CreateMergeRequestResponse] =
+      ) =
         EitherT(api.createBranch(command.projectId, targetBranch))
           *> EitherT(api.createCommit(
             command.projectId,
