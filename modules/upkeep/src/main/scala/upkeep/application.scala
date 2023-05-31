@@ -37,16 +37,41 @@ object application:
           )
           newContent =
             replaceDependency(content, command.name, command.from, command.to)
-          _ <- EitherT(api.createBranch(command.projectId, targetBranch))
-          mergeRequest <- EitherT(api.createMergeRequest(
+          result <- if newContent == content then
+            EitherT(
+              s"Failed to change the content for ${command.projectId}, ${command.name}, ${command.to}".asLeft.pure
+            )
+          else
+            submitUpdate(
+              command,
+              targetBranch,
+              content
+            )
+        yield result).value.flatTap {
+          case Left(reason) => Logger[F].error(reason)
+          case Right(_)     => ().pure
+        }
+
+      private def submitUpdate(
+          command: UpdateDependency[String],
+          targetBranch: String,
+          content: String
+      ): EitherT[F, String, core.infra.CreateMergeRequestResponse] =
+        EitherT(api.createBranch(command.projectId, targetBranch))
+          *> EitherT(api.createCommit(
+            command.projectId,
+            s"Bumps ${command.name} from ${command.from} to ${command.to}",
+            List(core.infra.CommitAction(
+              core.infra.Action.Update,
+              command.filePath,
+              content
+            ))
+          ))
+          *> EitherT(api.createMergeRequest(
             command.projectId,
             command.sourceBranch,
             targetBranch
           ))
-        yield mergeRequest).value.flatTap {
-          case Left(reason) => Logger[F].error(reason)
-          case Right(_)     => ().pure
-        }
 
       def updateAffectedProjects(dependencyName: String)
           : F[List[Either[String, Unit]]] =
