@@ -64,10 +64,19 @@ object application:
           targetBranch: String,
           content: String
       ) =
-        EitherT(api.createBranch(command.projectId, targetBranch))
+        val commitMessage =
+          s"Bumps ${command.name} from ${command.from} to ${command.to}"
+        val mergeRequestTitle = commitMessage
+
+        EitherT(api.createBranch(
+          command.projectId,
+          command.sourceBranch,
+          targetBranch
+        ))
           *> EitherT(api.createCommit(
             command.projectId,
-            s"Bumps ${command.name} from ${command.from} to ${command.to}",
+            targetBranch,
+            commitMessage,
             List(core.infra.CommitAction(
               core.infra.Action.Update,
               command.filePath,
@@ -77,7 +86,8 @@ object application:
           *> EitherT(api.createMergeRequest(
             command.projectId,
             command.sourceBranch,
-            targetBranch
+            targetBranch,
+            mergeRequestTitle
           ))
 
       def updateAffectedProjects(dependencyName: String)

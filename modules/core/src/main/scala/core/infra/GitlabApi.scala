@@ -10,7 +10,12 @@ import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
 import sttp.model.Uri
-import io.circe.derivation.{ Configuration, ConfiguredDecoder }
+import io.circe.derivation.{
+  Configuration,
+  ConfiguredDecoder,
+  ConfiguredEncoder
+}
+import io.circe.derivation.ConfiguredEncoder
 
 case class RepositoryTreeFile(name: String, path: String) derives Decoder
 
@@ -37,16 +42,22 @@ trait GitlabApi[F[_]]:
       branch: String,
       filePath: String
   ): F[Either[String, RepositoryFile]]
-  def createBranch(projectId: String, branch: String): F[Either[String, Unit]]
+  def createBranch(
+      projectId: String,
+      baseBranch: String,
+      newBranchName: String
+  ): F[Either[String, Unit]]
   def createCommit(
       projectId: String,
+      branch: String,
       commitMessage: String,
       actions: List[CommitAction]
   ): F[Either[String, Unit]]
   def createMergeRequest(
       projectId: String,
       sourceBranch: String,
-      targetBranch: String
+      targetBranch: String,
+      title: String
   ): F[Either[String, CreateMergeRequestResponse]]
 
 object GitlabApi:
@@ -60,23 +71,81 @@ object GitlabApi:
     given Configuration = Configuration.default.withSnakeCaseMemberNames
     given ConfiguredDecoder[CreateMergeRequestResponse] =
       ConfiguredDecoder.derived
+    given ConfiguredEncoder[CommitAction] = ConfiguredEncoder.derived
+
+    private case class CreateCommitPayload(
+        branch: String,
+        commitMessage: String,
+        actions: List[CommitAction]
+    ) derives ConfiguredEncoder
+
+    private case class CreateMergeRequestPayload(
+        sourceBranch: String,
+        targetBranch: String,
+        title: String,
+        removeSourceBranch: Boolean,
+        squashOnMerge: Boolean
+    ) derives ConfiguredEncoder
 
     override def createMergeRequest(
         projectId: String,
         sourceBranch: String,
-        targetBranch: String
-    ): F[Either[String, CreateMergeRequestResponse]] = ???
+        targetBranch: String,
+        title: String
+    ): F[Either[String, CreateMergeRequestResponse]] =
+      val endpoint =
+        uri"https://$host/api/v4/projects/$projectId/merge_requests"
+
+      basicRequest
+        .post(endpoint)
+        .readTimeout(10.seconds)
+        .header("PRIVATE-TOKEN", token)
+        .body(CreateMergeRequestPayload(
+          sourceBranch,
+          targetBranch,
+          title,
+          removeSourceBranch = true,
+          squashOnMerge = true
+        ))
+        .response(asJson[CreateMergeRequestResponse])
+        .send(backend)
+        .map(_.body.leftMap(buildErrorMessage(endpoint)))
 
     override def createCommit(
         projectId: String,
+        branch: String,
         commitMessage: String,
         actions: List[CommitAction]
-    ): F[Either[String, Unit]] = ???
+    ): F[Either[String, Unit]] =
+      val endpoint =
+        uri"https://$host/api/v4/projects/$projectId/repository/commits"
+
+      basicRequest
+        .post(endpoint)
+        .readTimeout(10.seconds)
+        .header("PRIVATE-TOKEN", token)
+        .body(CreateCommitPayload(branch, commitMessage, actions))
+        .send(backend)
+        .map(_.body.void)
 
     override def createBranch(
-        id: String,
-        branch: String
-    ): F[Either[String, Unit]] = ???
+        projectId: String,
+        baseBranch: String,
+        newBranchName: String
+    ): F[Either[String, Unit]] =
+      val queryParams = Map(
+        "ref"    -> baseBranch,
+        "branch" -> newBranchName
+      )
+      val endpoint =
+        uri"https://$host/api/v4/projects/$projectId/repository/branches?$queryParams"
+
+      basicRequest
+        .post(endpoint)
+        .readTimeout(10.seconds)
+        .header("PRIVATE-TOKEN", token)
+        .send(backend)
+        .map(_.body.void)
 
     def getFile(
         id: String,
