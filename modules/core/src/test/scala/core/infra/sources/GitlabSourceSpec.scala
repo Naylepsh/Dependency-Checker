@@ -60,6 +60,27 @@ object GitlabSourceSpec:
   def makeApi(
       fileResult: Either[String, RepositoryFile]
   ) = new GitlabApi[Id]:
+
+    override def createBranch(
+        projectId: String,
+        baseBranch: String,
+        newBranchName: String
+    ): Id[Either[String, Unit]] = ???
+
+    override def createCommit(
+        projectId: String,
+        branch: String,
+        commitMessage: String,
+        actions: List[CommitAction]
+    ): Id[Either[String, Unit]] = ???
+
+    override def createMergeRequest(
+        projectId: String,
+        sourceBranch: String,
+        targetBranch: String,
+        title: String
+    ): Id[Either[String, CreateMergeRequestResponse]] = ???
+
     override def getFile(
         id: String,
         branch: String,
