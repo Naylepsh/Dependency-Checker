@@ -100,19 +100,18 @@ object application:
       private def updateProjectIfHaventAttemptedBefore(
           project: UpdateDependency[String]
       ) =
-        upkeepRepository.isPending(
-          project.projectId,
-          project.name,
-          project.to
-        ).flatMap: isPending =>
-          if isPending then
-            ().asRight.pure
-          else
-            updateProjectInner(project).flatMap: result =>
-              result.traverse: mr =>
-                upkeepRepository.save(UpkeepRequest(
-                  project.projectId,
-                  project.name,
-                  project.to,
-                  mr.webUrl
-                ))
+        upkeepRepository
+          .isPending(project.projectId, project.name, project.to)
+          .flatMap: isPending =>
+            if isPending then
+              ().asRight.pure
+            else
+              updateProjectInner(project)
+                .flatMap: result =>
+                  result.traverse: mergeRequest =>
+                    upkeepRepository.save(UpkeepRequest(
+                      project.projectId,
+                      project.name,
+                      project.to,
+                      mergeRequest.webUrl
+                    ))
