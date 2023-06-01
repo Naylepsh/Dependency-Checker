@@ -27,7 +27,11 @@ object UpkeepCli:
               .as(ExitCode.Success)
         }
 
-  val allOpts = upkeepDependencyOpts
+  private val dependencyNameOpt =
+    Opts.option[String](
+      "name",
+      "Name of the dependency"
+    )
 
   private val upkeepDependencyOpts = Opts.subcommand(
     name = "upkeep-single",
@@ -37,12 +41,6 @@ object UpkeepCli:
     dependencyNameOpt,
     registryLocationOpt,
   ).mapN(UpkeepSingle.apply))
-
-  private val dependencyNameOpt =
-    Opts.option[String](
-      "name",
-      "Name of the dependency"
-    )
 
   private def makeUpkeepService(
       registryRepository: core.domain.registry.RegistryRepository[IO],
@@ -62,3 +60,5 @@ object UpkeepCli:
       projectRepository,
       upkeepRepository
     )
+
+  val allOpts = upkeepDependencyOpts
