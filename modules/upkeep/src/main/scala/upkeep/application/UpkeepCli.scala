@@ -38,8 +38,8 @@ object UpkeepCli:
     help =
       "Update a single dependency to the newest known version in all affected projects"
   )((
-    dependencyNameOpt,
     registryLocationOpt,
+    dependencyNameOpt,
   ).mapN(UpkeepSingle.apply))
 
   private def makeUpkeepService(
