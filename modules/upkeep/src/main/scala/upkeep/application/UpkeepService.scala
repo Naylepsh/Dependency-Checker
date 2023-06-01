@@ -46,7 +46,8 @@ object UpkeepService:
 
           updateAttempt.value.flatTap {
             case Left(reason) => Logger[F].error(reason)
-            case Right(_)     => ().pure
+            case Right(_) =>
+              Logger[F].info("Successfully submited update request")
           }
 
     private def getFile(command: UpdateDependency[String]) =
@@ -84,6 +85,7 @@ object UpkeepService:
         command.sourceBranch,
         targetBranch
       ))
+        *> EitherT(Logger[F].debug("Created branch").map(_.asRight))
         *> EitherT(api.createCommit(
           command.projectId,
           targetBranch,
@@ -94,12 +96,14 @@ object UpkeepService:
             content
           ))
         ))
+        *> EitherT(Logger[F].debug("Created commit").map(_.asRight))
         *> EitherT(api.createMergeRequest(
           command.projectId,
           command.sourceBranch,
           targetBranch,
           mergeRequestTitle
         ))
+        <* EitherT(Logger[F].debug("Created merge request").map(_.asRight))
 
     def updateAffectedProjects(dependencyName: String)
         : F[List[Either[String, Unit]]] =
