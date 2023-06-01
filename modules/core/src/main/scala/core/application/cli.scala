@@ -40,7 +40,7 @@ object cli:
       HttpClientCatsBackend.resource[IO]()
     ).tupled
 
-  private class Context(
+  class Context(
       val config: AppConfig,
       val xa: Transactor[IO],
       val backend: SttpBackend[IO, WebSockets]
@@ -76,8 +76,7 @@ object cli:
 
   private val parallelGroupSize = 10
 
-  private def withContext(f: Context => Logger[IO] ?=> IO[ExitCode])
-      : IO[ExitCode] =
+  def withContext(f: Context => Logger[IO] ?=> IO[ExitCode]): IO[ExitCode] =
     AppConfig.load[IO].flatMap { config =>
       resources(config).use {
         case (xa, backend) =>
@@ -263,3 +262,6 @@ object cli:
     timestampOpt("left-timestamp"),
     timestampOpt("right-timestamp")
   ).mapN(ExportScanDelta.apply))
+
+  val allOpts =
+    scanOpts orElse listScansOpts orElse deleteScansOpts orElse exportScanOpts orElse exportDeltaOpts

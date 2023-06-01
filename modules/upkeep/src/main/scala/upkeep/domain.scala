@@ -72,6 +72,8 @@ object domain:
 
   trait UpkeepService[F[_], A]:
     def updateProject(command: UpdateDependency[A]): F[Either[String, Unit]]
+    def updateAffectedProjects(dependencyName: String)
+        : F[List[Either[String, Unit]]]
 
   trait ProjectDependencyRepository[F[_], A]:
     def getAffectedProjects(

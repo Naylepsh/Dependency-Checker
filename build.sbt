@@ -38,8 +38,8 @@ lazy val root = project
     version := "0.5.0",
     commonSettings
   )
-  .aggregate(core)
-  .dependsOn(core)
+  .aggregate(core, upkeep)
+  .dependsOn(core, upkeep)
 
 lazy val core = project
   .in(file("modules/core"))

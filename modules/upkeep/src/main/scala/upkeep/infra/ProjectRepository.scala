@@ -11,14 +11,14 @@ import doobie.util.transactor.Transactor
 import org.joda.time.DateTime
 import core.domain.registry.Registry
 
-object ProjectDependencyRepository:
+object ProjectRepository:
   def make[F[_]: MonadCancelThrow](
       xa: Transactor[F],
       registryRepository: RegistryRepository[F]
   ): ProjectDependencyRepository[F, String] = new:
     override def getAffectedProjects(dependencyName: String)
         : F[List[UpdateDependency[String]]] =
-      ProjectDependencyRepositorySQL
+      ProjectRepositorySQL
         .getLatestScansTimestamps(1)
         .option
         .transact(xa)
@@ -32,7 +32,7 @@ object ProjectDependencyRepository:
         scanTimestamp: DateTime
     ): F[List[UpdateDependency[String]]] =
       for
-        raws <- ProjectDependencyRepositorySQL.getAffectedProjects(
+        raws <- ProjectRepositorySQL.getAffectedProjects(
           dependencyName,
           scanTimestamp
         ).to[List].transact(xa)
@@ -51,7 +51,7 @@ object ProjectDependencyRepository:
           )
       )
 
-object ProjectDependencyRepositorySQL:
+object ProjectRepositorySQL:
   import core.infra.persistance.sqlmappings.given
 
   case class RawAffectedProject(
