@@ -6,14 +6,14 @@ object Dependencies {
     val spoiwo     = "2.2.1"
     val toml4j     = "0.7.2"
     val catsCore   = "2.9.0"
-    val catsEffect = "3.4.9"
+    val catsEffect = "3.5.0"
     val circe      = "0.14.5"
     val scalaTime  = "2.32.0"
-    val ciris      = "3.1.0"
+    val ciris      = "3.2.0"
     val decline    = "2.4.1"
 
-    val doobie    = "1.0.0-RC1"
-    val sqliteJDB = "3.41.2.1"
+    val doobie    = "1.0.0-RC2"
+    val sqliteJDB = "3.42.0.0"
 
     val log4j = "2.20.0"
     val woof  = "0.6.0"
