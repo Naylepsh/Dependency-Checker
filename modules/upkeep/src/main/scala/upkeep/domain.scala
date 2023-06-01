@@ -12,10 +12,10 @@ object domain:
       from: String,
       to: String
   ):
-    val fileType = filePath.split(".").last match
-      case "txt"  => Right(FileType.Txt)
-      case "toml" => Right(FileType.Toml)
-      case other  => Left(s"$other is not a supported format")
+    val fileType = filePath.split("[.]").lastOption match
+      case Some("txt")  => Right(FileType.Txt)
+      case Some("toml") => Right(FileType.Toml)
+      case other        => Left(s"$other is not a supported format")
 
   def replaceDependency(
       fileType: FileType,
