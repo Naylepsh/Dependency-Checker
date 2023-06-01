@@ -16,6 +16,7 @@ import io.circe.derivation.{
   ConfiguredEncoder
 }
 import io.circe.derivation.ConfiguredEncoder
+import io.circe.Encoder
 
 case class RepositoryTreeFile(name: String, path: String) derives Decoder
 
@@ -33,7 +34,7 @@ enum Action:
 case class CommitAction(
     action: Action,
     filePath: String,
-    contnet: String
+    content: String
 )
 
 trait GitlabApi[F[_]]:
@@ -71,6 +72,13 @@ object GitlabApi:
     given Configuration = Configuration.default.withSnakeCaseMemberNames
     given ConfiguredDecoder[CreateMergeRequestResponse] =
       ConfiguredDecoder.derived
+    given Encoder[Action] = Encoder[String].contramap {
+      case Action.Create => "create"
+      case Action.Delete => "delete"
+      case Action.Move   => "move"
+      case Action.Update => "update"
+      case Action.Chmod  => "chmod"
+    }
     given ConfiguredEncoder[CommitAction] = ConfiguredEncoder.derived
 
     private case class CreateCommitPayload(
