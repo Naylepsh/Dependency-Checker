@@ -79,7 +79,7 @@ object ProjectRepositorySQL:
     sql"""
     SELECT pd.projectName,
             pd.groupName,
-            "$dependencyName",
+            $dependencyName,
             ds.currentVersion,
             ds.latestVersion
     FROM projectDependency pd
