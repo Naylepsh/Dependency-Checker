@@ -5,18 +5,16 @@ import scala.util.Try
 
 import cats.*
 import cats.implicits.*
-import io.circe.Decoder
-import sttp.capabilities.WebSockets
-import sttp.client3.*
-import sttp.client3.circe.*
-import sttp.model.Uri
 import io.circe.derivation.{
   Configuration,
   ConfiguredDecoder,
   ConfiguredEncoder
 }
-import io.circe.derivation.ConfiguredEncoder
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
+import sttp.capabilities.WebSockets
+import sttp.client3.*
+import sttp.client3.circe.*
+import sttp.model.Uri
 
 case class RepositoryTreeFile(name: String, path: String) derives Decoder
 

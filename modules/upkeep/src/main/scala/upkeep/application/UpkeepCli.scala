@@ -1,20 +1,18 @@
 package upkeep.application
 
-import core.application.cli.Command
-import cats.effect.ExitCode
-import cats.effect.IO
+import cats.effect.{ ExitCode, IO }
 import cats.implicits.*
-import core.application.cli.{ Context, registryLocationOpt, withContext }
-import core.infra.persistance.RegistryRepository
-import core.infra.GitlabApi
-import upkeep.infra.ProjectRepository
-import upkeep.infra.UpkeepRepository
-import org.legogroup.woof.Logger
 import com.monovore.decline.*
+import core.application.cli as CoreCli
+import core.application.cli.*
+import core.infra.GitlabApi
+import core.infra.persistance.RegistryRepository
+import org.legogroup.woof.Logger
+import upkeep.infra.{ ProjectRepository, UpkeepRepository }
 
 object UpkeepCli:
   case class UpkeepSingle(registryPath: String, dependencyName: String)
-      extends Command[IO]:
+      extends CoreCli.Command[IO]:
     def run(): IO[ExitCode] =
       withContext: context =>
         val registryRepository = RegistryRepository.fileBased(registryPath)
