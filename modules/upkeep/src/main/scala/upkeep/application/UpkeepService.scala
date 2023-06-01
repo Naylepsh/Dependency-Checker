@@ -41,7 +41,7 @@ object UpkeepService:
                 makeFailedToChangeContentError(command)
               else
                 val targetBranch = s"sentinel-${command.name}-${command.to}"
-                submitUpdate(command, targetBranch, content)
+                submitUpdate(command, targetBranch, newContent)
             yield result
 
           updateAttempt.value.flatTap {
