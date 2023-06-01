@@ -78,7 +78,7 @@ object ProjectRepositorySQL:
   ): Query0[RawAffectedProject] =
     sql"""
     SELECT pd.projectName,
-            pd.groupName
+            pd.groupName,
             "$dependencyName",
             ds.currentVersion,
             ds.latestVersion
