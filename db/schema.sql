@@ -41,7 +41,15 @@ CREATE TABLE vulnerability
     REFERENCES dependencyScan (id)
     ON DELETE CASCADE
 );
+CREATE TABLE upkeepRequest (
+  id uuid primary key,
+  projectId text not null,
+  dependencyName text not null,
+  updateToVersion text not null,
+  url text not null
+);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20230504143135'),
-  ('20230514114834');
+  ('20230514114834'),
+  ('20230530194352');
