@@ -121,17 +121,15 @@ class DomainSpec extends AnyFlatSpec with should.Matchers:
   }
 
   "File type of UpdateDependency request for registered types" should "be extracted" in {
-    val requestForToml = UpdateDependency(
+    val requestForTxt = UpdateDependency(
       42,
       "master",
-      "pyproject.toml",
+      "requirements.txt",
       "foo",
       "1.2.3",
       "4.5.6"
     )
-    val requestForTxt = requestForToml.copy(filePath = "requirements.txt")
 
-    requestForToml.fileType shouldBe Right(FileType.Toml)
     requestForTxt.fileType shouldBe Right(FileType.Txt)
   }
 
