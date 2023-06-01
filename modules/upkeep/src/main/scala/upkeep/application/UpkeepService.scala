@@ -46,8 +46,10 @@ object UpkeepService:
 
           updateAttempt.value.flatTap {
             case Left(reason) => Logger[F].error(reason)
-            case Right(_) =>
-              Logger[F].info("Successfully submited update request")
+            case Right(mergeRequest) =>
+              Logger[F].info(
+                s"Successfully submited update request ${mergeRequest.webUrl}"
+              )
           }
 
     private def getFile(command: UpdateDependency[String]) =
