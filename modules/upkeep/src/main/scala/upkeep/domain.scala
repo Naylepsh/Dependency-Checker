@@ -6,7 +6,7 @@ object domain:
 
   case class UpdateDependency[A](
       projectId: A,
-      sourceBranch: String,
+      branch: String,
       filePath: String,
       name: String,
       from: String,

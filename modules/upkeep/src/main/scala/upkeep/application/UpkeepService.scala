@@ -55,7 +55,7 @@ object UpkeepService:
     private def getFile(command: UpdateDependency[String]) =
       EitherT(api.getFile(
         command.projectId,
-        command.sourceBranch,
+        command.branch,
         command.filePath
       ))
 
@@ -75,7 +75,7 @@ object UpkeepService:
 
     private def submitUpdate(
         command: UpdateDependency[String],
-        targetBranch: String,
+        sourceBranch: String,
         content: String
     ) =
       val commitMessage =
@@ -84,13 +84,13 @@ object UpkeepService:
 
       EitherT(api.createBranch(
         command.projectId,
-        command.sourceBranch,
-        targetBranch
+        command.branch,
+        sourceBranch
       ))
         *> EitherT(Logger[F].debug("Created branch").map(_.asRight))
         *> EitherT(api.createCommit(
           command.projectId,
-          targetBranch,
+          sourceBranch,
           commitMessage,
           List(core.infra.CommitAction(
             core.infra.Action.Update,
@@ -101,8 +101,8 @@ object UpkeepService:
         *> EitherT(Logger[F].debug("Created commit").map(_.asRight))
         *> EitherT(api.createMergeRequest(
           command.projectId,
-          command.sourceBranch,
-          targetBranch,
+          sourceBranch,
+          command.branch,
           mergeRequestTitle
         ))
         <* EitherT(Logger[F].debug("Created merge request").map(_.asRight))
