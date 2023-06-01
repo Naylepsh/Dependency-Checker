@@ -23,20 +23,32 @@ object application:
 
       private def updateProjectInner(command: UpdateDependency[String])
           : F[Either[String, core.infra.CreateMergeRequestResponse]] =
-        (for
-          file    <- getFile(command)
-          content <- decodeContent(file.content)
-          newContent =
-            replaceDependency(content, command.name, command.from, command.to)
-          result <- if newContent == content then
-            makeFailedToChangeContentError(command)
-          else
-            val targetBranch = s"sentinel/${command.name}-${command.to}"
-            submitUpdate(command, targetBranch, content)
-        yield result).value.flatTap {
-          case Left(reason) => Logger[F].error(reason)
-          case Right(_)     => ().pure
-        }
+        command.fileType match
+          case Left(reason) => Logger[F].error(reason).as(Left(reason))
+          case Right(fileType) =>
+            val updateAttempt =
+              for
+                file    <- getFile(command)
+                content <- decodeContent(file.content)
+                newContent =
+                  replaceDependency(
+                    fileType,
+                    content,
+                    command.name,
+                    command.from,
+                    command.to
+                  )
+                result <- if newContent == content then
+                  makeFailedToChangeContentError(command)
+                else
+                  val targetBranch = s"sentinel/${command.name}-${command.to}"
+                  submitUpdate(command, targetBranch, content)
+              yield result
+
+            updateAttempt.value.flatTap {
+              case Left(reason) => Logger[F].error(reason)
+              case Right(_)     => ().pure
+            }
 
       private def getFile(command: UpdateDependency[String]) =
         EitherT(api.getFile(
