@@ -24,9 +24,15 @@ object domain:
       name: String,
       from: String,
       to: String
-  ): String = fileType match
-    case FileType.Txt  => replaceDependencyInTxt(fileContent, name, from, to)
-    case FileType.Toml => replaceDependencyInToml(fileContent, name, from, to)
+  ): String =
+    val symbollessFrom = from.replaceAll(removeSymbolsRegex, "")
+    fileType match
+      case FileType.Txt =>
+        replaceDependencyInTxt(fileContent, name, symbollessFrom, to)
+      case FileType.Toml =>
+        replaceDependencyInToml(fileContent, name, symbollessFrom, to)
+
+  private def lstrip(regex: String)(s: String) = s.replaceAll("^\\s+", "")
 
   private def replaceDependencyInTxt(
       fileContent: String,
@@ -69,7 +75,9 @@ object domain:
       .mkString(NEWLINE)
 
   private val versionComparisonSymbols = List('=', '>', '^', '~')
-  private val NEWLINE                  = "\n"
+  private val removeSymbolsRegex =
+    versionComparisonSymbols.mkString("[", "", "]")
+  private val NEWLINE = "\n"
 
   trait UpkeepService[F[_], A]:
     def updateProject(command: UpdateDependency[A]): F[Either[String, Unit]]

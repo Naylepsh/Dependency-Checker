@@ -16,11 +16,25 @@ class DomainSpec extends AnyFlatSpec with should.Matchers:
     val initialTomlContent  = pyProjectTomlTemplate("foo", "^", "1.2.3")
     val expectedTomlContent = pyProjectTomlTemplate("foo", "^", "2.0.0")
 
-    val actualTxtContent = replaceDependency(
+    val actualTxtContent1 = replaceDependency(
       FileType.Txt,
       initialTxtContent,
       "foo",
       "1.2.3",
+      "2.0.0"
+    )
+    val actualTxtContent2 = replaceDependency(
+      FileType.Txt,
+      initialTxtContent,
+      "foo",
+      "^1.2.3",
+      "2.0.0"
+    )
+    val actualTxtContent3 = replaceDependency(
+      FileType.Txt,
+      initialTxtContent,
+      "foo",
+      "~1.2.3",
       "2.0.0"
     )
     val actualTomlContent = replaceDependency(
@@ -31,7 +45,9 @@ class DomainSpec extends AnyFlatSpec with should.Matchers:
       "2.0.0"
     )
 
-    actualTxtContent shouldBe expectedTxtContent
+    actualTxtContent1 shouldBe expectedTxtContent
+    actualTxtContent2 shouldBe expectedTxtContent
+    actualTxtContent3 shouldBe expectedTxtContent
     actualTomlContent shouldBe expectedTomlContent
   }
 
