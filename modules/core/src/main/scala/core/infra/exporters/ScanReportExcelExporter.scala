@@ -27,8 +27,9 @@ object ScanReportExcelExporter:
         val groupName =
           Row(style = headerStyle).withCellValues("Source:", group.groupName)
         val tableDescription = Row(style = headerStyle).withCellValues(columns)
-        (groupName :: tableDescription :: group.items
-          .map(report =>
+        (groupName
+          :: tableDescription
+          :: group.items.sortBy(_.name.toLowerCase).map: report =>
             Row(style = chooseStyle(now, report)).withCellValues(
               report.name,
               report.currentVersion.getOrElse(""),
@@ -37,8 +38,7 @@ object ScanReportExcelExporter:
               report.vulnerabilities.length,
               report.vulnerabilities.mkString(",\n"),
               report.notes.getOrElse("")
-            )
-          )) :+ Row() // Add pseudo "margin-bottom"
+            )) :+ Row() // Add pseudo "margin-bottom"
       )
       Sheet(name = scan.projectName)
         .withRows(rows)
