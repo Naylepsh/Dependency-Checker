@@ -32,8 +32,6 @@ object domain:
       case FileType.Toml =>
         replaceDependencyInToml(fileContent, name, symbollessFrom, to)
 
-  private def lstrip(regex: String)(s: String) = s.replaceAll("^\\s+", "")
-
   private def replaceDependencyInTxt(
       fileContent: String,
       name: String,
@@ -52,7 +50,7 @@ object domain:
           line.replace(from, to)
         else
           line
-      .mkString(NEWLINE)
+      .mkString(NEWLINE) + NEWLINE
 
   private def replaceDependencyInToml(
       fileContent: String,
@@ -72,7 +70,7 @@ object domain:
           line.replace(from, to)
         else
           line
-      .mkString(NEWLINE)
+      .mkString(NEWLINE) + NEWLINE
 
   private val versionComparisonSymbols = List('=', '>', '^', '~')
   private val removeSymbolsRegex =

@@ -170,7 +170,7 @@ object DomainSpec:
   |a==1.2.3
   |$name$symbol$version
   |b>=1.2.3
-  """.stripMargin
+  |""".stripMargin
 
   def pyProjectTomlTemplate(
       name: String,
@@ -180,4 +180,4 @@ object DomainSpec:
   |a = "1.2.3"
   |$name = "$version"
   |b = "1.2.3"
-  """.stripMargin
+  |""".stripMargin
