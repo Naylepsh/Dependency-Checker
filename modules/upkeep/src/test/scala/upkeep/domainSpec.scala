@@ -45,6 +45,9 @@ class DomainSpec extends AnyFlatSpec with should.Matchers:
       "2.0.0"
     )
 
+    print(actualTxtContent3)
+    println("*****")
+
     actualTxtContent1 shouldBe expectedTxtContent
     actualTxtContent2 shouldBe expectedTxtContent
     actualTxtContent3 shouldBe expectedTxtContent
@@ -170,7 +173,7 @@ object DomainSpec:
   |a==1.2.3
   |$name$symbol$version
   |b>=1.2.3
-  """.stripMargin
+  |""".stripMargin
 
   def pyProjectTomlTemplate(
       name: String,
@@ -180,4 +183,4 @@ object DomainSpec:
   |a = "1.2.3"
   |$name = "$version"
   |b = "1.2.3"
-  """.stripMargin
+  |""".stripMargin

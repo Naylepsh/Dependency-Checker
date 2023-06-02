@@ -7,7 +7,7 @@ import upkeep.application.UpkeepCli
 object Main extends CommandIOApp(
       name = "sentinel",
       header = "",
-      version = "0.6.0"
+      version = "0.6.2"
     ):
 
   def main: Opts[IO[ExitCode]] =

@@ -35,7 +35,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "sentinel",
-    version := "0.6.0",
+    version := "0.6.2",
     commonSettings
   )
   .aggregate(core, upkeep)
