@@ -45,9 +45,6 @@ class DomainSpec extends AnyFlatSpec with should.Matchers:
       "2.0.0"
     )
 
-    print(actualTxtContent3)
-    println("*****")
-
     actualTxtContent1 shouldBe expectedTxtContent
     actualTxtContent2 shouldBe expectedTxtContent
     actualTxtContent3 shouldBe expectedTxtContent
