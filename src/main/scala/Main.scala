@@ -1,8 +1,8 @@
 import cats.effect.{ ExitCode, IO }
 import com.monovore.decline.Opts
 import com.monovore.decline.effect.CommandIOApp
-import core.application.cli as CoreCli
 import upkeep.application.UpkeepCli
+import scanning.application.ScanningCli
 
 object Main extends CommandIOApp(
       name = "sentinel",
@@ -11,4 +11,4 @@ object Main extends CommandIOApp(
     ):
 
   def main: Opts[IO[ExitCode]] =
-    (CoreCli.allOpts orElse UpkeepCli.allOpts).map(_.run())
+    (ScanningCli.allOpts orElse UpkeepCli.allOpts).map(_.run())

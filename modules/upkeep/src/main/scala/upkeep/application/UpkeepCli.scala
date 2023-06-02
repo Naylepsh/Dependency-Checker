@@ -30,6 +30,8 @@ object UpkeepCli:
       "name",
       "Name of the dependency"
     )
+  val registryLocationOpt =
+    Opts.option[String]("registry-path", "Path to JSON registry")
 
   private val upkeepDependencyOpts = Opts.subcommand(
     name = "upkeep-single",
