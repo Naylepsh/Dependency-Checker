@@ -31,7 +31,6 @@ object ScanningCli:
 
   private def makeScanningService(
       context: Context,
-      registry: Registry,
       parallelGroupSize: Int
   )(using Logger[IO]): ScanningService[IO] =
     val gitlabApi = GitlabApi.make[IO](
@@ -48,43 +47,30 @@ object ScanningCli:
         DependencyRepository.make(context.xa)
       )
 
-    ScanningService.make[IO](
-      source,
-      reporter,
-      repository
-    )
+    ScanningService.make[IO](source, reporter, repository)
 
   case class ScanRepositories(registryPath: String) extends Command[IO]:
     def run(): IO[ExitCode] =
-      withContext { context =>
+      withContext: context =>
         val registryRepository =
           RegistryRepository.fileBased(registryPath)
 
         registryRepository.get().flatMap {
           case Left(_) => ExitCode.Error.pure
           case Right(registry) =>
-            val service = makeScanningService(
-              context,
-              registry,
-              parallelGroupSize
-            )
+            val service = makeScanningService(context, parallelGroupSize)
 
             service
               .scan(registry.projects.filter(_.enabled))
               .as(ExitCode.Success)
         }
-      }
 
   case class ListLatestScans(limit: Int) extends Command[IO]:
     val registry = Registry.empty
 
     def run(): IO[ExitCode] =
-      withContext { context =>
-        val service = makeScanningService(
-          context,
-          registry,
-          parallelGroupSize
-        )
+      withContext: context =>
+        val service = makeScanningService(context, parallelGroupSize)
 
         for
           timestamps <- service.getLatestScansTimestamps(limit)
@@ -95,22 +81,16 @@ object ScanningCli:
             Console[IO].println(s"- $timestamp")
           )
         yield ExitCode.Success
-      }
 
   case class DeleteScans(timestamps: NonEmptyList[DateTime])
       extends Command[IO]:
     val registry = Registry.empty
 
     def run(): IO[ExitCode] =
-      withContext { context =>
-        val service = makeScanningService(
-          context,
-          registry,
-          parallelGroupSize
-        )
+      withContext: context =>
+        val service = makeScanningService(context, parallelGroupSize)
 
         service.deleteScans(timestamps).as(ExitCode.Success)
-      }
 
   case class ExportScanDelta(
       exportPath: String,
@@ -119,7 +99,7 @@ object ScanningCli:
       rightTimestamp: DateTime
   ) extends Command[IO]:
     def run(): IO[ExitCode] =
-      withContext { context =>
+      withContext: context =>
         RegistryRepository.fileBased(registryPath).get().flatMap {
           case Left(_) => ExitCode.Error.pure
           case Right(registry) =>
@@ -138,7 +118,6 @@ object ScanningCli:
               rightTimestamp
             ).as(ExitCode.Success)
         }
-      }
 
   case class ExportScanReports(exportPath: String, registryPath: String)
       extends Command[IO]:
@@ -171,17 +150,15 @@ object ScanningCli:
   val scanTimestampsOpts: Opts[NonEmptyList[DateTime]] = Opts.option[String](
     "timestamps",
     "Comma-separated list of timestamps"
-  ).mapValidated(input =>
+  ).mapValidated: input =>
     input
       .split(",")
       .toList
       .traverse(validateTimestamp)
-      .andThen(timestamps =>
+      .andThen: timestamps =>
         NonEmptyList
           .fromList(timestamps)
           .toValidNel("Empty sequence is not valid")
-      )
-  )
 
   val scanOpts = Opts.subcommand(
     name = "scan",
