@@ -40,8 +40,6 @@ object ScanningCli:
       context.config.gitlabToken
     )
     val source = GitlabSource.make(gitlabApi)
-    val prepareProjectForSource = (project: core.domain.project.Project) =>
-      registry.projects.find(_.id == project.id)
     val reporter =
       PythonDependencyReporter.make(Pypi(context.backend), parallelGroupSize)
     val repository =
@@ -50,9 +48,8 @@ object ScanningCli:
         DependencyRepository.make(context.xa)
       )
 
-    ScanningService.make[IO, core.domain.registry.Project](
+    ScanningService.make[IO](
       source,
-      prepareProjectForSource,
       reporter,
       repository
     )
@@ -72,10 +69,9 @@ object ScanningCli:
               parallelGroupSize
             )
 
-            service.scan(registry.projects.collect {
-              case core.domain.registry.Project(id, name, _, true, _) =>
-                core.domain.project.Project(id, name)
-            }).as(ExitCode.Success)
+            service
+              .scan(registry.projects.filter(_.enabled))
+              .as(ExitCode.Success)
         }
       }
 

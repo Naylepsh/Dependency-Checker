@@ -9,38 +9,39 @@ import cats.implicits.*
 import core.domain.*
 import core.domain.dependency.*
 import core.domain.project.*
+import core.domain.registry
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 
 trait ScanningService[F[_]]:
-  def scan(projects: List[Project]): F[Unit]
+  def scan(projects: List[registry.Project]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
-  def make[F[_]: Monad: Logger: Parallel: Time, A](
-      source: Source[F, A],
-      prepareForSource: Project => Option[A],
+  def make[F[_]: Monad: Logger: Parallel: Time](
+      source: Source[F, registry.Project],
       reporter: DependencyReporter[F],
       repository: ScanResultRepository[F]
-  ): ScanningService[F] = new ScanningService[F]:
+  ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
       Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
         >> repository.delete(timestamps)
         >> Logger[F].info("Successfully deleted the scan(s)")
 
-    def scan(projects: List[Project]): F[Unit] =
+    def scan(projects: List[registry.Project]): F[Unit] =
       for
         _ <- Logger[F].info(
           s"Scanning dependencies of ${projects.length} projects..."
         )
         projectsDependencies <- projects
-          .parTraverse(project =>
-            prepareForSource(project)
-              .map(source.extract(_))
-              .getOrElse(Monad[F].pure(List.empty))
-              .map(dependencies => ProjectDependencies(project, dependencies))
-          )
+          .parTraverse: project =>
+            source.extract(project)
+              .map: dependencies =>
+                ProjectDependencies(
+                  Project(project.id, project.name),
+                  dependencies
+                )
         dependencies = projectsDependencies
           .flatMap(_.dependencies.flatMap(_.items))
           .distinct
