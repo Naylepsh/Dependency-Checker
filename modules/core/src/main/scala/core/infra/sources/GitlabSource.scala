@@ -14,8 +14,6 @@ import core.infra.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }
 
 object GitlabSource:
-  case class GitlabProps(host: String, token: Option[String])
-
   def make[F[_]: Monad: Logger](
       api: GitlabApi[F],
       contentParser: DependencySource => String => List[Dependency] =

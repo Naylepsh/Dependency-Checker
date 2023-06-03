@@ -61,12 +61,9 @@ object registry:
       )
     )
 
-  case class Registry(
-      host: String,
-      projects: List[ProjectScanConfig]
-  ) derives Decoder
+  case class Registry(projects: List[ProjectScanConfig]) derives Decoder
   object Registry:
-    val empty: Registry = Registry(host = "N/A", projects = List.empty)
+    val empty: Registry = Registry(projects = List.empty)
 
   trait RegistryRepository[F[_]]:
     def get(): F[Either[Throwable, Registry]]

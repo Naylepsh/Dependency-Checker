@@ -24,7 +24,7 @@ object cli:
   private def resources(config: AppConfig) =
     (
       database
-        .makeSqliteTransactorResource[IO](config.databaseConfig)
+        .makeSqliteTransactorResource[IO](config.database)
         .evalTap(database.checkSQLiteConnection),
       HttpClientCatsBackend.resource[IO]()
     ).tupled

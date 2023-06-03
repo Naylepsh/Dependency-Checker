@@ -49,8 +49,8 @@ object UpkeepCli:
   )(using Logger[IO]) =
     val gitlabApi = GitlabApi.make(
       context.backend,
-      registry.host,
-      context.config.gitlabToken
+      context.config.gitlab.host,
+      context.config.gitlab.token
     )
     val upkeepRepository = UpkeepRepository.make(context.xa)
     val projectRepository =

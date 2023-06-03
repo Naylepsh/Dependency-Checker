@@ -36,8 +36,8 @@ object ScanningCli:
   )(using Logger[IO]): ScanningService[IO] =
     val gitlabApi = GitlabApi.make[IO](
       context.backend,
-      registry.host,
-      context.config.gitlabToken
+      context.config.gitlab.host,
+      context.config.gitlab.token
     )
     val source = GitlabSource.make(gitlabApi)
     val reporter =
