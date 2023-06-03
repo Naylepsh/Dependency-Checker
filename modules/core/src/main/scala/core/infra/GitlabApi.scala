@@ -1,7 +1,6 @@
 package core.infra
 
 import scala.concurrent.duration.*
-import scala.util.Try
 
 import cats.*
 import cats.implicits.*
@@ -10,7 +9,7 @@ import io.circe.derivation.{
   ConfiguredDecoder,
   ConfiguredEncoder
 }
-import io.circe.{Decoder, Encoder}
+import io.circe.{ Decoder, Encoder }
 import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*

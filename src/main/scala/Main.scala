@@ -1,8 +1,8 @@
 import cats.effect.{ ExitCode, IO }
 import com.monovore.decline.Opts
 import com.monovore.decline.effect.CommandIOApp
-import upkeep.application.UpkeepCli
 import scanning.application.ScanningCli
+import upkeep.application.UpkeepCli
 
 object Main extends CommandIOApp(
       name = "sentinel",

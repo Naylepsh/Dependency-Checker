@@ -1,12 +1,12 @@
 package core.application
 
-import cats.data.ValidatedNel 
+import cats.data.ValidatedNel
 import cats.effect.implicits.*
 import cats.effect.{ ExitCode, IO }
 import cats.implicits.*
 import com.monovore.decline.*
-import core.infra.resources.database
 import core.infra.logging
+import core.infra.resources.database
 import doobie.util.transactor.Transactor
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }

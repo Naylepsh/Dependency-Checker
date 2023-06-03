@@ -1,14 +1,15 @@
 package upkeep.infra
 
+import java.util.UUID
+
 import cats.effect.MonadCancelThrow
-import cats.implicits.*
 import cats.effect.std.UUIDGen
-import upkeep.domain.*
+import cats.implicits.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import java.util.UUID
+import upkeep.domain.*
 
 object UpkeepRepository:
   def make[F[_]: MonadCancelThrow: UUIDGen](

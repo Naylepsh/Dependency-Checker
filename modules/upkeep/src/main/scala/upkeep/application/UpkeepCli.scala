@@ -3,8 +3,8 @@ package upkeep.application
 import cats.effect.{ ExitCode, IO }
 import cats.implicits.*
 import com.monovore.decline.*
-import core.application.cli as CoreCli
 import core.application.cli.*
+import core.application.cli as CoreCli
 import core.infra.GitlabApi
 import core.infra.persistance.RegistryRepository
 import org.legogroup.woof.Logger

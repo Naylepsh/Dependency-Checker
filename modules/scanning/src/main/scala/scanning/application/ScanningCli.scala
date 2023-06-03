@@ -1,30 +1,21 @@
 package scanning.application
 
-import core.application.cli.Context
-import core.application.services.ScanningService
-import core.domain.registry.Registry
-import org.legogroup.woof.Logger
-import cats.effect.IO
-import cats.effect.std.Console
-import cats.syntax.all.*
-import core.infra.GitlabApi
-import core.infra.sources.GitlabSource
-import core.application.services.PythonDependencyReporter
-import core.infra.packageindexes.Pypi
-import core.infra.persistance.ScanResultRepository
-import core.infra.persistance.DependencyRepository
-import core.application.cli.{ Command, validateTimestamp, withContext }
-import cats.effect.ExitCode
-import core.infra.persistance.RegistryRepository
-import com.monovore.decline.Opts
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
-import core.infra.exporters.ScanDeltaExcelExporter
-import core.application.services.ScanDeltaExportService
+import cats.effect.std.Console
+import cats.effect.{ExitCode, IO}
+import cats.syntax.all.*
+import com.monovore.decline.Opts
+import core.application.cli._
+import core.application.services._
 import core.domain.project.{ Project, ScanReport }
-import core.infra.exporters.ScanReportExcelExporter
-import core.application.services.ScanReportExportService
-import core.application.cli.timestampOpt
+import core.domain.registry.Registry
+import core.infra.GitlabApi
+import core.infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
+import core.infra.packageindexes.Pypi
+import core.infra.persistance.{DependencyRepository, RegistryRepository, ScanResultRepository}
+import core.infra.sources.GitlabSource
+import org.joda.time.DateTime
+import org.legogroup.woof.Logger
 
 object ScanningCli:
   private val parallelGroupSize = 10

@@ -1,15 +1,14 @@
 package upkeep.application
 
 import cats.Monad
+import cats.data.EitherT
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
+import core.domain.registry.{Registry, RegistryRepository}
 import core.infra.GitlabApi
-import upkeep.domain.*
-import cats.data.EitherT
-import org.legogroup.woof.{ Logger, given }
-import core.domain.registry.RegistryRepository
 import org.joda.time.DateTime
-import core.domain.registry.Registry
+import org.legogroup.woof.{ Logger, given }
+import upkeep.domain.*
 
 object UpkeepService:
   def makeForGitlab[F[_]: Monad: Logger](

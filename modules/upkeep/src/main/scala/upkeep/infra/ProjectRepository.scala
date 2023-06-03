@@ -2,14 +2,13 @@ package upkeep.infra
 
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
-import upkeep.domain.*
-import core.domain.registry.RegistryRepository
+import core.domain.registry.{Registry, RegistryRepository}
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
 import org.joda.time.DateTime
-import core.domain.registry.Registry
+import upkeep.domain.*
 
 object ProjectRepository:
   def make[F[_]: MonadCancelThrow](
