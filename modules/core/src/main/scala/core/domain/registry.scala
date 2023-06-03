@@ -35,7 +35,7 @@ object registry:
                 ))
         }
 
-  private case class RawProject(
+  private case class RawProjectScanConfig(
       id: String,
       name: String,
       sources: List[DependencySource],
@@ -43,16 +43,16 @@ object registry:
       branch: Option[String]
   ) derives Decoder
 
-  case class Project(
+  case class ProjectScanConfig(
       id: String,
       name: String,
       sources: List[DependencySource],
       enabled: Boolean,
       branch: String
   )
-  object Project:
-    given Decoder[Project] = Decoder[RawProject].map(raw =>
-      Project(
+  object ProjectScanConfig:
+    given Decoder[ProjectScanConfig] = Decoder[RawProjectScanConfig].map(raw =>
+      ProjectScanConfig(
         raw.id,
         raw.name,
         raw.sources,
@@ -63,7 +63,7 @@ object registry:
 
   case class Registry(
       host: String,
-      projects: List[Project]
+      projects: List[ProjectScanConfig]
   ) derives Decoder
   object Registry:
     val empty: Registry = Registry(host = "N/A", projects = List.empty)

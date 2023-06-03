@@ -9,18 +9,18 @@ import cats.implicits.*
 import core.domain.*
 import core.domain.dependency.*
 import core.domain.project.*
-import core.domain.registry
+import core.domain.registry.ProjectScanConfig
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 
 trait ScanningService[F[_]]:
-  def scan(projects: List[registry.Project]): F[Unit]
+  def scan(projects: List[ProjectScanConfig]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time](
-      source: Source[F, registry.Project],
+      source: Source[F, ProjectScanConfig],
       reporter: DependencyReporter[F],
       repository: ScanResultRepository[F]
   ): ScanningService[F] = new:
@@ -29,7 +29,7 @@ object ScanningService:
         >> repository.delete(timestamps)
         >> Logger[F].info("Successfully deleted the scan(s)")
 
-    def scan(projects: List[registry.Project]): F[Unit] =
+    def scan(projects: List[ProjectScanConfig]): F[Unit] =
       for
         _ <- Logger[F].info(
           s"Scanning dependencies of ${projects.length} projects..."

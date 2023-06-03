@@ -39,7 +39,7 @@ class GitlabSourceSpec extends AnyFlatSpec:
   }
 
 object GitlabSourceSpec:
-  val testProject = Project(
+  val testProject = ProjectScanConfig(
     id = "123",
     name = "test-project",
     sources = List(DependencySource.TxtSource(path = "requirements.txt")),

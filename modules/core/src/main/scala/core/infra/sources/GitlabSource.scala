@@ -20,8 +20,8 @@ object GitlabSource:
       api: GitlabApi[F],
       contentParser: DependencySource => String => List[Dependency] =
         defaultContentParser
-  ): Source[F, Project] = new:
-    def extract(project: Project): F[List[Grouped[Dependency]]] =
+  ): Source[F, ProjectScanConfig] = new:
+    def extract(project: ProjectScanConfig): F[List[Grouped[Dependency]]] =
       project.sources
         .traverse(source =>
           extractFromFile(project, source.path, contentParser(source))
@@ -29,7 +29,7 @@ object GitlabSource:
         )
 
     private def extractFromFile(
-        project: Project,
+        project: ProjectScanConfig,
         filePath: String,
         contentExtractor: String => List[Dependency]
     ): F[List[Dependency]] =
