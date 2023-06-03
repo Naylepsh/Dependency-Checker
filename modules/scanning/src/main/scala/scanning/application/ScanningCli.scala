@@ -54,12 +54,11 @@ object ScanningCli:
       withContext: context =>
         val registryRepository =
           RegistryRepository.fileBased(registryPath)
+        val service = makeScanningService(context, parallelGroupSize)
 
         registryRepository.get().flatMap {
           case Left(_) => ExitCode.Error.pure
           case Right(registry) =>
-            val service = makeScanningService(context, parallelGroupSize)
-
             service
               .scan(registry.projects.filter(_.enabled))
               .as(ExitCode.Success)
@@ -100,20 +99,18 @@ object ScanningCli:
   ) extends Command[IO]:
     def run(): IO[ExitCode] =
       withContext: context =>
+        val dependencyRepository = DependencyRepository.make(context.xa)
+        val repository =
+          ScanResultRepository.make(context.xa, dependencyRepository)
+        val exporter = ScanDeltaExcelExporter.make[IO](exportPath)
+        val service  = ScanDeltaExportService.make(exporter, repository)
+
         RegistryRepository.fileBased(registryPath).get().flatMap {
           case Left(_) => ExitCode.Error.pure
           case Right(registry) =>
-            val repository = ScanResultRepository.make(
-              context.xa,
-              DependencyRepository.make(context.xa)
-            )
-            val exporter = ScanDeltaExcelExporter.make[IO](exportPath)
-            val service  = ScanDeltaExportService.make(exporter, repository)
-
             service.exportDeltas(
-              registry.projects.map(project =>
-                Project(project.id, project.name)
-              ),
+              registry.projects.map: project =>
+                Project(project.id, project.name),
               leftTimestamp,
               rightTimestamp
             ).as(ExitCode.Success)
@@ -122,20 +119,19 @@ object ScanningCli:
   case class ExportScanReports(exportPath: String, registryPath: String)
       extends Command[IO]:
     def run(): IO[ExitCode] =
-      val registryRepository =
-        RegistryRepository.fileBased(registryPath)
-      val exporter = ScanReportExcelExporter.make[IO](exportPath)
-
       withContext: context =>
+        val registryRepository =
+          RegistryRepository.fileBased(registryPath)
+        val exporter = ScanReportExcelExporter.make[IO](exportPath)
+        val repository = ScanResultRepository.make(
+          context.xa,
+          DependencyRepository.make(context.xa)
+        )
+        val service = ScanReportExportService.make(exporter, repository)
+
         registryRepository.get().flatMap {
           case Left(_) => IO.unit
           case Right(registry) =>
-            val repository = ScanResultRepository.make(
-              context.xa,
-              DependencyRepository.make(context.xa)
-            )
-            val service = ScanReportExportService.make(exporter, repository)
-
             service.exportScanResults(registry.projects.map(project =>
               Project(project.id, project.name)
             ))

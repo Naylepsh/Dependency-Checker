@@ -7,7 +7,7 @@ import scanning.application.ScanningCli
 object Main extends CommandIOApp(
       name = "sentinel",
       header = "",
-      version = "0.6.2"
+      version = "0.6.3"
     ):
 
   def main: Opts[IO[ExitCode]] =
