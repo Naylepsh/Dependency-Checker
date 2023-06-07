@@ -2,7 +2,7 @@ package upkeep.infra
 
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
-import core.domain.registry.{Registry, RegistryRepository}
+import core.domain.registry.{ Registry, RegistryRepository }
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
@@ -37,7 +37,7 @@ object ProjectRepository:
         ).to[List].transact(xa)
         projects <- registryRepository
           .get()
-          .map(_.map(_.projects).getOrElse(List.empty))
+          .map(_.map(_.projects.filter(_.enabled)).getOrElse(List.empty))
       yield raws.flatMap(raw =>
         projects.find(_.name == raw.projectName).map: project =>
           UpdateDependency(
