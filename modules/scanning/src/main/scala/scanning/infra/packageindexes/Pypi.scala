@@ -1,4 +1,4 @@
-package core.infra.packageindexes
+package scanning.infra.packageindexes
 
 import scala.concurrent.duration.*
 
@@ -6,7 +6,7 @@ import cats.Monad
 import cats.effect.Sync
 import cats.implicits.*
 import com.github.nscala_time.time.Imports.*
-import core.domain.PackageIndex
+import scanning.domain.PackageIndex
 import core.domain.dependency.{ Dependency, DependencyDetails }
 import io.circe.*
 import io.circe.generic.semiauto.*

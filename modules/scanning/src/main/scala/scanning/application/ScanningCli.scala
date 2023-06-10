@@ -10,7 +10,7 @@ import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
 import core.infra.GitlabApi
 import core.infra.exporters.{ ScanDeltaExcelExporter, ScanReportExcelExporter }
-import core.infra.packageindexes.Pypi
+import scanning.infra.packageindexes.Pypi
 import core.infra.persistance.{
   DependencyRepository,
   RegistryRepository,

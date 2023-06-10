@@ -1,6 +1,6 @@
-package core.domain
+package scanning.domain
 
-import dependency.{ Dependency, DependencyDetails }
+import core.domain.dependency.{ Dependency, DependencyDetails }
 
 trait PackageIndex[F[_]]:
   def getDetails(dependency: Dependency): F[Either[String, DependencyDetails]]

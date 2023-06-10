@@ -5,7 +5,7 @@ import scala.util.*
 
 import cats.*
 import cats.implicits.*
-import core.domain.PackageIndex
+import scanning.domain.PackageIndex
 import core.domain.dependency.*
 import org.legogroup.woof.{ *, given }
 

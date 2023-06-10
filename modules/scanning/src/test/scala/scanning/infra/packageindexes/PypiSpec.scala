@@ -1,4 +1,4 @@
-package core.infra.packageindexes
+package scanning.infra.packageindexes
 
 import cats.effect.*
 import cats.effect.testing.scalatest.AsyncIOSpec
