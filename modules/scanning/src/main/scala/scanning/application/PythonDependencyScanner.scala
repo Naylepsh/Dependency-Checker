@@ -1,4 +1,4 @@
-package core.application.services
+package scanning.application.services
 
 import scala.concurrent.*
 import scala.util.*
@@ -9,11 +9,11 @@ import core.domain.PackageIndex
 import core.domain.dependency.*
 import org.legogroup.woof.{ *, given }
 
-object PythonDependencyReporter:
+object PythonDependencyScanner:
   def make[F[_]: Logger: Parallel: Monad](
       packageIndex: PackageIndex[F],
       parallelGroupSize: Int
-  ): DependencyReporter[F] = new:
+  ): DependencyScanner[F] = new:
     def getDetails(
         dependencies: List[Dependency]
     ): F[List[DependencyDetails]] =

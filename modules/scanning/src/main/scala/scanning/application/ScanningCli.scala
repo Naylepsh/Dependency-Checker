@@ -2,20 +2,24 @@ package scanning.application
 
 import cats.data.NonEmptyList
 import cats.effect.std.Console
-import cats.effect.{ExitCode, IO}
+import cats.effect.{ ExitCode, IO }
 import cats.syntax.all.*
 import com.monovore.decline.Opts
-import core.application.cli._
-import core.application.services._
+import core.application.cli.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
 import core.infra.GitlabApi
-import core.infra.exporters.{ScanDeltaExcelExporter, ScanReportExcelExporter}
+import core.infra.exporters.{ ScanDeltaExcelExporter, ScanReportExcelExporter }
 import core.infra.packageindexes.Pypi
-import core.infra.persistance.{DependencyRepository, RegistryRepository, ScanResultRepository}
+import core.infra.persistance.{
+  DependencyRepository,
+  RegistryRepository,
+  ScanResultRepository
+}
 import core.infra.sources.GitlabSource
 import org.joda.time.DateTime
 import org.legogroup.woof.Logger
+import scanning.application.services._
 
 object ScanningCli:
   private val parallelGroupSize = 10
@@ -31,7 +35,7 @@ object ScanningCli:
     )
     val source = GitlabSource.make(gitlabApi)
     val reporter =
-      PythonDependencyReporter.make(Pypi(context.backend), parallelGroupSize)
+      PythonDependencyScanner.make(Pypi(context.backend), parallelGroupSize)
     val repository =
       ScanResultRepository.make(
         context.xa,

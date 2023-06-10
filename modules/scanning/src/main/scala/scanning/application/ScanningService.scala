@@ -1,4 +1,4 @@
-package core.application.services
+package scanning.application.services
 
 import scala.annotation.tailrec
 
@@ -21,7 +21,7 @@ trait ScanningService[F[_]]:
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time](
       source: Source[F, ProjectScanConfig],
-      reporter: DependencyReporter[F],
+      scanner: DependencyScanner[F],
       repository: ScanResultRepository[F]
   ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
@@ -48,12 +48,14 @@ object ScanningService:
         _ <- Logger[F].info(
           s"Checking the details of ${dependencies.length} dependencies..."
         )
-        details <- reporter.getDetails(dependencies)
+        details <- scanner.getDetails(dependencies)
         _       <- Logger[F].info("Building the report...")
-        detailsMap = buildDetailsMap(details)
-        reports    = projectsDependencies.map(buildReport(detailsMap))
+        reports =
+          projectsDependencies.map(buildReport(buildDetailsMap(details)))
+        _   <- Logger[F].info("Saving the scan results...")
         now <- Time[F].currentDateTime
         _   <- repository.save(reports, now)
+        _   <- Logger[F].info("Done with the scan")
       yield ()
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =

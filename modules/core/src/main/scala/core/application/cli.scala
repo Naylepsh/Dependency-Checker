@@ -15,7 +15,6 @@ import sttp.client3.SttpBackend
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 
 import config.AppConfig
-import services.*
 
 object cli:
   trait Command[F[_]]:

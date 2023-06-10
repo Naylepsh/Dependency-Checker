@@ -1,4 +1,4 @@
-package core.application.services
+package scanning.application.services
 
 import cats.Monad
 import cats.data.Validated.{ Invalid, Valid }

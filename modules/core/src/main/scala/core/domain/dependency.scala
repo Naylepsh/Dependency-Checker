@@ -54,7 +54,7 @@ object dependency:
       notes
     )
 
-  trait DependencyReporter[F[_]]:
+  trait DependencyScanner[F[_]]:
     def getDetails(dependencies: List[Dependency]): F[List[DependencyDetails]]
 
   case class ExistingDependency(

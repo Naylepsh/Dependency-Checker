@@ -1,4 +1,4 @@
-package core.application.services
+package scanning.application.services
 
 import cats.*
 import cats.implicits.*
