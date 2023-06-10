@@ -1,4 +1,4 @@
-package core.infra.sources
+package scanning.infra.sources
 
 import cats.*
 import cats.implicits.*

@@ -12,6 +12,7 @@ import core.domain.project.*
 import core.domain.registry.ProjectScanConfig
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
+import scanning.domain.Source
 
 trait ScanningService[F[_]]:
   def scan(projects: List[ProjectScanConfig]): F[Unit]

@@ -1,4 +1,4 @@
-package core.infra.sources
+package scanning.infra.sources
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -8,7 +8,8 @@ import cats.implicits.*
 import core.domain.dependency.*
 import core.domain.registry.DependencySource.{ TomlSource, TxtSource }
 import core.domain.registry.*
-import core.domain.{ Grouped, Source }
+import core.domain.{ Grouped }
+import scanning.domain.Source
 import core.infra.parsers.python.{ PyProjectToml, RequirementsTxt }
 import core.infra.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }

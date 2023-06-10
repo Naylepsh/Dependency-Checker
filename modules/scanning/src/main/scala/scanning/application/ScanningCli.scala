@@ -16,7 +16,7 @@ import core.infra.persistance.{
   RegistryRepository,
   ScanResultRepository
 }
-import core.infra.sources.GitlabSource
+import scanning.infra.sources.GitlabSource
 import org.joda.time.DateTime
 import org.legogroup.woof.Logger
 import scanning.application.services._
