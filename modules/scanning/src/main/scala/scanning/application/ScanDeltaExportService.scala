@@ -3,7 +3,7 @@ package scanning.application.services
 import cats.Monad
 import cats.data.Validated.{ Invalid, Valid }
 import cats.implicits.*
-import core.domain.Exporter
+import scanning.domain.Exporter
 import core.domain.delta.ScanDelta
 import core.domain.project.{ Project, ScanResultRepository }
 import org.joda.time.DateTime

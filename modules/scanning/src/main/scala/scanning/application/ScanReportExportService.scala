@@ -2,7 +2,7 @@ package scanning.application.services
 
 import cats.*
 import cats.implicits.*
-import core.domain.Exporter
+import scanning.domain.Exporter
 import core.domain.project.{ Project, ScanReport, ScanResultRepository }
 import org.legogroup.woof.{ *, given }
 

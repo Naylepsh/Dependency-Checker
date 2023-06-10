@@ -1,9 +1,10 @@
-package core.infra.exporters
+package scanning.infra.exporters
 
 import cats.effect.kernel.Sync
 import cats.implicits.*
 import core.domain.delta.{ DependencyDelta, PropertyDelta, ScanDelta }
-import core.domain.{ Exporter, Grouped }
+import core.domain.Grouped
+import scanning.domain.Exporter
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*

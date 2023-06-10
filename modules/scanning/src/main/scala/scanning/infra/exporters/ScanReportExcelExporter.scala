@@ -1,4 +1,4 @@
-package core.infra.exporters
+package scanning.infra.exporters
 
 import cats.*
 import cats.effect.kernel.Sync
@@ -7,7 +7,8 @@ import core.domain.dependency.DependencyReport
 import core.domain.project.{ ScanReport, ScanResult }
 import core.domain.semver.*
 import core.domain.severity.*
-import core.domain.{ Exporter, Time }
+import core.domain.Time
+import scanning.domain.Exporter
 import org.joda.time.DateTime
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
