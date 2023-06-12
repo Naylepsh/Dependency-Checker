@@ -39,7 +39,7 @@ object domain:
       to: String
   ): String =
     fileContent
-      .split(NEWLINE)
+      .split("\n")
       .map: line =>
         val index                = line.indexOf(name)
         val indexOfCharAfterName = index + name.length
@@ -50,7 +50,7 @@ object domain:
           line.replace(from, to)
         else
           line
-      .mkString(NEWLINE) + NEWLINE
+      .mkString("\n") + "\n"
 
   private def replaceDependencyInToml(
       fileContent: String,
@@ -59,7 +59,7 @@ object domain:
       to: String
   ): String =
     fileContent
-      .split(NEWLINE)
+      .split("\n")
       .map: line =>
         val index                = line.indexOf(name)
         val indexOfCharAfterName = index + name.length
@@ -70,12 +70,11 @@ object domain:
           line.replace(from, to)
         else
           line
-      .mkString(NEWLINE) + NEWLINE
+      .mkString("\n") + "\n"
 
   private val versionComparisonSymbols = List('=', '>', '^', '~')
   private val removeSymbolsRegex =
     versionComparisonSymbols.mkString("[", "", "]")
-  private val NEWLINE = "\n"
 
   trait UpkeepService[F[_], A]:
     def updateProject(command: UpdateDependency[A]): F[Either[String, Unit]]
