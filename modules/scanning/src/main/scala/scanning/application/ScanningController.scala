@@ -101,7 +101,11 @@ private object ScanningViews:
       div(
         cls := "grid grid-cols-1 divide-y divide-rose-900 divide-dashed",
         vulnerabilities.map: vulnerability =>
-          p(cls := "px-3", vulnerability)
+          div(
+            cls := "px-3 flex justify-between",
+            p(cls      := "my-auto", vulnerability),
+            button(cls := "bg-rose-900 m-1 py-1 px-3", "Ignore")
+          )
       )
 
   private def renderSeverityBar(severity: Severity) =
