@@ -1,5 +1,6 @@
 package scanning.application
 
+import com.comcast.ip4s.*
 import cats.data.NonEmptyList
 import cats.effect.std.Console
 import cats.effect.{ ExitCode, IO }
@@ -9,7 +10,10 @@ import core.application.cli.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
 import core.infra.GitlabApi
-import scanning.infra.exporters.{ ScanDeltaExcelExporter, ScanReportExcelExporter }
+import scanning.infra.exporters.{
+  ScanDeltaExcelExporter,
+  ScanReportExcelExporter
+}
 import scanning.infra.packageindexes.Pypi
 import core.infra.persistance.{
   DependencyRepository,
@@ -19,7 +23,8 @@ import core.infra.persistance.{
 import scanning.infra.sources.GitlabSource
 import org.joda.time.DateTime
 import org.legogroup.woof.Logger
-import scanning.application.services._
+import scanning.application.services.*
+import org.http4s.ember.server.EmberServerBuilder
 
 object ScanningCli:
   private val parallelGroupSize = 10
@@ -132,6 +137,29 @@ object ScanningCli:
             ))
         }.as(ExitCode.Success)
 
+  case class WebServer(registryPath: String) extends Command[IO]:
+    def run(): IO[ExitCode] =
+      withContext: context =>
+        val scanResultService = ScanResultRepository.make(
+          context.xa,
+          DependencyRepository.make(context.xa)
+        )
+        val scanResultRepository = ScanResultRepository.make(
+          context.xa,
+          DependencyRepository.make(context.xa)
+        )
+        val service    = ScanReportService.make(scanResultRepository)
+        val controller = ScanningController.make[IO](service)
+
+        EmberServerBuilder
+          .default[IO]
+          .withHost(ipv4"0.0.0.0")
+          .withPort(port"8080")
+          .withHttpApp(controller.routes.orNotFound)
+          .build
+          .useForever
+          .as(ExitCode.Success)
+
   val exportLocationOpt =
     Opts.option[String]("export-path", "Path to save the export to")
   val registryLocationOpt =
@@ -181,5 +209,14 @@ object ScanningCli:
     timestampOpt("right-timestamp")
   ).mapN(ExportScanDelta.apply))
 
-  val allOpts =
-    scanOpts orElse listScansOpts orElse deleteScansOpts orElse exportScanOpts orElse exportDeltaOpts
+  val webServerOpts = Opts.subcommand(
+    name = "web",
+    help = "Expose web server"
+  )(registryLocationOpt.map(WebServer.apply))
+
+  val allOpts = scanOpts
+    .orElse(listScansOpts)
+    .orElse(deleteScansOpts)
+    .orElse(exportScanOpts)
+    .orElse(exportDeltaOpts)
+    .orElse(webServerOpts)
