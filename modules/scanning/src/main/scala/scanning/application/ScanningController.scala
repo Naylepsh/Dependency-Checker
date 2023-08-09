@@ -21,8 +21,8 @@ object ScanningController:
           service
             .getLatestScan(projectName)
             .map:
-              case None             => renderNoScanResult
-              case Some(scanReport) => renderScanResult(scanReport)
+              case None             => layout(renderNoScanResult)
+              case Some(scanReport) => layout(renderScanResult(scanReport))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
 
@@ -34,30 +34,65 @@ private object ScanningViews:
         script(src := "https://unpkg.com/htmx.org/dist/ext/json-enc.js"),
         script(src := "https://cdn.tailwindcss.com")
       ),
-      body(bodyContent)
+      body(
+        cls := "text-stone-50 bg-zinc-900",
+        bodyContent
+      )
     )
 
   def renderScanResult(scanResult: ScanReport) =
     div(
-      cls := "container",
+      cls := "container mx-auto my-10",
+      h2(
+        cls := "text-center text-rose-900 font-semibold text-5xl",
+        scanResult.projectName
+      ),
       scanResult.dependenciesReports.map: group =>
         div(
-          h1(group.groupName),
+          cls := "my-5",
+          h3(cls := "text-2xl", s"> ${group.groupName}"),
           div(
+            cls := "ml-5",
             group.items.map: dependencyReport =>
-              div(
-                dependencyReport.name,
+              val items = List(
                 div(
-                  p(dependencyReport.currentVersion.getOrElse("-")),
-                  p(dependencyReport.latestVersion),
-                  p(dependencyReport.latestReleaseDate.map(
-                    _.toString
-                  ).getOrElse("-")),
-                  p(dependencyReport.vulnerabilities.length)
+                  cls := "text-2xl",
+                  dependencyReport.name
+                ),
+                div(
+                  cls := "my-3 flex justify-between",
+                  p(
+                    s"""Current version: ${dependencyReport.currentVersion.getOrElse(
+                        "-"
+                      )}"""
+                  ),
+                  p(s"Latest version: ${dependencyReport.latestVersion}"),
+                  p(s"""Latest release date: ${dependencyReport.latestReleaseDate.map(
+                      _.toString
+                    ).getOrElse("-")}""")
                 )
+              )
+              div(
+                cls := "my-3 p-3 border-2 border-rose-900 grid grid-colrs-1 divide-y divide-rose-900",
+                if dependencyReport.vulnerabilities.isEmpty
+                then items
+                else
+                  items.appended(
+                    renderVulnerabilities(dependencyReport.vulnerabilities)
+                  )
               )
           )
         )
     )
+
+  private def renderVulnerabilities(vulnerabilities: List[String]) =
+    if vulnerabilities.isEmpty
+    then div()
+    else
+      div(
+        cls := "grid grid-cols-1 divide-y divide-rose-900 divide-dashed",
+        vulnerabilities.map: vulnerability =>
+          p(cls := "px-3", vulnerability)
+      )
 
   def renderNoScanResult = ???
