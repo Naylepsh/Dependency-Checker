@@ -10,19 +10,25 @@ import cats.syntax.all.*
 import scalatags.Text.all.*
 import core.domain.project.ScanResult
 import core.domain.project.ScanReport
+import core.domain.severity.{ Severity, determineSeverity }
+import core.domain.Time
+import org.joda.time.DateTime
 
 object ScanningController:
   import ScanningViews.*
 
-  def make[F[_]: Monad](service: ScanReportService[F]): Controller[F] =
+  def make[F[_]: Monad: Time](service: ScanReportService[F]): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       def routes: HttpRoutes[F] = HttpRoutes.of[F]:
         case GET -> Root / "scan-report" / projectName / "latest" =>
           service
             .getLatestScan(projectName)
-            .map:
-              case None             => layout(renderNoScanResult)
-              case Some(scanReport) => layout(renderScanResult(scanReport))
+            .flatMap:
+              case None =>
+                layout(renderNoScanResult).pure
+              case Some(scanReport) =>
+                Time[F].currentDateTime.map: now =>
+                  layout(renderScanResult(now, scanReport))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
 
@@ -40,7 +46,7 @@ private object ScanningViews:
       )
     )
 
-  def renderScanResult(scanResult: ScanReport) =
+  def renderScanResult(now: DateTime, scanResult: ScanReport) =
     div(
       cls := "container mx-auto my-10",
       h2(
@@ -56,8 +62,12 @@ private object ScanningViews:
             group.items.map: dependencyReport =>
               val items = List(
                 div(
-                  cls := "text-2xl",
-                  dependencyReport.name
+                  cls := "flex justify-between",
+                  div(
+                    cls := "text-2xl",
+                    dependencyReport.name
+                  ),
+                  renderSeverityBar(determineSeverity(now, dependencyReport))
                 ),
                 div(
                   cls := "my-3 flex justify-between",
@@ -94,5 +104,19 @@ private object ScanningViews:
         vulnerabilities.map: vulnerability =>
           p(cls := "px-3", vulnerability)
       )
+
+  private def renderSeverityBar(severity: Severity) =
+    val (color, barSize, leftoverSize) = severity match
+      case Severity.Unknown => ("bg-slate-400", "w-full", "w-0")
+      case Severity.None    => ("bg-emerald-600", "w-full", "w-0")
+      case Severity.Low     => ("bg-lime-200", "w-3/4", "w-1/4")
+      case Severity.Medium  => ("bg-yellow-200", "w-1/2", "w-1/2")
+      case Severity.High    => ("bg-red-400", "w-1/4", "w-3/3")
+
+    div(
+      cls := "flex w-64 h-8 border-2 border-stone-500",
+      div(cls := s"$color $barSize"),
+      div(cls := leftoverSize)
+    )
 
   def renderNoScanResult = ???
