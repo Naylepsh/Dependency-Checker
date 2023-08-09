@@ -13,6 +13,7 @@ import core.domain.project.ScanReport
 import core.domain.severity.{ Severity, determineSeverity }
 import core.domain.Time
 import org.joda.time.DateTime
+import core.domain.Time.DeltaUnit
 
 object ScanningController:
   import ScanningViews.*
@@ -77,9 +78,7 @@ private object ScanningViews:
                       )}"""
                   ),
                   p(s"Latest version: ${dependencyReport.latestVersion}"),
-                  p(s"""Latest release date: ${dependencyReport.latestReleaseDate.map(
-                      _.toString
-                    ).getOrElse("-")}""")
+                  renderReleaseDate(now, dependencyReport.latestReleaseDate)
                 )
               )
               div(
@@ -119,4 +118,13 @@ private object ScanningViews:
       div(cls := leftoverSize)
     )
 
+  private def renderReleaseDate(now: DateTime, releaseDate: Option[DateTime]) = 
+    val delta = releaseDate
+      .map: date =>
+        Time.Delta(date, now).show
+      .getOrElse("-")
+    p(s"Latest release: $delta ago")
+
+
   def renderNoScanResult = ???
+
