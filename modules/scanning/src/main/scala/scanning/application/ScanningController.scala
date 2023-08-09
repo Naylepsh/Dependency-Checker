@@ -60,7 +60,7 @@ private object ScanningViews:
           h3(cls := "text-2xl", s"> ${group.groupName}"),
           div(
             cls := "ml-5",
-            group.items.map: dependencyReport =>
+            group.items.sortBy(_.name.toLowerCase).map: dependencyReport =>
               val items = List(
                 div(
                   cls := "flex justify-between",
@@ -118,13 +118,11 @@ private object ScanningViews:
       div(cls := leftoverSize)
     )
 
-  private def renderReleaseDate(now: DateTime, releaseDate: Option[DateTime]) = 
+  private def renderReleaseDate(now: DateTime, releaseDate: Option[DateTime]) =
     val delta = releaseDate
       .map: date =>
         Time.Delta(date, now).show
       .getOrElse("-")
     p(s"Latest release: $delta ago")
 
-
   def renderNoScanResult = ???
-
