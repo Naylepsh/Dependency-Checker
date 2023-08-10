@@ -9,7 +9,7 @@ import com.monovore.decline.Opts
 import core.application.cli.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
-import core.infra.GitlabApi
+import gitlab.GitlabApi
 import scanning.infra.exporters.{
   ScanDeltaExcelExporter,
   ScanReportExcelExporter

@@ -5,7 +5,7 @@ import cats.data.EitherT
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
 import core.domain.registry.{ Registry, RegistryRepository }
-import core.infra.GitlabApi
+import gitlab.{ Action, CommitAction, CreateMergeRequestResponse, GitlabApi }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ Logger, given }
 import upkeep.domain.*
@@ -20,7 +20,7 @@ object UpkeepService:
         : F[Either[String, Unit]] = updateProjectInner(command).map(_.void)
 
     private def updateProjectInner(command: UpdateDependency[String])
-        : F[Either[String, core.infra.CreateMergeRequestResponse]] =
+        : F[Either[String, CreateMergeRequestResponse]] =
       command.fileType match
         case Left(reason) => Logger[F].error(reason).as(Left(reason))
         case Right(fileType) =>
@@ -91,8 +91,8 @@ object UpkeepService:
           command.projectId,
           sourceBranch,
           commitMessage,
-          List(core.infra.CommitAction(
-            core.infra.Action.Update,
+          List(CommitAction(
+            Action.Update,
             command.filePath,
             content
           ))
