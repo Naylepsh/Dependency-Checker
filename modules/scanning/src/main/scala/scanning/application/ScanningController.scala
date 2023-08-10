@@ -42,7 +42,7 @@ private object ScanningViews:
         script(src := "https://cdn.tailwindcss.com")
       ),
       body(
-        cls := "text-stone-50 bg-zinc-900",
+        cls := "text-gray-200 bg-gray-900",
         bodyContent
       )
     )
@@ -51,7 +51,7 @@ private object ScanningViews:
     div(
       cls := "container mx-auto my-10",
       h2(
-        cls := "text-center text-rose-900 font-semibold text-5xl",
+        cls := "text-center font-semibold text-5xl",
         scanResult.projectName
       ),
       scanResult.dependenciesReports.map: group =>
@@ -82,7 +82,7 @@ private object ScanningViews:
                 )
               )
               div(
-                cls := "my-3 p-3 border-2 border-rose-900 grid grid-colrs-1 divide-y divide-rose-900",
+                cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
                 if dependencyReport.vulnerabilities.isEmpty
                 then items
                 else
@@ -99,22 +99,22 @@ private object ScanningViews:
     then div()
     else
       div(
-        cls := "grid grid-cols-1 divide-y divide-rose-900 divide-dashed",
+        cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
         vulnerabilities.map: vulnerability =>
           div(
             cls := "px-3 flex justify-between",
             p(cls      := "my-auto", vulnerability),
-            button(cls := "bg-rose-900 m-1 py-1 px-3", "Ignore")
+            button(cls := "bg-teal-500 m-1 py-1 px-3 text-gray-100", "Ignore")
           )
       )
 
   private def renderSeverityBar(severity: Severity) =
     val (color, barSize, leftoverSize) = severity match
       case Severity.Unknown => ("bg-slate-400", "w-full", "w-0")
-      case Severity.None    => ("bg-emerald-600", "w-full", "w-0")
-      case Severity.Low     => ("bg-lime-200", "w-3/4", "w-1/4")
-      case Severity.Medium  => ("bg-yellow-200", "w-1/2", "w-1/2")
-      case Severity.High    => ("bg-red-400", "w-1/4", "w-3/3")
+      case Severity.None    => ("bg-green-500", "w-full", "w-0")
+      case Severity.Low     => ("bg-lime-300", "w-3/4", "w-1/4")
+      case Severity.Medium  => ("bg-yellow-500", "w-1/2", "w-1/2")
+      case Severity.High    => ("bg-red-500", "w-1/4", "w-3/3")
 
     div(
       cls := "flex w-64 h-8 border-2 border-stone-500",
