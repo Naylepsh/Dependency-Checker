@@ -81,6 +81,7 @@ private object ScanningViews:
                   renderReleaseDate(now, dependencyReport.latestReleaseDate)
                 )
               )
+
               div(
                 cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
                 if dependencyReport.vulnerabilities.isEmpty

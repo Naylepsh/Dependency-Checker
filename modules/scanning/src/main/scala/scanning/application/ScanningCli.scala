@@ -148,14 +148,21 @@ object ScanningCli:
           context.xa,
           DependencyRepository.make(context.xa)
         )
-        val service    = ScanReportService.make(scanResultRepository)
-        val controller = ScanningController.make[IO](service)
+        val scanReportService = ScanReportService.make(scanResultRepository)
+        val scanReportController =
+          ScanningController.make[IO](scanReportService)
+        val registryRepository =
+          RegistryRepository.fileBased(registryPath)
+        val projectService    = ProjectService.make(registryRepository)
+        val projectController = ProjectController.make(projectService)
+
+        val routes = scanReportController.routes <+> projectController.routes
 
         EmberServerBuilder
           .default[IO]
           .withHost(ipv4"0.0.0.0")
           .withPort(port"8080")
-          .withHttpApp(controller.routes.orNotFound)
+          .withHttpApp(routes.orNotFound)
           .build
           .useForever
           .as(ExitCode.Success)
