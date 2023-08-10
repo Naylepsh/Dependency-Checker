@@ -5,7 +5,7 @@ import cats.implicits.*
 import com.monovore.decline.*
 import core.application.cli.*
 import core.application.cli as CoreCli
-import core.infra.GitlabApi
+import gitlab.GitlabApi
 import core.infra.persistance.RegistryRepository
 import org.legogroup.woof.Logger
 import upkeep.infra.{ ProjectRepository, UpkeepRepository }

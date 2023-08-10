@@ -1,4 +1,4 @@
-package core.infra
+package gitlab
 
 import scala.concurrent.duration.*
 

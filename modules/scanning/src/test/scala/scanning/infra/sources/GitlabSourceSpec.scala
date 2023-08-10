@@ -5,6 +5,7 @@ import cats.implicits.*
 import core.domain.dependency.Dependency
 import core.domain.registry.*
 import core.infra.*
+import gitlab.*
 import org.legogroup.woof.Logger.StringLocal
 import org.legogroup.woof.{ *, given }
 import org.scalactic.Explicitly.*
