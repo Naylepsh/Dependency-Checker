@@ -10,7 +10,7 @@ import core.domain.registry.DependencySource.{ TomlSource, TxtSource }
 import core.domain.registry.*
 import core.domain.{ Grouped }
 import scanning.domain.Source
-import core.infra.parsers.python.{ PyProjectToml, RequirementsTxt }
+import parsers.python.{ PyProjectToml, RequirementsTxt }
 import gitlab.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }
 

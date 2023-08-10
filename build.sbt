@@ -42,8 +42,8 @@ lazy val root = project
     version := "0.6.3",
     commonSettings
   )
-  .aggregate(core, gitlab, scanning, upkeep)
-  .dependsOn(core, gitlab, scanning, upkeep)
+  .aggregate(core, gitlab, parsers, scanning, upkeep)
+  .dependsOn(core, gitlab, parsers, scanning, upkeep)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -53,15 +53,20 @@ lazy val gitlab = project
   .in(file("modules/gitlab"))
   .settings(commonSettings: _*)
 
+lazy val parsers = project
+  .in(file("modules/parsers"))
+  .settings(commonSettings: _*)
+  .dependsOn(core)
+
 lazy val scanning = project
   .in(file("modules/scanning"))
   .settings(commonSettings: _*)
-  .dependsOn(core, gitlab)
+  .dependsOn(core, parsers, gitlab)
 
 lazy val upkeep = project
   .in(file("modules/upkeep"))
   .settings(commonSettings: _*)
-  .dependsOn(core, gitlab)
+  .dependsOn(core, parsers, gitlab)
 
 enablePlugins(JavaAppPackaging)
 

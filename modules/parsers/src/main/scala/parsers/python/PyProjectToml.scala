@@ -1,4 +1,4 @@
-package core.infra.parsers.python
+package parsers.python
 
 import scala.collection.JavaConverters.*
 import scala.util.{ Success, Try }
