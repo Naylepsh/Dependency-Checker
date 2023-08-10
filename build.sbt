@@ -58,6 +58,11 @@ lazy val parsers = project
   .settings(commonSettings: _*)
   .dependsOn(core)
 
+lazy val processor = project
+  .in(file("modules/processor"))
+  .settings(commonSettings: _*)
+  .dependsOn(core)
+
 lazy val scanning = project
   .in(file("modules/scanning"))
   .settings(commonSettings: _*)
