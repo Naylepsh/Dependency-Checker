@@ -1,8 +1,8 @@
 package processor
 
 import core.domain.task.{ Task, TaskHandler, TaskProcessor }
-import cats.effect.std.Queue
-import cats.effect.{ Ref, Temporal }
+import cats.effect.std.{ Queue, Supervisor }
+import cats.effect.{ Ref, Spawn, Temporal }
 import cats.Monad
 import cats.syntax.all.*
 import concurrent.duration.*
@@ -13,13 +13,21 @@ object TaskProcessor:
       handler: TaskHandler[F],
       maxWorkers: Int
   ): F[TaskProcessor[F]] =
-    Ref.of[F, Int](1).flatMap: workerCount =>
-      val mainWorker = TaskWorker(queue, handler, 5.seconds.some)
+    Supervisor[F](await = true).use: supervisor =>
+      Ref.of[F, Int](1).flatMap: workerCount =>
+        val mainWorker = TaskWorker(queue, handler, 5.seconds.some)
 
-      mainWorker.runForever.map: _ =>
-        TaskProcessor.make(queue, handler, workerCount, maxWorkers)
+        mainWorker.runForever.map: _ =>
+          TaskProcessor.make(
+            supervisor,
+            queue,
+            handler,
+            workerCount,
+            maxWorkers
+          )
 
   private def make[F[_]: Monad: Temporal](
+      supervisor: Supervisor[F],
       queue: Ref[F, Queue[F, Task]],
       handler: TaskHandler[F],
       workerCount: Ref[F, Int],
@@ -33,9 +41,10 @@ object TaskProcessor:
         _ <-
           if tasksOnQueue > 0 && busyWorkers <= maxWorkers
           then
-            workerCount.update(_ + 1)
+            val execution = workerCount.update(_ + 1)
               *> TaskWorker(queue, handler).runOnce
               *> workerCount.update(_ - 1)
+            supervisor.supervise(execution).void
           else Monad[F].unit
       yield ()
 
