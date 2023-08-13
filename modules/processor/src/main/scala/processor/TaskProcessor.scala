@@ -16,14 +16,15 @@ object TaskProcessor:
   ): Resource[F, TaskProcessor[F]] =
     Supervisor[F](await = true).evalMap: supervisor =>
       for
-        queue       <- Queue.unbounded[F, Task]
-        workerCount <- Ref.of[F, Int](1)
-        mainWorker = TaskWorker(queue, handler, mainWorkerSleepTime)
+        queue          <- Queue.unbounded[F, Task]
+        tasksInProgess <- Ref.of[F, Int](0)
+        mainWorker =
+          TaskWorker(queue, handler, tasksInProgess, mainWorkerSleepTime)
         processor = TaskProcessor.make(
           supervisor,
           queue,
           handler,
-          workerCount,
+          tasksInProgess,
           maxWorkers
         )
         _ <- supervisor.supervise(
@@ -35,31 +36,35 @@ object TaskProcessor:
       supervisor: Supervisor[F],
       queue: Queue[F, Task],
       handler: TaskHandler[F],
-      workerCount: Ref[F, Int],
+      tasksInProgress: Ref[F, Int],
       maxWorkers: Int
   ): TaskProcessor[F] = new:
     def add(task: Task): F[Unit] =
       for
-        tasksOnQueue <- queue.size
-        busyWorkers  <- workerCount.get
-        _            <- queue.offer(task)
+        _               <- queue.offer(task)
+        inProgressCount <- tasksInProgress.get
         _ <-
-          if tasksOnQueue > 0 && busyWorkers <= maxWorkers
+          /**
+           * TODO: There's an edge case here:
+           *  If a user adds the jobs quickly: 
+           *  `processor.add(task1) *> processor.add(task2) *> processor.add(task3)`
+           *  then there's a chance that inProgressCount will still be 0 
+           *  by the time of `add(task2)` and `add(task3)`
+           *  preventing the additional workers from spawning
+           */
+          if 0 < inProgressCount && inProgressCount <= maxWorkers
           then
-            val execution = workerCount.update(_ + 1)
-              *> TaskWorker(queue, handler).runOnce
-              *> workerCount.update(_ - 1)
-            supervisor.supervise(execution).void
+            val worker = TaskWorker(queue, handler, tasksInProgress)
+            supervisor.supervise(worker.runOnce).void
           else Monad[F].unit
       yield ()
 
 private class TaskWorker[F[_]: Monad: Temporal](
     queue: Queue[F, Task],
     handler: TaskHandler[F],
+    tasksInProgress: Ref[F, Int],
     sleepOnEmpty: Option[Duration] = None
 ):
-  def runForever: F[Unit] = runOnce.foreverM
-
   def runOnce: F[Unit] =
     queue.tryTake.flatMap:
       case None =>
@@ -67,4 +72,6 @@ private class TaskWorker[F[_]: Monad: Temporal](
           .map(Temporal[F].sleep)
           .getOrElse(Monad[F].unit)
       case Some(task) =>
-        handler.execute(task)
+        tasksInProgress.update(_ + 1)
+          *> handler.execute(task)
+          *> tasksInProgress.update(_ - 1)
