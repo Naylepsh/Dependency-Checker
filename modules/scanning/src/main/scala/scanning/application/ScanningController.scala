@@ -40,7 +40,7 @@ object ScanningController:
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
 
-        case POST -> Root / "api" / "scan" / projectName =>
+        case POST -> Root / "scan" / projectName =>
           registryRepository.get().flatMap:
             case Left(_) => NotFound(s"$projectName does not exist")
             case Right(registry) =>
@@ -50,7 +50,10 @@ object ScanningController:
                   project.name == projectName
                 .fold(NotFound(s"$projectName does not exist")): project =>
                   taskProcessor.add(service.scan(project))
-                    *> Ok(s"Scheduled a scan for $projectName")
+                    *> Ok(
+                      renderScanScheduledButton.toString,
+                      `Content-Type`(MediaType.text.html)
+                    )
 
 private object ScanningViews:
   def layout(bodyContent: scalatags.Text.Modifier*) =
@@ -149,4 +152,12 @@ private object ScanningViews:
       .getOrElse("-")
     p(s"Latest release: $delta ago")
 
-  def renderNoScanResult = ???
+  def renderNoScanResult =
+    // TODO: Add prettier view
+    div("This project hasn't been scanned yet")
+
+  val renderScanScheduledButton =
+    a(
+      cls := "bg-gray-400 m-1 py-2 px-3 text-gray-100 cursor-pointer animate-pulse",
+      "Scan scheduled"
+    )
