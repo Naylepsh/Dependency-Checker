@@ -10,9 +10,6 @@ import cats.syntax.all.*
 import scalatags.Text.all.*
 import core.domain.registry.ProjectScanConfig
 
-object events:
-  val click = "click"
-
 object ProjectController:
   // TODO: Move this to a dedicated module
   // And mode ScanningViews' layout to a shared module (/lib?)
