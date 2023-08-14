@@ -15,20 +15,44 @@ import org.legogroup.woof.{ *, given }
 import scanning.domain.Source
 
 trait ScanningService[F[_]]:
+  def scan(project: ProjectScanConfig): F[Unit]
   def scan(projects: List[ProjectScanConfig]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
+  def getLatestScan(projectName: String): F[Option[ScanReport]] 
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time](
       source: Source[F, ProjectScanConfig],
       scanner: DependencyScanner[F],
-      repository: ScanResultRepository[F]
+      repository: ScanResultRepository[F],
   ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
       Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
         >> repository.delete(timestamps)
         >> Logger[F].info("Successfully deleted the scan(s)")
+
+    def scan(project: ProjectScanConfig): F[Unit] =
+      for
+        _ <- Logger[F].info(s"Scanning dependencies of ${project.name}")
+        projectDependencies <- source
+          .extract(project)
+          .map: dependencies =>
+            ProjectDependencies(Project(project.id, project.name), dependencies)
+        allDependencies = projectDependencies
+          .dependencies
+          .flatMap(_.items)
+          .distinct
+        _ <- Logger[F].info(
+          s"Checking the details of ${allDependencies.length} dependencies"
+        )
+        details <- scanner.getDetails(allDependencies)
+        report = buildReport(buildDetailsMap(details))(projectDependencies)
+        _   <- Logger[F].info("Saving the scan results...")
+        now <- Time[F].currentDateTime
+        _   <- repository.save(List(report), now)
+        _   <- Logger[F].info("Done with the scan")
+      yield ()
 
     def scan(projects: List[ProjectScanConfig]): F[Unit] =
       for
@@ -61,6 +85,11 @@ object ScanningService:
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       repository.getLatestScansTimestamps(limit)
+
+    def getLatestScan(projectName: String): F[Option[ScanReport]] =
+      repository.getLatestScanReports(List(projectName)).map:
+        case report :: Nil => Some(report)
+        case _             => None
 
   private val latestKey = "LATEST"
 

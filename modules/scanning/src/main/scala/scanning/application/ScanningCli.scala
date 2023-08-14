@@ -25,6 +25,8 @@ import org.joda.time.DateTime
 import org.legogroup.woof.Logger
 import scanning.application.services.*
 import org.http4s.ember.server.EmberServerBuilder
+import concurrent.duration.*
+import processor.TaskProcessor
 
 object ScanningCli:
   private val parallelGroupSize = 10
@@ -148,24 +150,30 @@ object ScanningCli:
           context.xa,
           DependencyRepository.make(context.xa)
         )
-        val scanReportService = ScanReportService.make(scanResultRepository)
-        val scanReportController =
-          ScanningController.make[IO](scanReportService)
         val registryRepository =
           RegistryRepository.fileBased(registryPath)
         val projectService    = ProjectService.make(registryRepository)
         val projectController = ProjectController.make(projectService)
 
-        val routes = scanReportController.routes <+> projectController.routes
+        TaskProcessor.make[IO](1, false.pure, 10.seconds.some).use: processor =>
+          val scanningService = makeScanningService(context, parallelGroupSize)
+          val scanReportController =
+            ScanningController.make(
+              scanningService,
+              registryRepository,
+              processor
+            )
 
-        EmberServerBuilder
-          .default[IO]
-          .withHost(ipv4"0.0.0.0")
-          .withPort(port"8080")
-          .withHttpApp(routes.orNotFound)
-          .build
-          .useForever
-          .as(ExitCode.Success)
+          val routes = scanReportController.routes <+> projectController.routes
+
+          EmberServerBuilder
+            .default[IO]
+            .withHost(ipv4"0.0.0.0")
+            .withPort(port"8080")
+            .withHttpApp(routes.orNotFound)
+            .build
+            .useForever
+            .as(ExitCode.Success)
 
   val exportLocationOpt =
     Opts.option[String]("export-path", "Path to save the export to")

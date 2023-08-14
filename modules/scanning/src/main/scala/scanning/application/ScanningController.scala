@@ -14,11 +14,18 @@ import core.domain.severity.{ Severity, determineSeverity }
 import core.domain.Time
 import org.joda.time.DateTime
 import core.domain.Time.DeltaUnit
+import scanning.application.services.ScanningService
+import core.domain.registry.RegistryRepository
+import core.domain.task.TaskProcessor
 
 object ScanningController:
   import ScanningViews.*
 
-  def make[F[_]: Monad: Time](service: ScanReportService[F]): Controller[F] =
+  def make[F[_]: Monad: Time](
+      service: ScanningService[F],
+      registryRepository: RegistryRepository[F],
+      taskProcessor: TaskProcessor[F]
+  ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       def routes: HttpRoutes[F] = HttpRoutes.of[F]:
         case GET -> Root / "scan-report" / projectName / "latest" =>
@@ -32,6 +39,18 @@ object ScanningController:
                   layout(renderScanResult(now, scanReport))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
+
+        case POST -> Root / "api" / "scan" / projectName =>
+          registryRepository.get().flatMap:
+            case Left(_) => NotFound(s"$projectName does not exist")
+            case Right(registry) =>
+              registry
+                .projects
+                .find: project =>
+                  project.name == projectName
+                .fold(NotFound(s"$projectName does not exist")): project =>
+                  taskProcessor.add(service.scan(project))
+                    *> Ok(s"Scheduled a scan for $projectName")
 
 private object ScanningViews:
   def layout(bodyContent: scalatags.Text.Modifier*) =
