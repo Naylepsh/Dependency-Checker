@@ -73,6 +73,7 @@ object ProjectViews:
     )
 
   def renderProjectShort(project: ProjectScanConfig) =
+    // TODO: Add some animations when details unfold
     div(
       cls                 := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
       htmx.ajax.get       := s"/project/${project.name}/detailed",
