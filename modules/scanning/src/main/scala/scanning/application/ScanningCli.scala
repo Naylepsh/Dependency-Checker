@@ -29,34 +29,28 @@ import concurrent.duration.*
 import processor.TaskProcessor
 
 object ScanningCli:
-  private val parallelGroupSize = 10
-
-  private def makeScanningService(
-      context: Context,
-      parallelGroupSize: Int
-  )(using Logger[IO]): ScanningService[IO] =
+  private def makeScanningService(context: Context)(using Logger[IO]): ScanningService[IO] =
     val gitlabApi = GitlabApi.make[IO](
       context.backend,
       context.config.gitlab.host,
       context.config.gitlab.token
     )
     val source = GitlabSource.make(gitlabApi)
-    val reporter =
-      PythonDependencyScanner.make(Pypi(context.backend), parallelGroupSize)
+    val scanner = DependencyScanner.make(Pypi(context.backend))
     val repository =
       ScanResultRepository.make(
         context.xa,
         DependencyRepository.make(context.xa)
       )
 
-    ScanningService.make[IO](source, reporter, repository)
+    ScanningService.make[IO](source, scanner, repository)
 
   case class ScanRepositories(registryPath: String) extends Command[IO]:
     def run(): IO[ExitCode] =
       withContext: context =>
         val registryRepository =
           RegistryRepository.fileBased(registryPath)
-        val service = makeScanningService(context, parallelGroupSize)
+        val service = makeScanningService(context)
 
         registryRepository.get().flatMap {
           case Left(_) => ExitCode.Error.pure
@@ -71,7 +65,7 @@ object ScanningCli:
 
     def run(): IO[ExitCode] =
       withContext: context =>
-        val service = makeScanningService(context, parallelGroupSize)
+        val service = makeScanningService(context)
 
         for
           timestamps <- service.getLatestScansTimestamps(limit)
@@ -89,7 +83,7 @@ object ScanningCli:
 
     def run(): IO[ExitCode] =
       withContext: context =>
-        val service = makeScanningService(context, parallelGroupSize)
+        val service = makeScanningService(context)
 
         service.deleteScans(timestamps).as(ExitCode.Success)
 
@@ -156,7 +150,7 @@ object ScanningCli:
         val projectController = ProjectController.make(projectService)
 
         TaskProcessor.make[IO](1, false.pure, 10.seconds.some).use: processor =>
-          val scanningService = makeScanningService(context, parallelGroupSize)
+          val scanningService = makeScanningService(context)
           val scanReportController =
             ScanningController.make(
               scanningService,
