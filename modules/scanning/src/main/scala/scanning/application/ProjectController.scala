@@ -72,7 +72,7 @@ object ProjectViews:
         cls := "ml-auto my-auto",
         a(
           cls := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-          htmx.ajax.post := s"/api/scan/${project.name}",
+          htmx.ajax.post := s"/scan/${project.name}",
           htmx.trigger := events.click,
           "Scan"
         ),
