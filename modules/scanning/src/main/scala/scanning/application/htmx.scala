@@ -12,10 +12,12 @@ object htmx:
     val attribute = attr("hx-trigger")
     object value:
       val click = "click"
-      
 
   object swap:
     val attribute = attr("hx-swap")
     object value:
       val outerHTML = "outerHTML"
       val beforeEnd = "beforeend"
+
+  object target:
+    val attribute = attr("hx-target")

@@ -75,12 +75,17 @@ object ProjectViews:
   def renderProjectShort(project: ProjectScanConfig) =
     // TODO: Add some animations when details unfold
     div(
-      cls                 := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
-      htmx.ajax.get       := s"/project/${project.name}/detailed",
-      htmx.swap.attribute := htmx.swap.value.outerHTML,
+      id  := project.name,
+      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
       div(
         cls := "flex justify-between",
-        p(cls := "text-2xl", project.name),
+        p(
+          cls                   := "text-2xl",
+          htmx.ajax.get         := s"/project/${project.name}/detailed",
+          htmx.swap.attribute   := htmx.swap.value.outerHTML,
+          htmx.target.attribute := s"#${project.name}",
+          project.name
+        ),
         div(
           cls := "ml-auto my-auto",
           a(
@@ -101,12 +106,17 @@ object ProjectViews:
 
   def renderProjectDetails(project: ProjectScanConfig) =
     div(
-      cls                 := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700",
-      htmx.ajax.get       := s"/project/${project.name}/short",
-      htmx.swap.attribute := htmx.swap.value.outerHTML,
+      id  := project.name,
+      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700",
       div(
         cls := "pb-3 flex justify-between",
-        p(cls := "text-2xl", project.name),
+        p(
+          cls                   := "text-2xl",
+          htmx.ajax.get         := s"/project/${project.name}/short",
+          htmx.swap.attribute   := htmx.swap.value.outerHTML,
+          htmx.target.attribute := s"#${project.name}",
+          project.name
+        ),
         div(
           cls := "ml-auto my-auto",
           a(
