@@ -66,7 +66,7 @@ lazy val processor = project
 lazy val scanning = project
   .in(file("modules/scanning"))
   .settings(commonSettings: _*)
-  .dependsOn(core, parsers, gitlab)
+  .dependsOn(core, parsers, gitlab, processor)
 
 lazy val upkeep = project
   .in(file("modules/upkeep"))
