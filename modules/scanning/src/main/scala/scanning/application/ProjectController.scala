@@ -80,14 +80,14 @@ object ProjectViews:
       div(
         cls := "flex justify-between",
         p(
-          cls                   := "text-2xl",
+          cls                   := "grow text-2xl",
           htmx.ajax.get         := s"/project/${project.name}/detailed",
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
           htmx.target.attribute := s"#${project.name}",
           project.name
         ),
         div(
-          cls := "ml-auto my-auto",
+          cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
             htmx.ajax.post         := s"/scan/${project.name}",
@@ -110,15 +110,15 @@ object ProjectViews:
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700",
       div(
         cls := "pb-3 flex justify-between",
-        p(
-          cls                   := "text-2xl",
+        div(
+          cls                   := "grow text-2xl",
           htmx.ajax.get         := s"/project/${project.name}/short",
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
           htmx.target.attribute := s"#${project.name}",
           project.name
         ),
         div(
-          cls := "ml-auto my-auto",
+          cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
             htmx.ajax.post         := s"/scan/${project.name}",
