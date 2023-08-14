@@ -10,16 +10,8 @@ import cats.syntax.all.*
 import scalatags.Text.all.*
 import core.domain.registry.ProjectScanConfig
 
-object htmx:
-  // TODO: Move this to a dedicated module (/lib?)
-  object ajax:
-    val post = attr("hx-post")
-
-  val trigger = attr("trigger")
-
 object events:
   val click = "click"
-
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -71,9 +63,10 @@ object ProjectViews:
       div(
         cls := "ml-auto my-auto",
         a(
-          cls := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-          htmx.ajax.post := s"/scan/${project.name}",
-          htmx.trigger := events.click,
+          cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
+          htmx.ajax.post         := s"/scan/${project.name}",
+          htmx.trigger.attribute := htmx.trigger.value.click,
+          htmx.swap.attribute    := htmx.swap.value.outerHTML,
           "Scan"
         ),
         a(
