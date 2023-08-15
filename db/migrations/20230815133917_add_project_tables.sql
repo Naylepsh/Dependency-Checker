@@ -4,12 +4,7 @@ create table projectScanConfig (
   projectName text not null unique,
   gitlabId integer not null unique,
   enabled integer not null,
-  branch text not null,
-
-  constraint fk_project_id
-    foreign key (projectId)
-    references project (id)
-    on delete cascade
+  branch text not null
 );
 
 create table txtSource (
@@ -27,7 +22,7 @@ create table tomlSource (
   id uuid primary key,
   configId uuid not null,
   path text not null,
-  group text,
+  targetGroup text,
 
   constraint fk_config_id
     foreign key (configId)

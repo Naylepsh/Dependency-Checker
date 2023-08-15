@@ -48,8 +48,37 @@ CREATE TABLE upkeepRequest (
   updateToVersion text not null,
   url text not null
 );
+CREATE TABLE projectScanConfig (
+  id uuid primary key,
+  projectName text not null unique,
+  gitlabId integer not null unique,
+  enabled integer not null,
+  branch text not null
+);
+CREATE TABLE txtSource (
+  id uuid primary key,
+  configId uuid not null,
+  path text not null,
+
+  constraint fk_config_id
+    foreign key (configId)
+    references projectScanConfig (id)
+    on delete cascade
+);
+CREATE TABLE tomlSource (
+  id uuid primary key,
+  configId uuid not null,
+  path text not null,
+  targetGroup text,
+
+  constraint fk_config_id
+    foreign key (configId)
+    references projectScanConfig (id)
+    on delete cascade
+);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20230504143135'),
   ('20230514114834'),
-  ('20230530194352');
+  ('20230530194352'),
+  ('20230815133917');

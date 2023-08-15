@@ -6,6 +6,7 @@ import scala.util.{ Failure, Success, Try }
 import cats.*
 import cats.implicits.*
 import core.domain.dependency.*
+import core.domain.registry
 import core.domain.registry.DependencySource.{ TomlSource, TxtSource }
 import core.domain.registry.*
 import core.domain.{ Grouped }
@@ -17,7 +18,7 @@ import org.legogroup.woof.{ *, given }
 object GitlabSource:
   def make[F[_]: Monad: Logger](
       api: GitlabApi[F],
-      contentParser: DependencySource => String => List[Dependency] =
+      contentParser: registry.DependencySource => String => List[Dependency] =
         defaultContentParser
   ): Source[F, ProjectScanConfig] = new:
     def extract(project: ProjectScanConfig): F[List[Grouped[Dependency]]] =
@@ -52,7 +53,7 @@ object GitlabSource:
         }
 
   def defaultContentParser(
-      source: DependencySource
+      source: registry.DependencySource
   ): String => List[Dependency] =
     source match
       case TxtSource(path) => RequirementsTxt.extract

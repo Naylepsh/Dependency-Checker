@@ -1,4 +1,4 @@
-package core.infra.persistance
+package persistance
 
 import java.util.UUID
 
@@ -41,7 +41,7 @@ object ProjectScanConfigRepository:
             _ <- SQL.insertConfig(configId, config).run
             // terrible performance, but it doesn't get called that much, so low priority
             // TODO: Improve perf. by updating in batch
-            _ = sources.traverse:
+            _ <- sources.traverse:
               case (id, txt @ TxtSource(_)) => SQL.insertTxtSource(id, configId, txt).run
               case (id, toml @ TomlSource(_, _)) => SQL.insertTomlSource(id, configId, toml).run
           yield ()
@@ -49,7 +49,7 @@ object ProjectScanConfigRepository:
       yield configId
 
 private object SQL:
-  import sqlmappings.given
+  import core.infra.persistance.sqlmappings.given
 
   private[persistance] case class RawConfig(
       projectName: String,
@@ -95,24 +95,24 @@ private object SQL:
 
   def allConfigs =
     sql"""
-      SELECT projectName, configId, gitlabId, enabled, branch
+      SELECT projectName, id as configId, gitlabId, enabled, branch
       FROM projectScanConfig
       """.query[RawConfig]
 
-  def getTxtSources(projectIds: NonEmptyList[UUID]) =
+  def getTxtSources(configIds: NonEmptyList[UUID]) =
     val s =
       sql"""
-      SELECT projectId, path
+      SELECT configId, path
       FROM txtSource
-      WHERE """ ++ Fragments.in(fr"configId", projectIds)
+      WHERE """ ++ Fragments.in(fr"configId", configIds)
     s.query[RawTxtSource]
 
-  def getTomlSources(projectIds: NonEmptyList[UUID]) =
+  def getTomlSources(configIds: NonEmptyList[UUID]) =
     val s =
       sql"""
-      SELECT projectId, path, group
+      SELECT configId, path, targetGroup
       FROM tomlSource
-      WHERE """ ++ Fragments.in(fr"configId", projectIds)
+      WHERE """ ++ Fragments.in(fr"configId", configIds)
     s.query[RawTomlSource]
 
   def insertConfig(id: UUID, config: ProjectScanConfig) =
@@ -129,6 +129,6 @@ private object SQL:
 
   def insertTomlSource(id: UUID, configId: UUID, source: TomlSource) =
     sql"""
-    INSERT INTO tomlSource (id, configId, path, group)
+    INSERT INTO tomlSource (id, configId, path, targetGroup)
     VALUES ($id, $configId, ${source.path}, ${source.group})
     """.update
