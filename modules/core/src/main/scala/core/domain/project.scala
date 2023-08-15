@@ -26,6 +26,7 @@ object project:
         projectNames: List[String],
         timestamp: DateTime
     ): F[List[ScanReport]]
+    def getLatestScanReport(projectName: String): F[Option[ScanReport]]
     def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]]
     def getLatestScanTimestamp(): F[Option[DateTime]] =
       getLatestScansTimestamps(1).map(_.headOption)
