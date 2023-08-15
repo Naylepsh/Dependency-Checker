@@ -15,6 +15,16 @@ object project:
       dependencies: List[Grouped[Dependency]]
   )
 
+  case class ProjectScanConfig(
+      project: Project,
+      sources: List[DependencySource],
+      enabled: Boolean,
+      branch: String
+  )
+
+  trait ProjectScanConfigRepository[F[_]]:
+    def all: F[List[ProjectScanConfig]] 
+
   case class ScanResult(
       project: Project,
       dependenciesReports: List[Grouped[DependencyReport]]
