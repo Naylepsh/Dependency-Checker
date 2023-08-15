@@ -36,10 +36,10 @@ object ScanningController:
             .getLatestScan(projectName)
             .flatMap:
               case None =>
-                layout(renderNoScanResult).pure
+                views.layout(renderNoScanResult).pure
               case Some(scanReport) =>
                 Time[F].currentDateTime.map: now =>
-                  layout(renderScanResult(now, scanReport))
+                  views.layout(renderScanResult(now, scanReport))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
             .handleErrorWith: error =>
@@ -62,19 +62,6 @@ object ScanningController:
                     )
 
 private object ScanningViews:
-  def layout(bodyContent: scalatags.Text.Modifier*) =
-    html(
-      head(
-        script(src := "https://unpkg.com/htmx.org@1.9.4"),
-        script(src := "https://unpkg.com/htmx.org/dist/ext/json-enc.js"),
-        script(src := "https://cdn.tailwindcss.com")
-      ),
-      body(
-        cls := "text-gray-200 bg-gray-900",
-        bodyContent
-      )
-    )
-
   def renderScanResult(now: DateTime, scanResult: ScanReport) =
     div(
       cls := "container mx-auto my-10",
