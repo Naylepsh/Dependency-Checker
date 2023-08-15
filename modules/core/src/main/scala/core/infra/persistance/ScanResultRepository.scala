@@ -71,6 +71,19 @@ object ScanResultRepository:
           .transact(xa)
       else List.empty.pure
 
+    def getLatestScanReport(projectName: String): F[Option[ScanReport]] =
+      ScanResultRepositorySQL
+        .getLatestScanTimestamp(projectName)
+        .option
+        .flatMap: timestamp =>
+          timestamp.traverse: timestamp =>
+            getAll(NonEmptyList.of(projectName), timestamp)
+              .to[List]
+              .map(GetAllResult.toDomain)
+              .map(_.headOption)
+        .map(_.flatten)
+        .transact(xa)
+
     def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]] =
       for
         _         <- Logger[F].info("Starting...")
@@ -175,4 +188,13 @@ object ScanResultRepository:
       FROM dependencyScan
       ORDER BY timestamp DESC
       LIMIT $limit
+      """.query[DateTime]
+
+    def getLatestScanTimestamp(projectName: String): Query0[DateTime] =
+      sql"""
+      SELECT DISTINCT timestamp
+      FROM dependencyScan
+      WHERE projectName = $projectName
+      ORDER BY timestamp DESC
+      LIMIT 1
       """.query[DateTime]

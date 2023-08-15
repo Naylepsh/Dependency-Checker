@@ -87,9 +87,7 @@ object ScanningService:
       repository.getLatestScansTimestamps(limit)
 
     def getLatestScan(projectName: String): F[Option[ScanReport]] =
-      repository.getLatestScanReports(List(projectName)).map:
-        case report :: Nil => Some(report)
-        case _             => None
+      repository.getLatestScanReport(projectName)
 
   private val latestKey = "LATEST"
 

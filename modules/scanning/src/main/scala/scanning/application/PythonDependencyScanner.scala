@@ -10,6 +10,7 @@ import core.domain.dependency.*
 import org.legogroup.woof.{ *, given }
 
 object PythonDependencyScanner:
+  // TODO: delete this object after deprecating CLI
   def make[F[_]: Logger: Parallel: Monad](
       packageIndex: PackageIndex[F],
       parallelGroupSize: Int
