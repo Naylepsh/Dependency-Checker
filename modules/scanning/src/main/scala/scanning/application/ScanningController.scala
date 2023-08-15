@@ -5,7 +5,7 @@ import org.http4s.{ EntityDecoder, HttpRoutes, MediaType }
 import org.http4s.headers.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.*
-import cats.Monad
+import cats.{ Monad, MonadError }
 import cats.syntax.all.*
 import scalatags.Text.all.*
 import core.domain.project.ScanResult
@@ -17,11 +17,14 @@ import core.domain.Time.DeltaUnit
 import scanning.application.services.ScanningService
 import core.domain.registry.RegistryRepository
 import core.domain.task.TaskProcessor
+import org.legogroup.woof.{ *, given }
 
 object ScanningController:
   import ScanningViews.*
 
-  def make[F[_]: Monad: Time](
+  type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
+
+  def make[F[_]: Monad: ThrowableMonadError: Time: Logger](
       service: ScanningService[F],
       registryRepository: RegistryRepository[F],
       taskProcessor: TaskProcessor[F]
@@ -39,6 +42,9 @@ object ScanningController:
                   layout(renderScanResult(now, scanReport))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
+            .handleErrorWith: error =>
+              Logger[F].error(error.toString)
+                *> InternalServerError("Oops, something went wrong")
 
         case POST -> Root / "scan" / projectName =>
           registryRepository.get().flatMap:
