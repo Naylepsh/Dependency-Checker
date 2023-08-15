@@ -23,7 +23,7 @@ object ProjectController:
           service
             .all
             .map: projects =>
-              layout(renderProjects(projects))
+              views.layout(renderProjects(projects))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
         case GET -> Root / "project" / projectName / "detailed" =>
@@ -46,19 +46,6 @@ object ProjectController:
                 )
 
 object ProjectViews:
-  def layout(bodyContent: scalatags.Text.Modifier*) =
-    html(
-      head(
-        script(src := "https://unpkg.com/htmx.org@1.9.4"),
-        script(src := "https://unpkg.com/htmx.org/dist/ext/json-enc.js"),
-        script(src := "https://cdn.tailwindcss.com")
-      ),
-      body(
-        cls := "text-gray-200 bg-gray-900",
-        bodyContent
-      )
-    )
-
   def renderProjects(projects: List[ProjectScanConfig]) =
     div(
       cls := "container mx-auto my-10",
