@@ -54,6 +54,17 @@ object dependency:
       notes
     )
 
+  sealed trait DependencySource:
+    val path: String
+    val groupName: String
+  object DependencySource:
+    case class TxtSource(path: String) extends DependencySource:
+      val groupName: String = path
+
+    case class TomlSource(path: String, group: Option[String] = None)
+        extends DependencySource:
+      val groupName: String = group.fold(path)(g => s"$path:$g")
+
   trait DependencyScanner[F[_]]:
     def getDetails(dependencies: List[Dependency]): F[List[DependencyDetails]]
 
