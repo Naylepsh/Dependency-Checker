@@ -193,7 +193,7 @@ object ScanResultRepository:
     def getLatestScanTimestamp(projectName: String): Query0[DateTime] =
       sql"""
       SELECT DISTINCT timestamp
-      FROM dependencyScan
+      FROM projectDependency
       WHERE projectName = $projectName
       ORDER BY timestamp DESC
       LIMIT 1
