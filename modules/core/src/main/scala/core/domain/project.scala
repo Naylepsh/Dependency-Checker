@@ -1,5 +1,7 @@
 package core.domain
 
+import java.util.UUID
+
 import cats.*
 import cats.data.NonEmptyList
 import cats.implicits.*
@@ -24,6 +26,7 @@ object project:
 
   trait ProjectScanConfigRepository[F[_]]:
     def all: F[List[ProjectScanConfig]] 
+    def save(config: ProjectScanConfig): F[UUID]
 
   case class ScanResult(
       project: Project,

@@ -63,6 +63,11 @@ lazy val processor = project
   .settings(commonSettings: _*)
   .dependsOn(core)
 
+lazy val persistence = project
+  .in(file("modules/persistence"))
+  .settings(commonSettings: _*)
+  .dependsOn(core)
+
 lazy val scanning = project
   .in(file("modules/scanning"))
   .settings(commonSettings: _*)
