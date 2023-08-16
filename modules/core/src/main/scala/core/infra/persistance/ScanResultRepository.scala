@@ -188,7 +188,7 @@ object ScanResultRepository:
             AND dependency_scan.timestamp = $timestamp
         LEFT JOIN vulnerability ON vulnerability.dependency_scan_id = dependency_scan.id
         WHERE """ ++ Fragments.in(
-        fr"project_dependency.project_name",
+        fr"project.name",
         projectNames
       )).query[GetAllResult]
 

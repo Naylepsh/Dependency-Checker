@@ -5,18 +5,22 @@ import org.http4s.{ EntityDecoder, HttpRoutes, MediaType }
 import org.http4s.headers.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.*
-import cats.Monad
+import cats.{ Monad, MonadError }
 import cats.syntax.all.*
 import scalatags.Text.all.*
 import core.domain.project.ProjectScanConfig
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
+import org.legogroup.woof.{ *, given }
 
 object ProjectController:
   // TODO: Move this to a dedicated module
   // And mode ScanningViews' layout to a shared module (/lib?)
   import ProjectViews.*
 
-  def make[F[_]: Monad](service: ProjectService[F]): Controller[F] =
+  type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
+
+  def make[F[_]: Monad: ThrowableMonadError: Logger](service: ProjectService[F])
+      : Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       def routes: HttpRoutes[F] = HttpRoutes.of[F]:
         case GET -> Root / "project" =>
@@ -26,6 +30,9 @@ object ProjectController:
               views.layout(renderProjects(projects))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
+            .handleErrorWith: error =>
+              Logger[F].error(error.toString)
+                *> InternalServerError("Oops, something went wrong")
         case GET -> Root / "project" / projectName / "detailed" =>
           service
             .find(projectName)
