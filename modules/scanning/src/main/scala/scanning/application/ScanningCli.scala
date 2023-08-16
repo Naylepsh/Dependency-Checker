@@ -148,7 +148,7 @@ object ScanningCli:
               )
             configs.traverse(scanConfigRepository.save).as(ExitCode.Success)
 
-  case class WebServer(registryPath: String) extends Command[IO]:
+  object WebServer extends Command[IO]:
     def run(): IO[ExitCode] =
       withContext: context =>
         val scanResultService = ScanResultRepository.make(
@@ -230,7 +230,7 @@ object ScanningCli:
   val webServerOpts = Opts.subcommand(
     name = "web",
     help = "Expose web server"
-  )(registryLocationOpt.map(WebServer.apply))
+  )(Opts.unit.as(WebServer))
 
   val migrateRegistryOpts = Opts.subcommand(
     name = "migrate-registry",
