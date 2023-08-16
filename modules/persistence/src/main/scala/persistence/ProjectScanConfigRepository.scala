@@ -33,18 +33,23 @@ object ProjectScanConfigRepository:
 
     def save(config: ProjectScanConfig): F[UUID] =
       for
-        configId <- randomUUID
+        projectId <- randomUUID
+        configId  <- randomUUID
         sources <- config.sources.traverse: source =>
           randomUUID.map(id => id -> source)
-        _ <- 
-          val inserts = for
-            _ <- SQL.insertConfig(configId, config).run
-            // terrible performance, but it doesn't get called that much, so low priority
-            // TODO: Improve perf. by updating in batch
-            _ <- sources.traverse:
-              case (id, txt @ TxtSource(_)) => SQL.insertTxtSource(id, configId, txt).run
-              case (id, toml @ TomlSource(_, _)) => SQL.insertTomlSource(id, configId, toml).run
-          yield ()
+        _ <-
+          val inserts =
+            for
+              _ <- SQL.insertProject(projectId, config.project).run
+              _ <- SQL.insertConfig(configId, config, projectId).run
+              // terrible performance, but it doesn't get called that much, so low priority
+              // TODO: Improve perf. by updating in batch
+              _ <- sources.traverse:
+                case (id, txt @ TxtSource(_)) =>
+                  SQL.insertTxtSource(id, configId, txt).run
+                case (id, toml @ TomlSource(_, _)) =>
+                  SQL.insertTomlSource(id, configId, toml).run
+            yield ()
           inserts.transact(xa)
       yield configId
 
@@ -95,40 +100,47 @@ private object SQL:
 
   def allConfigs =
     sql"""
-      SELECT projectName, id as configId, gitlabId, enabled, branch
-      FROM projectScanConfig
+      SELECT project.name, config.id as configId, gitlab_id, enabled, branch
+      FROM project_scan_config config
+      JOIN project ON project.id = config.project_id
       """.query[RawConfig]
 
   def getTxtSources(configIds: NonEmptyList[UUID]) =
     val s =
       sql"""
-      SELECT configId, path
-      FROM txtSource
-      WHERE """ ++ Fragments.in(fr"configId", configIds)
+      SELECT config_id, path
+      FROM txt-source
+      WHERE """ ++ Fragments.in(fr"config_id", configIds)
     s.query[RawTxtSource]
 
   def getTomlSources(configIds: NonEmptyList[UUID]) =
     val s =
       sql"""
-      SELECT configId, path, targetGroup
-      FROM tomlSource
-      WHERE """ ++ Fragments.in(fr"configId", configIds)
+      SELECT config_id, path, target_group
+      FROM toml_source
+      WHERE """ ++ Fragments.in(fr"config_id", configIds)
     s.query[RawTomlSource]
 
-  def insertConfig(id: UUID, config: ProjectScanConfig) =
+  def insertProject(id: UUID, project: Project) =
     sql"""
-    INSERT INTO projectScanConfig (id, gitlabId, projectName, enabled, branch)
-    VALUES ($id, ${config.project.id}, ${config.project.name}, ${config.enabled}, ${config.branch})
+    INSERT INTO project (id, name)
+    VALUES ($id, ${project.name})
+    """.update
+
+  def insertConfig(id: UUID, config: ProjectScanConfig, projectId: UUID) =
+    sql"""
+    INSERT INTO project_scan_config (id, gitlab_id, enabled, branch, project_id)
+    VALUES ($id, ${config.project.id}, ${config.enabled}, ${config.branch}, $projectId)
     """.update
 
   def insertTxtSource(id: UUID, configId: UUID, source: TxtSource) =
     sql"""
-    INSERT INTO txtSource (id, configId, path)
+    INSERT INTO txt_source (id, config_id, path)
     VALUES ($id, $configId, ${source.path})
     """.update
 
   def insertTomlSource(id: UUID, configId: UUID, source: TomlSource) =
     sql"""
-    INSERT INTO tomlSource (id, configId, path, targetGroup)
+    INSERT INTO toml_source (id, config_id, path, target_group)
     VALUES ($id, $configId, ${source.path}, ${source.group})
     """.update

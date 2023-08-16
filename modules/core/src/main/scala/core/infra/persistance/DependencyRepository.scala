@@ -133,7 +133,7 @@ object DependencyRepository:
         scans: List[ExistingDependencyScan]
     ): ConnectionIO[Int] =
       val sql = """
-        INSERT INTO dependencyScan (id, timestamp, dependencyId, currentVersion, latestVersion, latestReleaseDate, notes)
+        INSERT INTO dependency_scan (id, timestamp, dependency_id, current_version, latest_version, latest_release_date, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       """
       Update[ExistingDependencyScan](sql).updateMany(scans)
@@ -142,7 +142,7 @@ object DependencyRepository:
         vulnerabilities: List[ExistingVulnerability]
     ): ConnectionIO[Int] =
       val sql = """
-          INSERT INTO vulnerability (id, dependencyScanId, name)
+          INSERT INTO vulnerability (id, dependency_scan_id, name)
           VALUES (?, ?, ?)
         """
       Update[ExistingVulnerability](sql).updateMany(vulnerabilities)
