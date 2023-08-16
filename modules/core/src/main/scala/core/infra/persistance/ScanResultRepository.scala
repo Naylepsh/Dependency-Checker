@@ -26,10 +26,7 @@ object ScanResultRepository:
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
       dependencyRepository.delete(timestamps)
 
-    def save(
-        results: List[ScanResult],
-        timestamp: DateTime
-    ): F[Unit] =
+    def save(results: List[ScanResult], timestamp: DateTime): F[Unit] =
       results.traverse(result =>
         result.dependenciesReports.traverse(group =>
           for
@@ -40,18 +37,24 @@ object ScanResultRepository:
             _ <- Logger[F].debug(
               s"Saving ${dependencies.length} projectDependencies"
             )
-            records = dependencies.map(dependency =>
-              ProjectDependency(
-                timestamp,
-                result.project.name,
-                group.groupName,
-                dependency.id
-              )
-            )
-            _ <- insertMany(records).transact(xa)
+            maybeProjectId <- getProjectId(result.project.name)
+            _ <- maybeProjectId match
+              case None => MonadCancelThrow[F].unit
+              case Some(projectId) =>
+                val records = dependencies.map: dependency =>
+                  ProjectDependency(
+                    timestamp,
+                    projectId,
+                    group.groupName,
+                    dependency.id
+                  )
+                insertMany(records).transact(xa).void
           yield ()
         )
       ).void
+
+    private def getProjectId(projectName: String): F[Option[UUID]] =
+      ScanResultRepositorySQL.getProjectId(projectName).option.transact(xa)
 
     def getScanReports(
         projectNames: List[String],
@@ -98,7 +101,7 @@ object ScanResultRepository:
 
   private[persistance] case class ProjectDependency(
       timestamp: DateTime,
-      projectName: String,
+      projectId: UUID,
       groupName: String,
       dependencyId: UUID
   )
@@ -106,16 +109,22 @@ object ScanResultRepository:
   private[persistance] object ScanResultRepositorySQL:
     import sqlmappings.given
 
+    def getProjectId(projectName: String) =
+      sql"""
+      SELECT id
+      FROM project
+      WHERE project.name = $projectName
+      """.query[UUID]
+
     def insertMany(projectDependencies: List[ProjectDependency])
         : ConnectionIO[Int] =
-      val sql = """
-      INSERT INTO projectDependency (
+      val sql = s"""
+      INSERT INTO project_dependency (
         timestamp,
-        projectName,
-        groupName,
-        dependencyId)
-      VALUES (?, ?, ?, ?)
-      """
+        project_id,
+        group_name,
+        dependency_id)
+      VALUES (?, ?, ?, ?)"""
       Update[ProjectDependency](sql).updateMany(projectDependencies)
 
     case class GetAllResult(
@@ -163,29 +172,30 @@ object ScanResultRepository:
     ): Query0[GetAllResult] =
       (sql"""
         SELECT
-          projectDependency.projectName,
-          projectDependency.groupName,
+          project.name,
+          project_dependency.group_name,
           dependency.id,
           dependency.name,
-          dependencyScan.currentVersion,
-          dependencyScan.latestVersion,
-          dependencyScan.latestReleaseDate,
-          dependencyScan.notes,
+          dependency_scan.current_version,
+          dependency_scan.latest_version,
+          dependency_scan.latest_release_date,
+          dependency_scan.notes,
           vulnerability.name
-        FROM projectDependency
-        JOIN dependency ON dependency.id = projectDependency.dependencyId 
-        JOIN dependencyScan ON dependencyScan.dependencyId = dependency.id
-            AND dependencyScan.timestamp = $timestamp
-        LEFT JOIN vulnerability ON vulnerability.dependencyScanId = dependencyScan.id
+        FROM project_dependency
+        JOIN project ON project.id = project_dependency.project_id
+        JOIN dependency ON dependency.id = project_dependency.dependency_id 
+        JOIN dependency_scan ON dependency_scan.dependency_id = dependency.id
+            AND dependency_scan.timestamp = $timestamp
+        LEFT JOIN vulnerability ON vulnerability.dependency_scan_id = dependency_scan.id
         WHERE """ ++ Fragments.in(
-        fr"projectDependency.projectName",
+        fr"project_dependency.project_name",
         projectNames
       )).query[GetAllResult]
 
     def getLatestScansTimestamps(limit: Int): Query0[DateTime] =
       sql"""
       SELECT DISTINCT timestamp
-      FROM dependencyScan
+      FROM dependency_scan
       ORDER BY timestamp DESC
       LIMIT $limit
       """.query[DateTime]
@@ -193,8 +203,9 @@ object ScanResultRepository:
     def getLatestScanTimestamp(projectName: String): Query0[DateTime] =
       sql"""
       SELECT DISTINCT timestamp
-      FROM projectDependency
-      WHERE projectName = $projectName
+      FROM project
+      JOIN project_dependency ON project_dependency.project_id = project.id
+      WHERE project.name = $projectName
       ORDER BY timestamp DESC
       LIMIT 1
       """.query[DateTime]
