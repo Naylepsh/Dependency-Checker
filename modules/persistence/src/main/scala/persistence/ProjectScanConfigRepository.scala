@@ -109,7 +109,7 @@ private object SQL:
     val s =
       sql"""
       SELECT config_id, path
-      FROM txt-source
+      FROM txt_source
       WHERE """ ++ Fragments.in(fr"config_id", configIds)
     s.query[RawTxtSource]
 
