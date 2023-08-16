@@ -71,7 +71,7 @@ lazy val persistence = project
 lazy val scanning = project
   .in(file("modules/scanning"))
   .settings(commonSettings: _*)
-  .dependsOn(core, parsers, gitlab, processor)
+  .dependsOn(core, parsers, gitlab, processor, persistence)
 
 lazy val upkeep = project
   .in(file("modules/upkeep"))

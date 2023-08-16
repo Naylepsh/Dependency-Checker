@@ -15,7 +15,7 @@ import core.domain.Time
 import org.joda.time.DateTime
 import core.domain.Time.DeltaUnit
 import scanning.application.services.ScanningService
-import core.domain.registry.RegistryRepository
+import core.domain.project.ProjectScanConfigRepository
 import core.domain.task.TaskProcessor
 import org.legogroup.woof.{ *, given }
 
@@ -26,7 +26,7 @@ object ScanningController:
 
   def make[F[_]: Monad: ThrowableMonadError: Time: Logger](
       service: ScanningService[F],
-      registryRepository: RegistryRepository[F],
+      repository: ProjectScanConfigRepository[F],
       taskProcessor: TaskProcessor[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
@@ -47,13 +47,10 @@ object ScanningController:
                 *> InternalServerError("Oops, something went wrong")
 
         case POST -> Root / "scan" / projectName =>
-          registryRepository.get().flatMap:
-            case Left(_) => NotFound(s"$projectName does not exist")
-            case Right(registry) =>
-              registry
-                .projects
-                .find: project =>
-                  project.name == projectName
+          repository.all.flatMap: configs =>
+              configs
+                .find: config =>
+                  config.project.name == projectName
                 .fold(NotFound(s"$projectName does not exist")): project =>
                   taskProcessor.add(service.scan(project))
                     *> Ok(
