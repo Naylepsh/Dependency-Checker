@@ -76,23 +76,24 @@ object ProjectRepositorySQL:
       scanTimestamp: DateTime
   ): Query0[RawAffectedProject] =
     sql"""
-    SELECT pd.projectName,
-            pd.groupName,
-            $dependencyName,
-            ds.currentVersion,
-            ds.latestVersion
-    FROM projectDependency pd
-    JOIN dependency d on d.id = pd.dependencyId
-    JOIN dependencyScan ds on ds.dependencyId = pd.dependencyId
+    SELECT p.name,
+           pd.group_name,
+           $dependencyName,
+           ds.current_version,
+           ds.latest_version
+    FROM project p 
+    JOIN project_dependency pd pd.project_id = p.id
+    JOIN dependency d on d.id = pd.dependency_id
+    JOIN dependency_scan ds on ds.dependency_id = pd.dependency_id
     WHERE pd.timestamp = $scanTimestamp
           AND d.name = $dependencyName
-          AND ds.currentVersion IS NOT NULL
+          AND ds.current_version IS NOT NULL
     """.query[RawAffectedProject]
 
   def getLatestScansTimestamps(limit: Int): Query0[DateTime] =
     sql"""
     SELECT DISTINCT timestamp
-    FROM dependencyScan
+    FROM dependency_scan
     ORDER BY timestamp DESC
     LIMIT $limit
     """.query[DateTime]

@@ -1,1 +1,2 @@
-Upkeep module is currently broken due to database schema issues. DO NOT USE
+Upkeep module is currently (possibly) broken due to database schema issues.
+TODO: Test it
