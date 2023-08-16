@@ -9,7 +9,7 @@ import cats.implicits.*
 import core.domain.*
 import core.domain.dependency.*
 import core.domain.project.*
-import core.domain.registry.ProjectScanConfig
+import core.domain.project.ProjectScanConfig
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import scanning.domain.Source
@@ -18,27 +18,27 @@ trait ScanningService[F[_]]:
   def scan(project: ProjectScanConfig): F[Unit]
   def scan(projects: List[ProjectScanConfig]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
-  def getLatestScan(projectName: String): F[Option[ScanReport]] 
+  def getLatestScan(projectName: String): F[Option[ScanReport]]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time](
       source: Source[F, ProjectScanConfig],
       scanner: DependencyScanner[F],
-      repository: ScanResultRepository[F],
+      repository: ScanResultRepository[F]
   ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
       Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
         >> repository.delete(timestamps)
         >> Logger[F].info("Successfully deleted the scan(s)")
 
-    def scan(project: ProjectScanConfig): F[Unit] =
+    def scan(config: ProjectScanConfig): F[Unit] =
       for
-        _ <- Logger[F].info(s"Scanning dependencies of ${project.name}")
+        _ <- Logger[F].info(s"Scanning dependencies of ${config.project.name}")
         projectDependencies <- source
-          .extract(project)
+          .extract(config)
           .map: dependencies =>
-            ProjectDependencies(Project(project.id, project.name), dependencies)
+            ProjectDependencies(config.project, dependencies)
         allDependencies = projectDependencies
           .dependencies
           .flatMap(_.items)
@@ -54,19 +54,16 @@ object ScanningService:
         _   <- Logger[F].info("Done with the scan")
       yield ()
 
-    def scan(projects: List[ProjectScanConfig]): F[Unit] =
+    def scan(configs: List[ProjectScanConfig]): F[Unit] =
       for
         _ <- Logger[F].info(
-          s"Scanning dependencies of ${projects.length} projects..."
+          s"Scanning dependencies of ${configs.length} projects..."
         )
-        projectsDependencies <- projects
-          .parTraverse: project =>
-            source.extract(project)
+        projectsDependencies <- configs
+          .parTraverse: config =>
+            source.extract(config)
               .map: dependencies =>
-                ProjectDependencies(
-                  Project(project.id, project.name),
-                  dependencies
-                )
+                ProjectDependencies(config.project, dependencies)
         dependencies = projectsDependencies
           .flatMap(_.dependencies.flatMap(_.items))
           .distinct

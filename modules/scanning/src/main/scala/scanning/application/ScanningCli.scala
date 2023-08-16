@@ -27,15 +27,17 @@ import scanning.application.services.*
 import org.http4s.ember.server.EmberServerBuilder
 import concurrent.duration.*
 import processor.TaskProcessor
+import persistance.ProjectScanConfigRepository
 
 object ScanningCli:
-  private def makeScanningService(context: Context)(using Logger[IO]): ScanningService[IO] =
+  private def makeScanningService(context: Context)(using
+  Logger[IO]): ScanningService[IO] =
     val gitlabApi = GitlabApi.make[IO](
       context.backend,
       context.config.gitlab.host,
       context.config.gitlab.token
     )
-    val source = GitlabSource.make(gitlabApi)
+    val source  = GitlabSource.make(gitlabApi)
     val scanner = DependencyScanner.make(Pypi(context.backend))
     val repository =
       ScanResultRepository.make(
@@ -44,21 +46,6 @@ object ScanningCli:
       )
 
     ScanningService.make[IO](source, scanner, repository)
-
-  case class ScanRepositories(registryPath: String) extends Command[IO]:
-    def run(): IO[ExitCode] =
-      withContext: context =>
-        val registryRepository =
-          RegistryRepository.fileBased(registryPath)
-        val service = makeScanningService(context)
-
-        registryRepository.get().flatMap {
-          case Left(_) => ExitCode.Error.pure
-          case Right(registry) =>
-            service
-              .scan(registry.projects.filter(_.enabled))
-              .as(ExitCode.Success)
-        }
 
   case class ListLatestScans(limit: Int) extends Command[IO]:
     val registry = Registry.empty
@@ -133,6 +120,34 @@ object ScanningCli:
             ))
         }.as(ExitCode.Success)
 
+  case class MigrateRegistry(registryPath: String) extends Command[IO]:
+    def run(): IO[ExitCode] =
+      withContext: context =>
+        val registryRepository =
+          RegistryRepository.fileBased(registryPath)
+        val scanConfigRepository = ProjectScanConfigRepository.make(context.xa)
+
+        registryRepository.get().flatMap:
+          case Right(registry) =>
+            val configs = registry.projects.map: config =>
+              val sources = config.sources.map:
+                case core.domain.registry.DependencySource.TxtSource(path) =>
+                  core.domain.dependency.DependencySource.TxtSource(path)
+                case core.domain.registry.DependencySource.TomlSource(
+                      path,
+                      group
+                    ) => core.domain.dependency.DependencySource.TomlSource(
+                    path,
+                    group
+                  )
+              core.domain.project.ProjectScanConfig(
+                core.domain.project.Project(config.id, config.name),
+                sources,
+                config.enabled,
+                config.branch
+              )
+            configs.traverse(scanConfigRepository.save).as(ExitCode.Success)
+
   case class WebServer(registryPath: String) extends Command[IO]:
     def run(): IO[ExitCode] =
       withContext: context =>
@@ -144,9 +159,8 @@ object ScanningCli:
           context.xa,
           DependencyRepository.make(context.xa)
         )
-        val registryRepository =
-          RegistryRepository.fileBased(registryPath)
-        val projectService    = ProjectService.make(registryRepository)
+        val projectRepository = ProjectScanConfigRepository.make(context.xa)
+        val projectService    = ProjectService.make(projectRepository)
         val projectController = ProjectController.make(projectService)
 
         TaskProcessor.make[IO](1, false.pure, 10.seconds.some).use: processor =>
@@ -154,7 +168,7 @@ object ScanningCli:
           val scanReportController =
             ScanningController.make(
               scanningService,
-              registryRepository,
+              projectRepository,
               processor
             )
 
@@ -188,11 +202,6 @@ object ScanningCli:
           .fromList(timestamps)
           .toValidNel("Empty sequence is not valid")
 
-  val scanOpts = Opts.subcommand(
-    name = "scan",
-    help = "Scan the projects' dependencies"
-  )(registryLocationOpt.map(ScanRepositories.apply))
-
   val listScansOpts = Opts.subcommand(
     name = "list-scans",
     help = "List the timestamp of the latest scans"
@@ -223,9 +232,14 @@ object ScanningCli:
     help = "Expose web server"
   )(registryLocationOpt.map(WebServer.apply))
 
-  val allOpts = scanOpts
-    .orElse(listScansOpts)
+  val migrateRegistryOpts = Opts.subcommand(
+    name = "migrate-registry",
+    help = "Migrate registry from json to sql database"
+  )(registryLocationOpt.map(MigrateRegistry.apply))
+
+  val allOpts = listScansOpts
     .orElse(deleteScansOpts)
     .orElse(exportScanOpts)
     .orElse(exportDeltaOpts)
     .orElse(webServerOpts)
+    .orElse(migrateRegistryOpts)

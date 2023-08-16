@@ -8,8 +8,8 @@ import org.http4s.*
 import cats.Monad
 import cats.syntax.all.*
 import scalatags.Text.all.*
-import core.domain.registry.ProjectScanConfig
-import core.domain.registry.DependencySource.{ TomlSource, TxtSource }
+import core.domain.project.ProjectScanConfig
+import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -59,75 +59,75 @@ object ProjectViews:
       )
     )
 
-  def renderProjectShort(project: ProjectScanConfig) =
+  def renderProjectShort(config: ProjectScanConfig) =
     // TODO: Add some animations when details unfold
     div(
-      id  := project.name,
+      id  := config.project.name,
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
       div(
         cls := "flex justify-between",
         p(
           cls                   := "grow text-2xl",
-          htmx.ajax.get         := s"/project/${project.name}/detailed",
+          htmx.ajax.get         := s"/project/${config.project.name}/detailed",
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
-          htmx.target.attribute := s"#${project.name}",
-          project.name
+          htmx.target.attribute := s"#${config.project.name}",
+          config.project.name
         ),
         div(
           cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/${project.name}",
+            htmx.ajax.post         := s"/scan/${config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan-report/${project.name}/latest",
+            href := s"/scan-report/${config.project.name}/latest",
             "Scan report"
           )
         )
       )
     )
 
-  def renderProjectDetails(project: ProjectScanConfig) =
+  def renderProjectDetails(config: ProjectScanConfig) =
     div(
-      id  := project.name,
+      id  := config.project.name,
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700",
       div(
         cls := "pb-3 flex justify-between",
         div(
           cls                   := "grow text-2xl",
-          htmx.ajax.get         := s"/project/${project.name}/short",
+          htmx.ajax.get         := s"/project/${config.project.name}/short",
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
-          htmx.target.attribute := s"#${project.name}",
-          project.name
+          htmx.target.attribute := s"#${config.project.name}",
+          config.project.name
         ),
         div(
           cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/${project.name}",
+            htmx.ajax.post         := s"/scan/${config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan-report/${project.name}/latest",
+            href := s"/scan-report/${config.project.name}/latest",
             "Scan report"
           )
         )
       ),
       div(
         cls := "pt-3",
-        p(span(cls := "font-semibold", "Gitlab ID: "), project.id),
-        p(span(cls := "font-semibold", "Target branch: "), project.branch),
+        p(span(cls := "font-semibold", "Gitlab ID: "), config.project.id),
+        p(span(cls := "font-semibold", "Target branch: "), config.branch),
         div(
           cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
           span(cls := "font-semibold", "Sources:"),
-          project
+          config
             .sources
             .map:
               case TxtSource(path) => path

@@ -8,6 +8,7 @@ import io.circe.*
 import io.circe.syntax.*
 
 object registry:
+  // TODO: delete this entire package
   sealed trait DependencySource:
     val path: String
     val groupName: String
