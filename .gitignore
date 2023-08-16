@@ -11,4 +11,5 @@ registry*.json
 *.xlsx
 
 .env
+.env.test
 *.sqlite
