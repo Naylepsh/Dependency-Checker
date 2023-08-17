@@ -209,7 +209,7 @@ object ProjectViews:
               ),
               div(
                 id  := "sources",
-                cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed"
+                cls := "grid grid-cols-1 divide-y-2 divide-gray-700 divide-dashed"
               )
             )
           ),
