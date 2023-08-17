@@ -163,6 +163,8 @@ object ScanningCli:
         val projectService    = ProjectService.make(projectRepository)
         val projectController = ProjectController.make(projectService)
 
+        val staticFileController = StaticFileController.make[IO]
+
         TaskProcessor.make[IO](1, false.pure, 10.seconds.some).use: processor =>
           val scanningService = makeScanningService(context)
           val scanReportController =
@@ -172,7 +174,9 @@ object ScanningCli:
               processor
             )
 
-          val routes = scanReportController.routes <+> projectController.routes
+          val routes = scanReportController.routes 
+            <+> projectController.routes 
+            <+> staticFileController.routes
 
           EmberServerBuilder
             .default[IO]

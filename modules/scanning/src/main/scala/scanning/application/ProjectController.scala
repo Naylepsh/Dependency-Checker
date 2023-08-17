@@ -26,10 +26,6 @@ object ProjectController:
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       def routes: HttpRoutes[F] = HttpRoutes.of[F]:
-        case request @ GET -> Root / "static" / path =>
-          // TODO: Move this to a dedicated controller
-          val p = fs2.io.file.Path(s"./static/$path")
-          StaticFile.fromPath(p, Some(request)).getOrElseF(NotFound())
         case GET -> Root / "project" =>
           service
             .all
