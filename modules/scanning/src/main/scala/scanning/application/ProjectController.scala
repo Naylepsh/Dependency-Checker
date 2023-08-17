@@ -194,32 +194,36 @@ object ProjectViews:
             cls := "mb-4",
             formLabel("sources", "Sources"),
             div(
-              cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed border border-2 border-gray-400",
-              txtSourceInput,
-              tomlSourceInput
+              cls := "border border-2 border-gray-400",
+              div(
+                button(
+                  cls     := "bg-green-500 w-1/2 py-2",
+                  onclick := "addTxtInput()",
+                  "+ TXT"
+                ),
+                button(
+                  cls     := "bg-lime-500 w-1/2 py-2",
+                  onclick := "addTomlInput()",
+                  "+ TOML"
+                )
+              ),
+              div(
+                id  := "sources",
+                cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed"
+              )
             )
           ),
           button(cls := "w-full bg-teal-500 py-2 px-3", "Submit")
-        )
+        ),
+        txtSourceInputTemplate,
+        tomlSourceInputTemplate
       )
     )
 
-  private def sourceInput(i: Int) =
+  private def txtSourceInputTemplate =
     div(
-      cls := "flex",
-      formInput(s"sources[path]"),
-      formInput(s"sources[group]"),
-      button(
-        cls     := "px-3 bg-teal-500",
-        onclick := "removeParent(this)",
-        `type`  := "button",
-        "X"
-      )
-    )
-
-  private def txtSourceInput =
-    div(
-      cls := "p-3 form-group",
+      id  := "txt-source-template",
+      cls := "p-3 form-group hidden",
       div(
         cls := "flex",
         h4(cls := "w-full mb-3", "TXT source"),
@@ -234,9 +238,10 @@ object ProjectViews:
       formInput(s"sources[path]")
     )
 
-  private def tomlSourceInput =
+  private def tomlSourceInputTemplate =
     div(
-      cls := "p-3 form-group",
+      id  := "toml-source-template",
+      cls := "p-3 form-group hidden",
       div(
         cls := "flex",
         h4(cls := "w-full mb-3", "TOML source"),
