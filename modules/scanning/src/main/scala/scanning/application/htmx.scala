@@ -18,6 +18,7 @@ object htmx:
     object value:
       val outerHTML = "outerHTML"
       val beforeEnd = "beforeend"
+      val delete = "delete"
 
   object target:
     val attribute = attr("hx-target")

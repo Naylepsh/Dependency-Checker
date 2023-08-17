@@ -11,6 +11,8 @@ import scalatags.Text.all.*
 import core.domain.project.ProjectScanConfig
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 import org.legogroup.woof.{ *, given }
+import cats.effect.kernel.Sync
+import fs2.io.file.Files
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -19,10 +21,15 @@ object ProjectController:
 
   type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
 
-  def make[F[_]: Monad: ThrowableMonadError: Logger](service: ProjectService[F])
-      : Controller[F] =
+  def make[F[_]: Monad: ThrowableMonadError: Logger: Sync: Files](
+      service: ProjectService[F]
+  ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       def routes: HttpRoutes[F] = HttpRoutes.of[F]:
+        case request @ GET -> Root / "static" / path =>
+          // TODO: Move this to a dedicated controller
+          val p = fs2.io.file.Path(s"./static/$path")
+          StaticFile.fromPath(p, Some(request)).getOrElseF(NotFound())
         case GET -> Root / "project" =>
           service
             .all
@@ -33,6 +40,11 @@ object ProjectController:
             .handleErrorWith: error =>
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
+        case GET -> Root / "project" / "form" =>
+          Ok(
+            views.layout(renderProjectForm).toString,
+            `Content-Type`(MediaType.text.html)
+          )
         case GET -> Root / "project" / projectName / "detailed" =>
           service
             .find(projectName)
@@ -148,4 +160,112 @@ object ProjectViews:
               p(cls := "pl-3", str)
         )
       )
+    )
+
+  val renderProjectForm =
+    div(
+      cls := "container mx-auto my-10",
+      h2(
+        cls := "text-center font-semibold text-3xl",
+        "Create a new project config"
+      ),
+      div(
+        cls := "w-full max-w-md mx-auto",
+        form(
+          cls            := "text-sm font-bold",
+          htmx.ajax.post := "/project",
+          attr("hx-ext") := "json-enc",
+          div(
+            cls := "mb-4",
+            formLabel("name", "Name"),
+            formInput("name")
+          ),
+          div(
+            cls := "mb-4",
+            formLabel("gitlabId", "Gitlab ID"),
+            formInput("gitlabId")
+          ),
+          div(
+            cls := "mb-4",
+            formLabel("branch", "Branch"),
+            formInput("branch")
+          ),
+          div(
+            cls := "mb-4",
+            formLabel("sources", "Sources"),
+            div(
+              cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed border border-2 border-gray-400",
+              txtSourceInput,
+              tomlSourceInput
+            )
+          ),
+          button(cls := "w-full bg-teal-500 py-2 px-3", "Submit")
+        )
+      )
+    )
+
+  private def sourceInput(i: Int) =
+    div(
+      cls := "flex",
+      formInput(s"sources[path]"),
+      formInput(s"sources[group]"),
+      button(
+        cls     := "px-3 bg-teal-500",
+        onclick := "removeParent(this)",
+        `type`  := "button",
+        "X"
+      )
+    )
+
+  private def txtSourceInput =
+    div(
+      cls := "p-3 form-group",
+      div(
+        cls := "flex",
+        h4(cls := "w-full mb-3", "TXT source"),
+        button(
+          cls     := "px-3 bg-teal-500",
+          onclick := "removeClosest(this, '.form-group')",
+          `type`  := "button",
+          "X"
+        )
+      ),
+      formLabel("sources[path]", "Path"),
+      formInput(s"sources[path]")
+    )
+
+  private def tomlSourceInput =
+    div(
+      cls := "p-3 form-group",
+      div(
+        cls := "flex",
+        h4(cls := "w-full mb-3", "TOML source"),
+        button(
+          cls     := "px-3 bg-teal-500",
+          onclick := "removeClosest(this, '.form-group')",
+          `type`  := "button",
+          "X"
+        )
+      ),
+      div(
+        formLabel("sources[path]", "Path"),
+        formInput(s"sources[path]")
+      ),
+      div(
+        formLabel("sources[group]", "Group"),
+        formInput(s"sources[group]")
+      )
+    )
+
+  private def formLabel(elementName: String, labelText: String) =
+    label(
+      cls   := "block font-bold",
+      `for` := elementName,
+      labelText
+    )
+
+  private def formInput(inputName: String) =
+    input(
+      cls  := "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900",
+      name := inputName
     )
