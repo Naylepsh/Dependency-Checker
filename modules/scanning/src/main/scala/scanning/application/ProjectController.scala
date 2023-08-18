@@ -195,11 +195,13 @@ object ProjectViews:
                 button(
                   cls     := "bg-green-500 w-1/2 py-2",
                   onclick := "addTxtInput()",
+                  `type`  := "button",
                   "+ TXT"
                 ),
                 button(
                   cls     := "bg-lime-500 w-1/2 py-2",
                   onclick := "addTomlInput()",
+                  `type`  := "button",
                   "+ TOML"
                 )
               ),
@@ -230,8 +232,8 @@ object ProjectViews:
           "X"
         )
       ),
-      formLabel("sources[path]", "Path"),
-      formInput(s"sources[path]")
+      formLabel("txtSources[path]", "Path"),
+      formInput(s"txtSources[path]")
     )
 
   private def tomlSourceInputTemplate =
@@ -249,12 +251,12 @@ object ProjectViews:
         )
       ),
       div(
-        formLabel("sources[path]", "Path"),
-        formInput(s"sources[path]")
+        formLabel("tomlSources[path]", "Path"),
+        formInput(s"tomlSources[path]")
       ),
       div(
-        formLabel("sources[group]", "Group"),
-        formInput(s"sources[group]")
+        formLabel("tomlSources[group]", "Group"),
+        formInput(s"tomlSources[group]")
       )
     )
 
