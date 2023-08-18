@@ -92,10 +92,8 @@ object ProjectController:
         case req @ POST -> Root =>
           req
             .as[ProjectPayload]
-            .flatTap: payload =>
-              Logger[F].info(payload.toDomain.toString)
-            .flatMap: _ =>
-              Ok("YEP")
+            .flatMap: payload =>
+              service.add(payload.toDomain) *> Ok("YEP")
             .handleErrorWith: error =>
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
