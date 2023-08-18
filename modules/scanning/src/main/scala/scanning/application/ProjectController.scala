@@ -11,22 +11,75 @@ import scalatags.Text.all.*
 import core.domain.project.ProjectScanConfig
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 import org.legogroup.woof.{ *, given }
-import cats.effect.kernel.Sync
-import fs2.io.file.Files
+import cats.effect.kernel.{ Concurrent, Sync }
+import core.domain.project.Project
+import io.circe.*
+import io.circe.syntax.*
+import org.http4s.circe.*
+import org.http4s.server.Router
+import cats.Show
+
+object ProjectPayloads:
+  type VariadicString = List[String] | String
+  object VariadicString:
+    given Decoder[VariadicString] with
+      final def apply(c: HCursor): Decoder.Result[VariadicString] =
+        c.as[List[String]] match
+          case Left(_)   => c.as[String]
+          case Right(xs) => xs.pure
+    implicit def decoder[F[_]: Concurrent]: EntityDecoder[F, VariadicString] =
+      jsonOf[F, VariadicString]
+
+  import VariadicString.given
+
+  case class ProjectPayload(
+      name: String,
+      gitlabId: Int,
+      branch: String,
+      `txtSources[path]`: Option[List[String] | String] = None,
+      `tomlSources[path]`: Option[List[String] | String] = None,
+      `tomlSources[group]`: Option[List[String] | String] = None
+  ) derives Decoder:
+    def toDomain: ProjectScanConfig =
+      val txtSources = `txtSources[path]`
+        .map:
+          case path: String        => List(TxtSource(path))
+          case paths: List[String] => paths.map(TxtSource.apply)
+        .getOrElse(List.empty)
+      val tomlSources = `tomlSources[path]`.zip(`tomlSources[group]`)
+        .map:
+          case (path: String, group: String) =>
+            List(TomlSource(path, group.some))
+          case (paths: List[String], groups: List[String]) =>
+            paths.zip(groups).map: (path, group) =>
+              TomlSource(path, group.some)
+          case _ => List.empty // TODO: This should be a validation failure
+        .getOrElse(List.empty)
+      val enabled = true
+      ProjectScanConfig(
+        Project(gitlabId.toString, name),
+        txtSources ++ tomlSources,
+        enabled,
+        branch
+      )
+  object ProjectPayload:
+    implicit def decoder[F[_]: Concurrent]: EntityDecoder[F, ProjectPayload] =
+      jsonOf[F, ProjectPayload]
 
 object ProjectController:
   // TODO: Move this to a dedicated module
   // And mode ScanningViews' layout to a shared module (/lib?)
   import ProjectViews.*
+  import ProjectPayloads.*
 
   type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
 
-  def make[F[_]: Monad: ThrowableMonadError: Logger: Sync: Files](
+  def make[F[_]: Monad: ThrowableMonadError: Logger: Concurrent](
       service: ProjectService[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
-      def routes: HttpRoutes[F] = HttpRoutes.of[F]:
-        case GET -> Root / "project" =>
+      private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
+        case GET -> Root =>
           service
             .all
             .map: projects =>
@@ -36,12 +89,22 @@ object ProjectController:
             .handleErrorWith: error =>
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
-        case GET -> Root / "project" / "form" =>
+        case req @ POST -> Root =>
+          req
+            .as[ProjectPayload]
+            .flatTap: payload =>
+              Logger[F].info(payload.toDomain.toString)
+            .flatMap: _ =>
+              Ok("YEP")
+            .handleErrorWith: error =>
+              Logger[F].error(error.toString)
+                *> InternalServerError("Oops, something went wrong")
+        case GET -> Root / "form" =>
           Ok(
             views.layout(renderProjectForm).toString,
             `Content-Type`(MediaType.text.html)
           )
-        case GET -> Root / "project" / projectName / "detailed" =>
+        case GET -> Root / projectName / "detailed" =>
           service
             .find(projectName)
             .flatMap:
@@ -50,7 +113,7 @@ object ProjectController:
                   renderProjectDetails(project).toString,
                   `Content-Type`(MediaType.text.html)
                 )
-        case GET -> Root / "project" / projectName / "short" =>
+        case GET -> Root / projectName / "short" =>
           service
             .find(projectName)
             .flatMap:
@@ -59,6 +122,8 @@ object ProjectController:
                   renderProjectShort(project).toString,
                   `Content-Type`(MediaType.text.html)
                 )
+
+      val routes: HttpRoutes[F] = Router("project" -> httpRoutes)
 
 object ProjectViews:
   def renderProjects(projects: List[ProjectScanConfig]) =
@@ -179,7 +244,7 @@ object ProjectViews:
           div(
             cls := "mb-4",
             formLabel("gitlabId", "Gitlab ID"),
-            formInput("gitlabId")
+            formInput("gitlabId", InputType.Number)
           ),
           div(
             cls := "mb-4",
@@ -267,8 +332,20 @@ object ProjectViews:
       labelText
     )
 
-  private def formInput(inputName: String) =
+  enum InputType:
+    case Text, Number
+  object InputType:
+    given Show[InputType] with
+      def show(x: InputType): String = x match
+        case Text   => "text"
+        case Number => "number"
+
+  private def formInput(
+      inputName: String,
+      inputType: InputType = InputType.Text
+  ) =
     input(
-      cls  := "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900",
-      name := inputName
+      cls    := "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900",
+      name   := inputName,
+      `type` := inputType.show
     )
