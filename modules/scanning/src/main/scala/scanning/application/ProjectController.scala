@@ -53,7 +53,7 @@ object ProjectController:
             .handleErrorWith: error =>
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
-        case GET -> Root / "form" =>
+        case GET -> Root / "new" =>
           Ok(
             views.layout(renderProjectForm(info = None)).toString,
             `Content-Type`(MediaType.text.html)
@@ -133,6 +133,11 @@ private object ProjectViews:
       h2(
         cls := "text-center font-semibold text-5xl",
         "Registered projects"
+      ),
+      a(
+        href := "/project/new",
+        cls  := "block w-full my-3 p-4 bg-teal-500 text-gray-300 border-2 border-gray-700 cursor-pointer text-center",
+        "Add new project"
       ),
       div(
         cls := "my-5",
