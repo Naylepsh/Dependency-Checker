@@ -19,7 +19,67 @@ import org.http4s.circe.*
 import org.http4s.server.Router
 import cats.Show
 
-object ProjectPayloads:
+object ProjectController:
+  // TODO: Move this to a dedicated module
+  // And mode ScanningViews' layout to a shared module (/lib?)
+  import ProjectViews.*
+  import ProjectPayloads.*
+
+  type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
+
+  def make[F[_]: Monad: ThrowableMonadError: Logger: Concurrent](
+      service: ProjectService[F]
+  ): Controller[F] =
+    new Controller[F] with Http4sDsl[F]:
+      private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
+        case GET -> Root =>
+          service
+            .all
+            .map: projects =>
+              views.layout(renderProjects(projects))
+            .flatMap: html =>
+              Ok(html.toString, `Content-Type`(MediaType.text.html))
+            .handleErrorWith: error =>
+              Logger[F].error(error.toString)
+                *> InternalServerError("Oops, something went wrong")
+        case req @ POST -> Root =>
+          req
+            .as[ProjectPayload]
+            .flatMap: payload =>
+              service.add(payload.toDomain)
+                *> Ok(renderProjectForm(info =
+                  s"Project ${payload.name} added successfully".some
+                ).toString)
+            .handleErrorWith: error =>
+              Logger[F].error(error.toString)
+                *> InternalServerError("Oops, something went wrong")
+        case GET -> Root / "form" =>
+          Ok(
+            views.layout(renderProjectForm(info = None)).toString,
+            `Content-Type`(MediaType.text.html)
+          )
+        case GET -> Root / projectName / "detailed" =>
+          service
+            .find(projectName)
+            .flatMap:
+              case None => ???
+              case Some(project) => Ok(
+                  renderProjectDetails(project).toString,
+                  `Content-Type`(MediaType.text.html)
+                )
+        case GET -> Root / projectName / "short" =>
+          service
+            .find(projectName)
+            .flatMap:
+              case None => ???
+              case Some(project) => Ok(
+                  renderProjectShort(project).toString,
+                  `Content-Type`(MediaType.text.html)
+                )
+
+      val routes: HttpRoutes[F] = Router("project" -> httpRoutes)
+
+private object ProjectPayloads:
   type VariadicString = List[String] | String
   object VariadicString:
     given Decoder[VariadicString] with
@@ -66,64 +126,7 @@ object ProjectPayloads:
     implicit def decoder[F[_]: Concurrent]: EntityDecoder[F, ProjectPayload] =
       jsonOf[F, ProjectPayload]
 
-object ProjectController:
-  // TODO: Move this to a dedicated module
-  // And mode ScanningViews' layout to a shared module (/lib?)
-  import ProjectViews.*
-  import ProjectPayloads.*
-
-  type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
-
-  def make[F[_]: Monad: ThrowableMonadError: Logger: Concurrent](
-      service: ProjectService[F]
-  ): Controller[F] =
-    new Controller[F] with Http4sDsl[F]:
-      private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
-        case GET -> Root =>
-          service
-            .all
-            .map: projects =>
-              views.layout(renderProjects(projects))
-            .flatMap: html =>
-              Ok(html.toString, `Content-Type`(MediaType.text.html))
-            .handleErrorWith: error =>
-              Logger[F].error(error.toString)
-                *> InternalServerError("Oops, something went wrong")
-        case req @ POST -> Root =>
-          req
-            .as[ProjectPayload]
-            .flatMap: payload =>
-              service.add(payload.toDomain) *> Ok("YEP")
-            .handleErrorWith: error =>
-              Logger[F].error(error.toString)
-                *> InternalServerError("Oops, something went wrong")
-        case GET -> Root / "form" =>
-          Ok(
-            views.layout(renderProjectForm).toString,
-            `Content-Type`(MediaType.text.html)
-          )
-        case GET -> Root / projectName / "detailed" =>
-          service
-            .find(projectName)
-            .flatMap:
-              case None => ???
-              case Some(project) => Ok(
-                  renderProjectDetails(project).toString,
-                  `Content-Type`(MediaType.text.html)
-                )
-        case GET -> Root / projectName / "short" =>
-          service
-            .find(projectName)
-            .flatMap:
-              case None => ???
-              case Some(project) => Ok(
-                  renderProjectShort(project).toString,
-                  `Content-Type`(MediaType.text.html)
-                )
-
-      val routes: HttpRoutes[F] = Router("project" -> httpRoutes)
-
-object ProjectViews:
+private object ProjectViews:
   def renderProjects(projects: List[ProjectScanConfig]) =
     div(
       cls := "container mx-auto my-10",
@@ -221,19 +224,34 @@ object ProjectViews:
       )
     )
 
-  val renderProjectForm =
+  def renderProjectForm(info: Option[String]) =
     div(
+      id  := "form-start",
       cls := "container mx-auto my-10",
       h2(
         cls := "text-center font-semibold text-3xl",
         "Create a new project config"
       ),
       div(
-        cls := "w-full max-w-md mx-auto",
+        cls := "w-full max-w-md mx-auto mt-5",
+        info
+          .map: info =>
+            div(
+              cls := "info bg-teal-100 flex p-2 my-2 text-sm text-gray-900",
+              p(cls := "mr-auto", info),
+              button(
+                `type`  := "button",
+                onclick := "removeClosest(this, '.info')",
+                "X"
+              )
+            )
+          .getOrElse(span()),
         form(
-          cls            := "text-sm font-bold",
-          htmx.ajax.post := "/project",
-          attr("hx-ext") := "json-enc",
+          cls                   := "text-sm font-bold",
+          htmx.ajax.post        := "/project",
+          htmx.target.attribute := htmx.target.value.closest("#form-start"),
+          htmx.swap.attribute   := htmx.swap.value.outerHTML,
+          attr("hx-ext")        := "json-enc",
           div(
             cls := "mb-4",
             formLabel("name", "Name"),
@@ -343,7 +361,8 @@ object ProjectViews:
       inputType: InputType = InputType.Text
   ) =
     input(
-      cls    := "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900",
-      name   := inputName,
-      `type` := inputType.show
+      cls      := "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900",
+      name     := inputName,
+      `type`   := inputType.show,
+      required := true
     )
