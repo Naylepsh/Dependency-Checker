@@ -87,7 +87,7 @@ private object ProjectPayloads:
         c.as[List[String]] match
           case Left(_)   => c.as[String]
           case Right(xs) => xs.pure
-    implicit def decoder[F[_]: Concurrent]: EntityDecoder[F, VariadicString] =
+    given decoder[F[_]: Concurrent]: EntityDecoder[F, VariadicString] =
       jsonOf[F, VariadicString]
 
   import VariadicString.given
