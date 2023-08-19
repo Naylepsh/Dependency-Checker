@@ -15,6 +15,8 @@ import core.domain.project.ProjectScanConfig
 import core.domain.project.Project
 import core.domain.dependency.DependencySource
 import persistance.ProjectScanConfigRepository
+import core.application.config.AppConfig
+import cats.effect.kernel.Resource
 
 object DatabaseTest extends Tag("DatabaseTest")
 
@@ -33,23 +35,23 @@ class ProjectScanConfigRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
         configs <- repository.all
       yield configs should (
         have length (3)
-          // NOTE: contain is wonky and requires the projectScanConfig list to be in exact order
+        // NOTE: contain is wonky and requires the projectScanConfig list to be in exact order
           and contain(txtScanConfig)
           and contain(tomlScanConfig)
           and contain(mixedScanConfig)
       )
 
 object ProjectScanConfigRepositorySpec:
-  val config =
-    Config("sqlite:///home/naylepsh/dev/sentinel/db.test.sqlite", "", "")
-  val transactor = makeSqliteTransactorResource[IO](config).evalTap: xa =>
-    val freshStart =
-      for
-        _ <- sql"DELETE FROM projectScanConfig".update.run
-        _ <- sql"DELETE FROM txtSource".update.run
-        _ <- sql"DELETE FROM tomlSource".update.run
-      yield xa
-    freshStart.transact(xa)
+  val transactor = Resource.eval(AppConfig.load[IO]).flatMap: config =>
+    makeSqliteTransactorResource[IO](config.database).evalTap: xa =>
+      val freshStart =
+        for
+          _ <- sql"DELETE FROM project".update.run
+          _ <- sql"DELETE FROM project_scan_config".update.run
+          _ <- sql"DELETE FROM txt_source".update.run
+          _ <- sql"DELETE FROM toml_source".update.run
+        yield xa
+      freshStart.transact(xa)
 
   val txtScanConfig = ProjectScanConfig(
     project = Project(id = "1", name = "foo"),
