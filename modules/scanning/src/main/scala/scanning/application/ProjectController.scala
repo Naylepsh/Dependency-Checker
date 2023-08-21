@@ -8,6 +8,7 @@ import org.http4s.*
 import cats.{ Monad, MonadError }
 import cats.syntax.all.*
 import scalatags.Text.all.*
+import scalatags.Text.TypedTag
 import core.domain.project.ProjectScanConfig
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 import org.legogroup.woof.{ *, given }
@@ -18,6 +19,8 @@ import io.circe.syntax.*
 import org.http4s.circe.*
 import org.http4s.server.Router
 import cats.Show
+import scalatags.generic.AttrPair
+import scalatags.text.Builder
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -260,17 +263,31 @@ private object ProjectViews:
           div(
             cls := "mb-4",
             formLabel("name", "Name"),
-            formInput("name")
+            FormInput.asHtml(FormInput.Text(
+              cls = formInputClass,
+              name = "name",
+              required = true
+            ))
           ),
           div(
             cls := "mb-4",
             formLabel("gitlabId", "Gitlab ID"),
-            formInput("gitlabId", InputType.Number)
+            FormInput.asHtml(FormInput.Number(
+              cls = formInputClass,
+              name = "gitlabId",
+              required = true,
+              min = 0.some
+            ))
           ),
           div(
             cls := "mb-4",
             formLabel("branch", "Branch"),
-            formInput("branch")
+            FormInput.asHtml(FormInput.Text(
+              cls = formInputClass,
+              name = "branch",
+              required = true,
+              value = "master".some
+            ))
           ),
           div(
             cls := "mb-4",
@@ -304,6 +321,9 @@ private object ProjectViews:
       )
     )
 
+  private val formInputClass =
+    "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900"
+
   private def txtSourceInputTemplate =
     div(
       id  := "txt-source-template",
@@ -319,7 +339,12 @@ private object ProjectViews:
         )
       ),
       formLabel("txtSources[path]", "Path"),
-      formInput(s"txtSources[path]")
+      FormInput.asHtml(FormInput.Text(
+        cls = formInputClass,
+        name = s"txtSources[path]",
+        required = true,
+        value = "requirements.txt".some
+      ))
     )
 
   private def tomlSourceInputTemplate =
@@ -338,11 +363,21 @@ private object ProjectViews:
       ),
       div(
         formLabel("tomlSources[path]", "Path"),
-        formInput(s"tomlSources[path]")
+        FormInput.asHtml(FormInput.Text(
+          cls = formInputClass,
+          name = s"tomlSources[path]",
+          required = true,
+          value = "pyproject.toml".some
+        ))
       ),
       div(
         formLabel("tomlSources[group]", "Group"),
-        formInput(s"tomlSources[group]")
+        FormInput.asHtml(FormInput.Text(
+          cls = formInputClass,
+          name = s"tomlSources[group]",
+          required = true,
+          value = "tool.poetry.dependencies".some
+        ))
       )
     )
 
@@ -353,21 +388,44 @@ private object ProjectViews:
       labelText
     )
 
-  enum InputType:
-    case Text, Number
-  object InputType:
-    given Show[InputType] with
-      def show(x: InputType): String = x match
-        case Text   => "text"
-        case Number => "number"
-
-  private def formInput(
-      inputName: String,
-      inputType: InputType = InputType.Text
-  ) =
-    input(
-      cls      := "shadow appearance-none border w-full py-2 px-3 text-gray-300 leading-tight focus:outline-none focus:shadow-outline focus:border-teal-200 bg-gray-900",
-      name     := inputName,
-      `type`   := inputType.show,
-      required := true
-    )
+  enum FormInput:
+    case Text(
+        cls: String,
+        name: String,
+        required: Boolean = false,
+        value: Option[String] = None
+    ) extends FormInput
+    case Number(
+        cls: String,
+        name: String,
+        required: Boolean = false,
+        min: Option[Int]
+    ) extends FormInput
+  object FormInput:
+    def asHtml(formInput: FormInput): TypedTag[String] =
+      formInput match
+        case x @ FormInput.Text(_, _, _, _) =>
+          var attrs = List(
+            cls      := x.cls,
+            name     := x.name,
+            required := x.required,
+            `type`   := "text"
+          )
+          x.value match
+            case Some(inputVal) => attrs = (value := inputVal) :: attrs
+            case None           =>
+          input(attrs)
+        case x @ FormInput.Number(_, _, _, _) =>
+          var attrs: List[AttrPair[
+            Builder,
+            ? >: String & Boolean & Int <: String | Boolean | Int
+          ]] = List(
+            cls      := x.cls,
+            name     := x.name,
+            required := x.required,
+            `type`   := "number"
+          )
+          x.min match
+            case Some(value) => attrs = (min := value) :: attrs
+            case None        =>
+          input(attrs)
