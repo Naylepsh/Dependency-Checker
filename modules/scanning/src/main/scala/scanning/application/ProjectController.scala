@@ -139,8 +139,15 @@ private object ProjectViews:
       ),
       a(
         href := "/project/new",
-        cls  := "block w-full my-3 p-4 bg-teal-500 text-gray-300 border-2 border-gray-700 cursor-pointer text-center",
+        cls  := "block w-full my-3 p-4 bg-teal-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
         "Add new project"
+      ),
+      button(
+        cls                    := "block w-full my-3 p-4 bg-orange-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
+        htmx.ajax.post         := "/scan/all",
+        htmx.trigger.attribute := htmx.trigger.value.click,
+        htmx.swap.attribute    := htmx.swap.value.outerHTML,
+        "Scan all projects"
       ),
       div(
         cls := "my-5",
