@@ -18,6 +18,7 @@ import scanning.application.services.ScanningService
 import core.domain.project.ProjectScanConfigRepository
 import core.domain.task.TaskProcessor
 import org.legogroup.woof.{ *, given }
+import org.http4s.server.Router
 
 object ScanningController:
   import ScanningViews.*
@@ -30,8 +31,8 @@ object ScanningController:
       taskProcessor: TaskProcessor[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
-      def routes: HttpRoutes[F] = HttpRoutes.of[F]:
-        case GET -> Root / "scan-report" / projectName / "latest" =>
+      private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
+        case GET -> Root / projectName / "latest" =>
           service
             .getLatestScan(projectName)
             .flatMap:
@@ -46,17 +47,30 @@ object ScanningController:
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
 
-        case POST -> Root / "scan" / projectName =>
+        case POST -> Root / "all" =>
           repository.all.flatMap: configs =>
-              configs
-                .find: config =>
-                  config.project.name == projectName
-                .fold(NotFound(s"$projectName does not exist")): project =>
-                  taskProcessor.add(service.scan(project))
-                    *> Ok(
-                      renderScanScheduledButton.toString,
-                      `Content-Type`(MediaType.text.html)
-                    )
+            configs
+              .traverse: config =>
+                taskProcessor.add(service.scan(config))
+              .flatMap: _ =>
+                Ok(
+                  renderAllScansScheduledButton.toString,
+                  `Content-Type`(MediaType.text.html)
+                )
+
+        case POST -> Root / projectName =>
+          repository.all.flatMap: configs =>
+            configs
+              .find: config =>
+                config.project.name == projectName
+              .fold(NotFound(s"$projectName does not exist")): project =>
+                taskProcessor.add(service.scan(project))
+                  *> Ok(
+                    renderScanScheduledButton.toString,
+                    `Content-Type`(MediaType.text.html)
+                  )
+
+      val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
 
 private object ScanningViews:
   def renderScanResult(now: DateTime, scanResult: ScanReport) =
@@ -150,4 +164,11 @@ private object ScanningViews:
     a(
       cls := "bg-gray-400 m-1 py-2 px-3 text-gray-100 cursor-pointer animate-pulse",
       "Scan scheduled"
+    )
+
+  // TODO: project controller should hx-swap: none and add classes: animate-pulse and bg-gray-400 after successful request
+  val renderAllScansScheduledButton =
+    a(
+      cls := "block w-full my-3 p-4 bg-gray-400 text-gray-100 border-2 border-gray-700 cursor-pointer text-center animate-pulse",
+      "Scans scheduled"
     )
