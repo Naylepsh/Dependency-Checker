@@ -53,6 +53,11 @@ object ProjectScanConfigRepository:
           inserts.transact(xa)
       yield configId
 
+    def setEnabled(name: String, enabled: Boolean): F[Unit] =
+      SQL.findScanId(name).option.transact(xa).flatMap:
+        case None => MonadCancelThrow[F].unit
+        case Some(scanId) => SQL.setEnabled(scanId, enabled).run.transact(xa).void
+
 private object SQL:
   import core.infra.persistance.sqlmappings.given
 
@@ -143,4 +148,19 @@ private object SQL:
     sql"""
     INSERT INTO toml_source (id, config_id, path, target_group)
     VALUES ($id, $configId, ${source.path}, ${source.group})
+    """.update
+
+  def findScanId(projectName: String) = 
+    sql"""
+    SELECT project_scan_config.id
+    FROM project_scan_config
+    JOIN project on project.id = project_scan_config.project_id
+    WHERE project.name = $projectName
+    """.query[UUID]
+
+  def setEnabled(id: UUID, enabled: Boolean) =
+    sql"""
+    UPDATE project_scan_config
+    SET enabled = $enabled
+    WHERE id = $id
     """.update
