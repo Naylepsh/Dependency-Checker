@@ -5,6 +5,8 @@ import org.http4s.{ EntityDecoder, HttpRoutes, MediaType }
 import org.http4s.headers.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.*
+import org.http4s.circe.*
+import org.http4s.server.Router
 import cats.{ Monad, MonadError }
 import cats.syntax.all.*
 import scalatags.Text.all.*
@@ -16,11 +18,6 @@ import cats.effect.kernel.{ Concurrent, Sync }
 import core.domain.project.Project
 import io.circe.*
 import io.circe.syntax.*
-import org.http4s.circe.*
-import org.http4s.server.Router
-import cats.Show
-import scalatags.generic.AttrPair
-import scalatags.text.Builder
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -367,31 +364,32 @@ private object ProjectViews:
           div(
             cls := "mb-4",
             formLabel("name", "Name"),
-            FormInput.asHtml(FormInput.Text(
-              cls = formInputClass,
-              name = "name",
-              required = true
-            ))
+            input(
+              cls      := formInputClass,
+              name     := "name",
+              required := true
+            )
           ),
           div(
             cls := "mb-4",
             formLabel("gitlabId", "Gitlab ID"),
-            FormInput.asHtml(FormInput.Number(
-              cls = formInputClass,
-              name = "gitlabId",
-              required = true,
-              min = 0.some
-            ))
+            input(
+              cls      := formInputClass,
+              name     := "gitlabId",
+              required := true,
+              min      := 0,
+              `type`   := "number"
+            )
           ),
           div(
             cls := "mb-4",
             formLabel("branch", "Branch"),
-            FormInput.asHtml(FormInput.Text(
-              cls = formInputClass,
-              name = "branch",
-              required = true,
-              value = "master".some
-            ))
+            input(
+              cls      := formInputClass,
+              name     := "branch",
+              required := true,
+              value    := "master"
+            )
           ),
           div(
             cls := "mb-4",
@@ -443,12 +441,13 @@ private object ProjectViews:
         )
       ),
       formLabel("txtSources[path]", "Path"),
-      FormInput.asHtml(FormInput.Text(
-        cls = formInputClass,
-        name = s"txtSources[path]",
-        required = true,
-        value = "requirements.txt".some
-      ))
+      input(
+        cls      := formInputClass,
+        name     := s"txtSources[path]",
+        required := true,
+        value    := "requirements.txt",
+        pattern  := "[.]txt$"
+      )
     )
 
   private def tomlSourceInputTemplate =
@@ -467,21 +466,22 @@ private object ProjectViews:
       ),
       div(
         formLabel("tomlSources[path]", "Path"),
-        FormInput.asHtml(FormInput.Text(
-          cls = formInputClass,
-          name = s"tomlSources[path]",
-          required = true,
-          value = "pyproject.toml".some
-        ))
+        input(
+          cls      := formInputClass,
+          name     := s"tomlSources[path]",
+          required := true,
+          value    := "pyproject.toml",
+          pattern  := "[.].toml$"
+        )
       ),
       div(
         formLabel("tomlSources[group]", "Group"),
-        FormInput.asHtml(FormInput.Text(
-          cls = formInputClass,
-          name = s"tomlSources[group]",
-          required = true,
-          value = "tool.poetry.dependencies".some
-        ))
+        input(
+          cls      := formInputClass,
+          name     := s"tomlSources[group]",
+          required := true,
+          value    := "tool.poetry.dependencies"
+        )
       )
     )
 
@@ -492,44 +492,3 @@ private object ProjectViews:
       labelText
     )
 
-  enum FormInput:
-    case Text(
-        cls: String,
-        name: String,
-        required: Boolean = false,
-        value: Option[String] = None
-    ) extends FormInput
-    case Number(
-        cls: String,
-        name: String,
-        required: Boolean = false,
-        min: Option[Int]
-    ) extends FormInput
-  object FormInput:
-    def asHtml(formInput: FormInput): TypedTag[String] =
-      formInput match
-        case x @ FormInput.Text(_, _, _, _) =>
-          var attrs = List(
-            cls      := x.cls,
-            name     := x.name,
-            required := x.required,
-            `type`   := "text"
-          )
-          x.value match
-            case Some(inputVal) => attrs = (value := inputVal) :: attrs
-            case None           =>
-          input(attrs)
-        case x @ FormInput.Number(_, _, _, _) =>
-          var attrs: List[AttrPair[
-            Builder,
-            ? >: String & Boolean & Int <: String | Boolean | Int
-          ]] = List(
-            cls      := x.cls,
-            name     := x.name,
-            required := x.required,
-            `type`   := "number"
-          )
-          x.min match
-            case Some(value) => attrs = (min := value) :: attrs
-            case None        =>
-          input(attrs)
