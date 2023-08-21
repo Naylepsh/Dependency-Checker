@@ -50,6 +50,7 @@ object ScanningController:
         case POST -> Root / "all" =>
           repository.all.flatMap: configs =>
             configs
+              .filter(_.enabled)
               .traverse: config =>
                 taskProcessor.add(service.scan(config))
               .flatMap: _ =>
