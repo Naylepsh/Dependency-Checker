@@ -25,8 +25,9 @@ object project:
   )
 
   trait ProjectScanConfigRepository[F[_]]:
-    def all: F[List[ProjectScanConfig]] 
+    def all: F[List[ProjectScanConfig]]
     def save(config: ProjectScanConfig): F[UUID]
+    def setEnabled(projectName: String, enabled: Boolean): F[Unit]
 
   case class ScanResult(
       project: Project,
