@@ -46,6 +46,7 @@ object project:
       getLatestScansTimestamps(1).map(_.headOption)
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
+    def deleteOld(projectName: String): F[Unit]
 
   case class ScanReport(
       projectName: String,

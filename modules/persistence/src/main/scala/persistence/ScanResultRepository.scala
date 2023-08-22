@@ -1,4 +1,4 @@
-package core.infra.persistance
+package persistance
 
 import java.util.UUID
 
@@ -15,6 +15,7 @@ import doobie.util.query.*
 import doobie.util.transactor.Transactor
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
+import doobie.util.update.Update0
 
 object ScanResultRepository:
   def make[F[_]: MonadCancelThrow: Logger](
@@ -22,9 +23,6 @@ object ScanResultRepository:
       dependencyRepository: DependencyRepository[F]
   ): ScanResultRepository[F] = new:
     import ScanResultRepositorySQL.*
-
-    def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
-      dependencyRepository.delete(timestamps)
 
     def save(results: List[ScanResult], timestamp: DateTime): F[Unit] =
       results.traverse(result =>
@@ -76,7 +74,7 @@ object ScanResultRepository:
 
     def getLatestScanReport(projectName: String): F[Option[ScanReport]] =
       ScanResultRepositorySQL
-        .getLatestScanTimestamp(projectName)
+        .getScanTimestamps(projectName, limit = 1)
         .option
         .flatMap: timestamp =>
           timestamp.traverse: timestamp =>
@@ -99,6 +97,19 @@ object ScanResultRepository:
         _ <- Logger[F].info(s"Reports count: ${reports.length}")
       yield reports
 
+    def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
+      dependencyRepository.delete(timestamps)
+
+    def deleteOld(projectName: String): F[Unit] =
+      getProjectId(projectName).flatMap:
+        case Some(id) =>
+          ScanResultRepositorySQL
+            .deleteOldDependencies(id)
+            .run
+            .transact(xa)
+            .void
+        case None => Applicative[F].unit
+
   private[persistance] case class ProjectDependency(
       timestamp: DateTime,
       projectId: UUID,
@@ -107,7 +118,7 @@ object ScanResultRepository:
   )
 
   private[persistance] object ScanResultRepositorySQL:
-    import sqlmappings.given
+    import core.infra.persistance.sqlmappings.given
 
     def getProjectId(projectName: String) =
       sql"""
@@ -200,12 +211,28 @@ object ScanResultRepository:
       LIMIT $limit
       """.query[DateTime]
 
-    def getLatestScanTimestamp(projectName: String): Query0[DateTime] =
+    def getScanTimestamps(projectName: String, limit: Int): Query0[DateTime] =
       sql"""
       SELECT DISTINCT timestamp
       FROM project
       JOIN project_dependency ON project_dependency.project_id = project.id
       WHERE project.name = $projectName
       ORDER BY timestamp DESC
-      LIMIT 1
+      LIMIT $limit
       """.query[DateTime]
+
+    def deleteOldDependencies(projectId: UUID): Update0 =
+      // delete everything but the latest dependencies
+      sql"""
+      DELETE
+      FROM project_dependency
+      WHERE project_id = $projectId
+      AND project_dependency.timestamp IN (
+        SELECT timestamp
+        FROM project_dependency
+        WHERE project_dependency.project_id = $projectId
+        ORDER BY timestamp DESC
+        LIMIT -1
+        OFFSET 1
+      )
+      """.update

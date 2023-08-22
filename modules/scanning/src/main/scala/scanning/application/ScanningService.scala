@@ -41,15 +41,16 @@ object ScanningService:
         allDependencies = projectDependencies
           .dependencies
           .flatMap(_.items)
-          .distinct
         _ <- Logger[F].info(
           s"Checking the details of ${allDependencies.length} dependencies"
         )
         details <- scanner.getDetails(allDependencies)
         report = buildReport(buildDetailsMap(details))(projectDependencies)
-        _   <- Logger[F].info("Saving the scan results...")
+        _   <- Logger[F].info("Saving the scan results")
         now <- Time[F].currentDateTime
         _   <- repository.save(List(report), now)
+        _   <- Logger[F].info("Deleting the old scans")
+        _   <- repository.deleteOld(config.project.name)
         _   <- Logger[F].info("Done with the scan")
       yield ()
 
