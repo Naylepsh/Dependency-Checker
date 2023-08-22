@@ -117,14 +117,14 @@ object ScanResultRepository:
             .void
         case None => Applicative[F].unit
 
-  private[persistance] case class ProjectDependency(
+  case class ProjectDependency(
       timestamp: DateTime,
       projectId: UUID,
       groupName: String,
       dependencyId: UUID
   )
 
-  private[persistance] object ScanResultRepositorySQL:
+  object ScanResultRepositorySQL:
     import core.infra.persistance.sqlmappings.given
 
     def getProjectId(projectName: String) =
