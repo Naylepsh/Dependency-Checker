@@ -18,7 +18,6 @@ import scanning.infra.packageindexes.Pypi
 import core.infra.persistance.{
   DependencyRepository,
   RegistryRepository,
-  ScanResultRepository
 }
 import scanning.infra.sources.GitlabSource
 import org.joda.time.DateTime
@@ -28,6 +27,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import concurrent.duration.*
 import processor.TaskProcessor
 import persistance.ProjectScanConfigRepository
+import persistance.ScanResultRepository
 
 object ScanningCli:
   private def makeScanningService(context: Context)(using

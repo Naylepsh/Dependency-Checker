@@ -48,7 +48,7 @@ CREATE TABLE dependency_scan
   current_version TEXT,
   latest_version TEXT NOT NULL,
   latest_release_date TIMESTAMP,
-  NOTes TEXT,
+  notes TEXT,
   dependency_id UUID NOT NULL,
 
   CONSTRAINT fk_dependency_id

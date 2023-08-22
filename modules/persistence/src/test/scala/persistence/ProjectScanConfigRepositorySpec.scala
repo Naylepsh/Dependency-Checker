@@ -2,7 +2,6 @@ package persistence
 
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.Tag
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.*
@@ -17,8 +16,6 @@ import core.domain.dependency.DependencySource
 import persistance.ProjectScanConfigRepository
 import core.application.config.AppConfig
 import cats.effect.kernel.Resource
-
-object DatabaseTest extends Tag("DatabaseTest")
 
 class ProjectScanConfigRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
     with Matchers:
