@@ -71,7 +71,7 @@ object ScanningController:
                     `Content-Type`(MediaType.text.html)
                   )
 
-      val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
+      val routes: HttpRoutes[F] = Router("scan-report" -> httpRoutes)
 
 private object ScanningViews:
   def renderScanResult(now: DateTime, scanResult: ScanReport) =
