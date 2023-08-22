@@ -16,7 +16,6 @@ import scanning.domain.Source
 
 trait ScanningService[F[_]]:
   def scan(project: ProjectScanConfig): F[Unit]
-  def scan(projects: List[ProjectScanConfig]): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
   def getLatestScan(projectName: String): F[Option[ScanReport]]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
@@ -51,32 +50,6 @@ object ScanningService:
         _   <- Logger[F].info("Saving the scan results...")
         now <- Time[F].currentDateTime
         _   <- repository.save(List(report), now)
-        _   <- Logger[F].info("Done with the scan")
-      yield ()
-
-    def scan(configs: List[ProjectScanConfig]): F[Unit] =
-      for
-        _ <- Logger[F].info(
-          s"Scanning dependencies of ${configs.length} projects..."
-        )
-        projectsDependencies <- configs
-          .parTraverse: config =>
-            source.extract(config)
-              .map: dependencies =>
-                ProjectDependencies(config.project, dependencies)
-        dependencies = projectsDependencies
-          .flatMap(_.dependencies.flatMap(_.items))
-          .distinct
-        _ <- Logger[F].info(
-          s"Checking the details of ${dependencies.length} dependencies..."
-        )
-        details <- scanner.getDetails(dependencies)
-        _       <- Logger[F].info("Building the report...")
-        reports =
-          projectsDependencies.map(buildReport(buildDetailsMap(details)))
-        _   <- Logger[F].info("Saving the scan results...")
-        now <- Time[F].currentDateTime
-        _   <- repository.save(reports, now)
         _   <- Logger[F].info("Done with the scan")
       yield ()
 
