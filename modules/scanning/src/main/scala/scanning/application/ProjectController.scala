@@ -191,7 +191,7 @@ private object ProjectViews:
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan-report/${config.project.name}/latest",
+            href := s"/scan/${config.project.name}/latest",
             "Scan report"
           )
         )
@@ -301,7 +301,7 @@ private object ProjectViews:
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan-report/${config.project.name}/latest",
+            href := s"/scan/${config.project.name}/latest",
             "Scan report"
           )
         )
