@@ -15,10 +15,7 @@ import scanning.infra.exporters.{
   ScanReportExcelExporter
 }
 import scanning.infra.packageindexes.Pypi
-import core.infra.persistance.{
-  DependencyRepository,
-  RegistryRepository,
-}
+import core.infra.persistance.{ DependencyRepository, RegistryRepository }
 import scanning.infra.sources.GitlabSource
 import org.joda.time.DateTime
 import org.legogroup.woof.Logger
@@ -165,7 +162,11 @@ object ScanningCli:
 
         val staticFileController = StaticFileController.make[IO]
 
-        TaskProcessor.make[IO](1, false.pure, 10.seconds.some).use: processor =>
+        TaskProcessor.make[IO](
+          context.config.workerCount,
+          false.pure,
+          10.seconds.some
+        ).use: processor =>
           val scanningService = makeScanningService(context)
           val scanReportController =
             ScanningController.make(
@@ -174,9 +175,10 @@ object ScanningCli:
               processor
             )
 
-          val routes = scanReportController.routes 
-            <+> projectController.routes 
-            <+> staticFileController.routes
+          val routes =
+            scanReportController.routes
+              <+> projectController.routes
+              <+> staticFileController.routes
 
           EmberServerBuilder
             .default[IO]
