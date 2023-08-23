@@ -1,7 +1,7 @@
 package scanning.application
 
 import cats.syntax.all.*
-import cats.{ Monad, MonadError }
+import cats.{ Monad, MonadThrow }
 import core.application.controller.Controller
 import core.domain.Time
 import core.domain.Time.DeltaUnit
@@ -24,9 +24,7 @@ import scanning.application.services.ScanningService
 object ScanningController:
   import ScanningViews.*
 
-  type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
-
-  def make[F[_]: Monad: ThrowableMonadError: Time: Logger](
+  def make[F[_]: MonadThrow: Time: Logger](
       service: ScanningService[F],
       repository: ProjectScanConfigRepository[F],
       taskProcessor: TaskProcessor[F]
