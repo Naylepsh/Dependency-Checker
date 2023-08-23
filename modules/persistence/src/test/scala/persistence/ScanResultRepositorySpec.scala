@@ -28,6 +28,8 @@ import core.domain.Time
 import org.scalatest.Checkpoints.Checkpoint
 import org.scalatest.Succeeded
 import ScanResultRepository.ScanResultRepositorySQL.GetAllResult
+import org.joda.time.DateTime
+import core.domain.project.ScanReport
 
 class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
     with Matchers:

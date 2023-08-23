@@ -68,11 +68,7 @@ object dependency:
   trait DependencyScanner[F[_]]:
     def getDetails(dependencies: List[Dependency]): F[List[DependencyDetails]]
 
-  case class ExistingDependency(
-      id: UUID,
-      timestamp: DateTime,
-      name: String
-  )
+  case class ExistingDependency(id: UUID, name: String)
 
   trait DependencyRepository[F[_]]:
     def save(
