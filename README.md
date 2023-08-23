@@ -1,7 +1,7 @@
 # Ganyu
 
 Python dependency scanner for repositories hosted on gitlab. 
-Checks the state of project's dependencies (how up/out-of-date they are and their vulnerabilities) and attempts to update them if prompted.
+Checks the state of project's dependencies (how up-to/out-of-date they are and their vulnerabilities) and attempts to update them if prompted.
 
 
 ## Currently supported languages & formats
