@@ -37,28 +37,27 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
 
   "Save, purge old and find latest scan report" taggedAs (DatabaseTest) in:
     transactor.use: xa =>
+      val countScans =
+        sql"SELECT COUNT(DISTINCT timestamp) FROM project_dependency"
+          .query[Int]
+          .unique
+          .transact(xa)
       given Filter  = Filter.everything
       given Printer = NoColorPrinter()
       for
         given Logger[IO] <- DefaultLogger.makeIo(noop)
         dependencyRepository = DependencyRepository.make(xa)
         repository           = ScanResultRepository.make(xa, dependencyRepository)
-        dt1 <- Time[IO].currentDateTime
-        _   <- repository.save(List(firstResult), dt1)
-        dt2 <- Time[IO].currentDateTime
-        _   <- repository.save(List(secondResult), dt2)
-        dt3 <- Time[IO].currentDateTime
-        _   <- repository.save(List(thirdResult), dt3)
-        savedCount <-
-          sql"SELECT COUNT(*) FROM project_dependency".query[Int].unique.transact(
-            xa
-          )
-        _ <- repository.deleteOld(project.name)
-        savedCountAfterPurge <-
-          sql"SELECT COUNT(*) FROM project_dependency".query[Int].unique.transact(
-            xa
-          )
-        latestScan <- repository.getLatestScanReport(project.name)
+        dt1                  <- Time[IO].currentDateTime
+        _                    <- repository.save(List(firstResult), dt1)
+        dt2                  <- Time[IO].currentDateTime
+        _                    <- repository.save(List(secondResult), dt2)
+        dt3                  <- Time[IO].currentDateTime
+        _                    <- repository.save(List(thirdResult), dt3)
+        savedCount           <- countScans
+        _                    <- repository.deleteOld(project.name)
+        savedCountAfterPurge <- countScans
+        latestScan           <- repository.getLatestScanReport(project.name)
       yield
         val cp = Checkpoint()
         savedCount shouldBe 3
@@ -72,7 +71,6 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
   "GetAllResult.toDomain constructs a proper report" in:
     val scanReports = GetAllResult.toDomain(testGetAllResults)
     scanReports should contain only (expectedFirstProjectReport, expectedSecondProjectReprort)
-
 
 object ScanResultRepositorySpec:
   val transactor = Resource.eval(AppConfig.load[IO]).flatMap: config =>

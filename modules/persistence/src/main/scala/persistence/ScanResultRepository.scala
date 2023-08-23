@@ -101,21 +101,26 @@ object ScanResultRepository:
       dependencyRepository.delete(timestamps)
 
     def deleteOld(projectName: String): F[Unit] =
-      getProjectId(projectName).flatMap:
-        case Some(id) =>
+      val getLatestTimestamp =
+        ScanResultRepositorySQL
+          .getScanTimestamps(projectName, limit = 1)
+          .option
+          .transact(xa)
+      (getLatestTimestamp, getProjectId(projectName)).tupled.flatMap:
+        case (Some(timestamp), Some(id)) =>
           /**
-           * Ideally we'd clean dependency_scan table as well, 
+           * Ideally we'd clean dependency_scan table as well,
            * but because it's attached to dependency (which can be shared by many projects)
            * instead of project, we can't just delete it without some shenanigans
            * with checking whether no other project relies on these records.
            * TL;DR dependency_scan table relations need revisiting
            */
           ScanResultRepositorySQL
-            .deleteOldDependencies(id)
+            .deleteOldDependencies(id, timestamp)
             .run
             .transact(xa)
             .void
-        case None => Applicative[F].unit
+        case _ => Applicative[F].unit
 
   case class ProjectDependency(
       timestamp: DateTime,
@@ -228,18 +233,14 @@ object ScanResultRepository:
       LIMIT $limit
       """.query[DateTime]
 
-    def deleteOldDependencies(projectId: UUID): Update0 =
+    def deleteOldDependencies(
+        projectId: UUID,
+        maxTimestamp: DateTime
+    ): Update0 =
       // delete everything but the latest dependencies
       sql"""
       DELETE
       FROM project_dependency
       WHERE project_id = $projectId
-      AND project_dependency.timestamp IN (
-        SELECT timestamp
-        FROM project_dependency
-        WHERE project_dependency.project_id = $projectId
-        ORDER BY timestamp DESC
-        LIMIT -1
-        OFFSET 1
-      )
+      AND project_dependency.timestamp < $maxTimestamp
       """.update

@@ -52,7 +52,9 @@ object TaskProcessor:
             Logger[F].debug(s"Adding a new worker (to existing $busyWorkers)")
               *> workerCount.update(_ + 1)
               *> supervisor.supervise(
-                worker.runWhileQueueIsNotEmpty *> workerCount.update(_ - 1)
+                worker.runWhileQueueIsNotEmpty
+                  *> workerCount.update(_ - 1)
+                  *> Logger[F].debug("Killing the worker")
               ).void
           else
             Logger[F].debug(
