@@ -2,9 +2,9 @@ package scanning.application
 
 import cats.Monad
 import cats.syntax.all.*
+import core.domain.dependency.*
 import org.legogroup.woof.{ *, given }
 import scanning.domain.PackageIndex
-import core.domain.dependency.*
 
 object DependencyScanner:
   def make[F[_]: Monad: Logger](packageIndex: PackageIndex[F])

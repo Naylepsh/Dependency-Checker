@@ -44,6 +44,7 @@ object TaskProcessor:
         _            <- Logger[F].debug("Adding a task on the queue")
         _            <- queue.offer(() => task)
         tasksOnQueue <- queue.size
+        _            <- Logger[F].debug(s"There are $tasksOnQueue tasks left to process")
         busyWorkers  <- workerCount.get
         _ <-
           if 0 < tasksOnQueue && busyWorkers < maxWorkers

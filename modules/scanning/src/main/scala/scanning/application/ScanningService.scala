@@ -8,8 +8,7 @@ import cats.effect.std.*
 import cats.implicits.*
 import core.domain.*
 import core.domain.dependency.*
-import core.domain.project.*
-import core.domain.project.ProjectScanConfig
+import core.domain.project.{ ProjectScanConfig, * }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import scanning.domain.Source

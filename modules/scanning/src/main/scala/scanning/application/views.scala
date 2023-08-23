@@ -6,10 +6,10 @@ object views:
   def layout(bodyContent: scalatags.Text.Modifier*) =
     html(
       head(
-        script(src := "https://unpkg.com/htmx.org@1.9.4"),
-        script(src := "https://unpkg.com/htmx.org/dist/ext/json-enc.js"),
-        script(src := "https://cdn.tailwindcss.com"),
-        script(`type`:="text/javascript", src:="/static/stuff.js"),
+        script(src    := "https://unpkg.com/htmx.org@1.9.4"),
+        script(src    := "https://unpkg.com/htmx.org/dist/ext/json-enc.js"),
+        script(src    := "https://cdn.tailwindcss.com"),
+        script(`type` := "text/javascript", src := "/static/stuff.js"),
         link(
           href := "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css",
           rel  := "stylesheet"

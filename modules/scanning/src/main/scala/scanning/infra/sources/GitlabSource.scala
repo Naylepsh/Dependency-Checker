@@ -5,14 +5,14 @@ import scala.util.{ Failure, Success, Try }
 
 import cats.*
 import cats.implicits.*
-import core.domain.dependency.*
+import core.domain.Grouped
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
-import core.domain.{ Grouped }
-import core.domain.project.{ProjectScanConfig}
-import scanning.domain.Source
-import parsers.python.{ PyProjectToml, RequirementsTxt }
+import core.domain.dependency.*
+import core.domain.project.ProjectScanConfig
 import gitlab.{ GitlabApi, RepositoryFile }
 import org.legogroup.woof.{ *, given }
+import parsers.python.{ PyProjectToml, RequirementsTxt }
+import scanning.domain.Source
 
 object GitlabSource:
   def make[F[_]: Monad: Logger](
@@ -51,7 +51,8 @@ object GitlabSource:
                 contentExtractor(decodedContent).pure
         }
 
-  def defaultContentParser(source: DependencySource): String => List[Dependency] =
+  def defaultContentParser(source: DependencySource)
+      : String => List[Dependency] =
     source match
       case TxtSource(path) => RequirementsTxt.extract
       case TomlSource(path, group) =>

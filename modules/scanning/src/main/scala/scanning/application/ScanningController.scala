@@ -1,24 +1,25 @@
 package scanning.application
 
-import core.application.controller.Controller
-import org.http4s.{ EntityDecoder, HttpRoutes, MediaType }
-import org.http4s.headers.*
-import org.http4s.dsl.Http4sDsl
-import org.http4s.*
-import cats.{ Monad, MonadError }
 import cats.syntax.all.*
-import scalatags.Text.all.*
-import core.domain.project.ScanResult
-import core.domain.project.ScanReport
-import core.domain.severity.{ Severity, determineSeverity }
+import cats.{ Monad, MonadError }
+import core.application.controller.Controller
 import core.domain.Time
-import org.joda.time.DateTime
 import core.domain.Time.DeltaUnit
-import scanning.application.services.ScanningService
-import core.domain.project.ProjectScanConfigRepository
+import core.domain.project.{
+  ProjectScanConfigRepository,
+  ScanReport,
+  ScanResult
+}
+import core.domain.severity.{ Severity, determineSeverity }
 import core.domain.task.TaskProcessor
-import org.legogroup.woof.{ *, given }
+import org.http4s.*
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.*
 import org.http4s.server.Router
+import org.joda.time.DateTime
+import org.legogroup.woof.{ *, given }
+import scalatags.Text.all.*
+import scanning.application.services.ScanningService
 
 object ScanningController:
   import ScanningViews.*

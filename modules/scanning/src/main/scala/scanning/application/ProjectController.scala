@@ -1,23 +1,21 @@
 package scanning.application
 
-import core.application.controller.Controller
-import org.http4s.{ EntityDecoder, HttpRoutes, MediaType }
-import org.http4s.headers.*
-import org.http4s.dsl.Http4sDsl
-import org.http4s.*
-import org.http4s.circe.*
-import org.http4s.server.Router
-import cats.{ Monad, MonadError }
-import cats.syntax.all.*
-import scalatags.Text.all.*
-import scalatags.Text.TypedTag
-import core.domain.project.ProjectScanConfig
-import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
-import org.legogroup.woof.{ *, given }
 import cats.effect.kernel.{ Concurrent, Sync }
-import core.domain.project.Project
+import cats.syntax.all.*
+import cats.{ Monad, MonadError }
+import core.application.controller.Controller
+import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
+import core.domain.project.{ Project, ProjectScanConfig }
 import io.circe.*
 import io.circe.syntax.*
+import org.http4s.*
+import org.http4s.circe.*
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.*
+import org.http4s.server.Router
+import org.legogroup.woof.{ *, given }
+import scalatags.Text.TypedTag
+import scalatags.Text.all.*
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -491,4 +489,3 @@ private object ProjectViews:
       `for` := elementName,
       labelText
     )
-

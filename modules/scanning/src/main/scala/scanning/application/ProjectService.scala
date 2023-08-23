@@ -1,9 +1,10 @@
 package scanning.application
 
-import cats.syntax.all.*
-import cats.Monad
-import core.domain.project.{ ProjectScanConfig, ProjectScanConfigRepository }
 import java.util.UUID
+
+import cats.Monad
+import cats.syntax.all.*
+import core.domain.project.{ ProjectScanConfig, ProjectScanConfigRepository }
 
 trait ProjectService[F[_]]:
   def all: F[List[ProjectScanConfig]]

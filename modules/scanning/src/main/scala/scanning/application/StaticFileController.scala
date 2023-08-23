@@ -1,14 +1,13 @@
 package scanning.application
 
-import core.application.controller.Controller
-import org.http4s.{ EntityDecoder, HttpRoutes, MediaType }
-import org.http4s.headers.*
-import org.http4s.dsl.Http4sDsl
-import org.http4s.*
-import cats.{ Monad, MonadError }
-import cats.syntax.all.*
 import cats.effect.kernel.Sync
+import cats.syntax.all.*
+import cats.{ Monad, MonadError }
+import core.application.controller.Controller
 import fs2.io.file.Files
+import org.http4s.*
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.*
 
 object StaticFileController:
   type ThrowableMonadError[F[_]] = MonadError[F, Throwable]

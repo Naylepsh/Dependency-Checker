@@ -5,7 +5,7 @@ import cats.data.EitherT
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
 import core.domain.registry.{ Registry, RegistryRepository }
-import gitlab.{ Action, CommitAction, CreateMergeRequestResponse, GitlabApi }
+import gitlab.*
 import org.joda.time.DateTime
 import org.legogroup.woof.{ Logger, given }
 import upkeep.domain.*

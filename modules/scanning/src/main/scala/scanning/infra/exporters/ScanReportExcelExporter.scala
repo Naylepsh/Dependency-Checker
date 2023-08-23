@@ -3,13 +3,13 @@ package scanning.infra.exporters
 import cats.*
 import cats.effect.kernel.Sync
 import cats.implicits.*
+import core.domain.Time
 import core.domain.dependency.DependencyReport
 import core.domain.project.{ ScanReport, ScanResult }
 import core.domain.semver.*
 import core.domain.severity.*
-import core.domain.Time
-import scanning.domain.Exporter
 import org.joda.time.DateTime
+import scanning.domain.Exporter
 import spoiwo.model.*
 import spoiwo.model.enums.CellFill
 import spoiwo.natures.xlsx.Model2XlsxConversions.*

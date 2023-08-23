@@ -5,9 +5,9 @@ import scala.util.*
 
 import cats.*
 import cats.implicits.*
-import scanning.domain.PackageIndex
 import core.domain.dependency.*
 import org.legogroup.woof.{ *, given }
+import scanning.domain.PackageIndex
 
 object PythonDependencyScanner:
   // TODO: delete this object after deprecating CLI

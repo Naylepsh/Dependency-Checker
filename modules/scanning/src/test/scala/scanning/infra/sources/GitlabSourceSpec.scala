@@ -3,7 +3,7 @@ package scanning.infra.sources
 import cats.*
 import cats.implicits.*
 import core.domain.dependency.*
-import core.domain.project.{Project, ProjectScanConfig}
+import core.domain.project.{ Project, ProjectScanConfig }
 import core.infra.*
 import gitlab.*
 import org.legogroup.woof.Logger.StringLocal
@@ -42,9 +42,9 @@ class GitlabSourceSpec extends AnyFlatSpec:
 object GitlabSourceSpec:
   val testProject = ProjectScanConfig(
     Project(
-    id = "123",
-    name = "test-project",
-      ),
+      id = "123",
+      name = "test-project"
+    ),
     sources = List(DependencySource.TxtSource(path = "requirements.txt")),
     enabled = true,
     branch = "master"

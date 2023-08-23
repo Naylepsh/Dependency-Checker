@@ -1,30 +1,30 @@
 package scanning.application
 
-import com.comcast.ip4s.*
 import cats.data.NonEmptyList
 import cats.effect.std.Console
 import cats.effect.{ ExitCode, IO }
 import cats.syntax.all.*
+import com.comcast.ip4s.*
 import com.monovore.decline.Opts
 import core.application.cli.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
+import core.infra.persistance.{ DependencyRepository, RegistryRepository }
 import gitlab.GitlabApi
+import org.http4s.ember.server.EmberServerBuilder
+import org.joda.time.DateTime
+import org.legogroup.woof.Logger
+import persistance.{ ProjectScanConfigRepository, ScanResultRepository }
+import processor.TaskProcessor
+import scanning.application.services.*
 import scanning.infra.exporters.{
   ScanDeltaExcelExporter,
   ScanReportExcelExporter
 }
 import scanning.infra.packageindexes.Pypi
-import core.infra.persistance.{ DependencyRepository, RegistryRepository }
 import scanning.infra.sources.GitlabSource
-import org.joda.time.DateTime
-import org.legogroup.woof.Logger
-import scanning.application.services.*
-import org.http4s.ember.server.EmberServerBuilder
+
 import concurrent.duration.*
-import processor.TaskProcessor
-import persistance.ProjectScanConfigRepository
-import persistance.ScanResultRepository
 
 object ScanningCli:
   private def makeScanningService(context: Context)(using
