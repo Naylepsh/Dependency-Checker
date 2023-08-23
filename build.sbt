@@ -38,8 +38,8 @@ val commonSettings = List(
 lazy val root = project
   .in(file("."))
   .settings(
-    name    := "sentinel",
-    version := "0.6.3",
+    name    := "ganyu",
+    version := "0.7.0",
     commonSettings
   )
   .aggregate(core, gitlab, parsers, scanning, upkeep)
