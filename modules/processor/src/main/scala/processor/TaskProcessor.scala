@@ -90,4 +90,5 @@ private class TaskWorker[F[_]: MonadThrow: Temporal: Logger](
         task()
           .handleErrorWith: error =>
             Logger[F].error(error.toString)
-              *> runWhileQueueIsNotEmpty
+          .flatMap: _ =>
+            runWhileQueueIsNotEmpty
