@@ -8,9 +8,12 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.*
 import core.domain.registry.ProjectScanConfig
 import concurrent.duration.*
+import org.legogroup.woof.{ *, given }
+import org.legogroup.woof.Logger.StringLocal
+import org.legogroup.woof.local.Local
 
 class TaskProcessorSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers:
-  import TaskProcessorSpec.*
+  import TaskProcessorSpec.{ *, given }
 
   "Execute tasks on the main worker" in:
     Ref[IO].of[Int](0).flatMap: taskCount =>
@@ -49,3 +52,11 @@ object TaskProcessorSpec:
 
   def slowIncTaskCount(taskCount: Ref[IO, Int]) =
     IO.sleep(3.seconds) *> incTaskCount(taskCount)
+
+  given Logger[IO] with
+    override val stringLocal: StringLocal[cats.effect.IO] =
+      // Very dirty workaround, but since it's a noop, it works
+      null
+
+    override def doLog(level: LogLevel, message: String)(using
+    LogInfo): IO[Unit] = IO.unit
