@@ -72,7 +72,7 @@ object DependencyRepository:
     ): F[ResultToSave] =
       (randomUUID, randomUUID).tupled.flatMap((dependencyId, scanId) =>
         val dependency =
-          ExistingDependency(dependencyId, timestamp, report.name)
+          ExistingDependency(dependencyId, report.name)
         val scan = ExistingDependencyScan(
           scanId,
           timestamp,
@@ -97,7 +97,6 @@ object DependencyRepository:
 
     case class RawDependency(
         id: UUID,
-        timestamp: DateTime,
         name: String,
         currentVersion: Option[String],
         latestVersion: String,
@@ -107,12 +106,10 @@ object DependencyRepository:
     object RawDependency:
       def apply(
           id: UUID,
-          timestamp: DateTime,
           dependency: DependencyReport
       ): RawDependency =
         RawDependency(
           id,
-          timestamp,
           dependency.name,
           dependency.currentVersion,
           dependency.latestVersion,
@@ -124,8 +121,8 @@ object DependencyRepository:
         dependencies: List[ExistingDependency]
     ): ConnectionIO[Int] =
       val sql = """
-        INSERT INTO dependency (id, timestamp, name)
-        VALUES (?, ?, ?)
+        INSERT INTO dependency (id, name)
+        VALUES (?, ?)
       """
       Update[ExistingDependency](sql).updateMany(dependencies)
 

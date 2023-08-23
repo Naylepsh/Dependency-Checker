@@ -38,7 +38,6 @@ CREATE TABLE toml_source (
 );
 CREATE TABLE dependency (
   id UUID PRIMARY KEY,
-  timestamp TIMESTAMP NOT NULL,
   name TEXT NOT NULL
 );
 CREATE TABLE dependency_scan
