@@ -2,7 +2,7 @@ package scanning.application
 
 import cats.effect.kernel.{ Concurrent, Sync }
 import cats.syntax.all.*
-import cats.{ Monad, MonadError }
+import cats.{ Monad, MonadThrow }
 import core.application.controller.Controller
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 import core.domain.project.{ Project, ProjectScanConfig }
@@ -23,9 +23,7 @@ object ProjectController:
   import ProjectViews.*
   import ProjectPayloads.*
 
-  type ThrowableMonadError[F[_]] = MonadError[F, Throwable]
-
-  def make[F[_]: Monad: ThrowableMonadError: Logger: Concurrent](
+  def make[F[_]: MonadThrow: Logger: Concurrent](
       service: ProjectService[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:

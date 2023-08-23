@@ -3,7 +3,7 @@ package processor
 import core.domain.task.TaskProcessor
 import cats.effect.std.{ Queue, Supervisor }
 import cats.effect.{ Ref, Resource, Spawn, Temporal }
-import cats.Monad
+import cats.{ Monad, MonadError, MonadThrow }
 import cats.syntax.all.*
 import concurrent.duration.*
 import org.legogroup.woof.{ *, given }
@@ -12,7 +12,7 @@ private type Task[F[_]] = () => F[Unit]
 
 object TaskProcessor:
 
-  def make[F[_]: Monad: Temporal: Logger](
+  def make[F[_]: MonadThrow: Temporal: Logger](
       maxWorkers: Int,
       stopPredicate: F[Boolean],
       mainWorkerSleepTime: Option[Duration]
@@ -29,11 +29,13 @@ object TaskProcessor:
           maxWorkers
         )
         _ <- supervisor.supervise(
-          mainWorker.runOnce(mainWorkerSleepTime).whileM_(stopPredicate.map(!_))
+          mainWorker
+            .runOnce(mainWorkerSleepTime)
+            .whileM_(stopPredicate.map(!_))
         )
       yield processor
 
-  private def make[F[_]: Monad: Temporal: Logger](
+  private def make[F[_]: MonadThrow: Temporal: Logger](
       supervisor: Supervisor[F],
       queue: Queue[F, Task[F]],
       workerCount: Ref[F, Int],
@@ -63,7 +65,14 @@ object TaskProcessor:
             )
       yield ()
 
-private class TaskWorker[F[_]: Monad: Temporal](queue: Queue[F, Task[F]]):
+private class TaskWorker[F[_]: MonadThrow: Temporal: Logger](
+    queue: Queue[F, Task[F]]
+):
+  /*
+   * Note: On failure the task should NOT be put back on the queue.
+   * This is to prevent the worker from being forever stuck processing the same task over and over again
+   */
+
   def runOnce(sleepOnEmpty: Option[Duration]): F[Unit] =
     queue.tryTake.flatMap:
       case None =>
@@ -71,9 +80,14 @@ private class TaskWorker[F[_]: Monad: Temporal](queue: Queue[F, Task[F]]):
           .map(Temporal[F].sleep)
           .getOrElse(Monad[F].unit)
       case Some(task) =>
-        task()
+        task().handleErrorWith: error =>
+          Logger[F].error(error.toString)
 
   def runWhileQueueIsNotEmpty: F[Unit] =
     queue.tryTake.flatMap:
-      case None       => Monad[F].unit
-      case Some(task) => task() *> runWhileQueueIsNotEmpty
+      case None => Monad[F].unit
+      case Some(task) =>
+        task()
+          .handleErrorWith: error =>
+            Logger[F].error(error.toString)
+              *> runWhileQueueIsNotEmpty
