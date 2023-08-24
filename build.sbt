@@ -76,7 +76,7 @@ lazy val scanning = project
 lazy val upkeep = project
   .in(file("modules/upkeep"))
   .settings(commonSettings: _*)
-  .dependsOn(core, parsers, gitlab)
+  .dependsOn(core, parsers, gitlab, persistence)
 
 enablePlugins(JavaAppPackaging)
 

@@ -9,12 +9,16 @@ import com.monovore.decline.Opts
 import core.application.cli.*
 import core.domain.project.{ Project, ScanReport }
 import core.domain.registry.Registry
-import core.infra.persistance.{ DependencyRepository, RegistryRepository }
+import core.infra.persistance.RegistryRepository
 import gitlab.GitlabApi
 import org.http4s.ember.server.EmberServerBuilder
 import org.joda.time.DateTime
 import org.legogroup.woof.Logger
-import persistance.{ ProjectScanConfigRepository, ScanResultRepository }
+import persistance.{
+  DependencyRepository,
+  ProjectScanConfigRepository,
+  ScanResultRepository
+}
 import processor.TaskProcessor
 import scanning.application.services.*
 import scanning.infra.exporters.{

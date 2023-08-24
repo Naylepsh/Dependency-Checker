@@ -1,4 +1,4 @@
-package core.infra.persistance
+package persistance
 
 import java.time.Instant
 import java.util.UUID
