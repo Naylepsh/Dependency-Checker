@@ -51,7 +51,7 @@ object ProjectRepository:
       )
 
 object ProjectRepositorySQL:
-  import core.infra.persistance.sqlmappings.given
+  import persistance.sqlmappings.given
 
   case class RawAffectedProject(
       projectName: String,

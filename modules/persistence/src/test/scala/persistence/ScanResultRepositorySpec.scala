@@ -21,8 +21,7 @@ import core.domain.dependency.DependencyReport
 import core.domain.dependency.DependencyDetails
 import core.domain.dependency.Dependency
 import core.domain.Grouped
-import persistance.ScanResultRepository
-import core.infra.persistance.DependencyRepository
+import persistance.{ DependencyRepository, ScanResultRepository }
 import org.legogroup.woof.{ *, given }
 import core.domain.Time
 import org.scalatest.Checkpoints.Checkpoint

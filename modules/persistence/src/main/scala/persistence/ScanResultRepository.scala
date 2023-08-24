@@ -130,7 +130,7 @@ object ScanResultRepository:
   )
 
   object ScanResultRepositorySQL:
-    import core.infra.persistance.sqlmappings.given
+    import persistance.sqlmappings.given
 
     def getProjectId(projectName: String) =
       sql"""

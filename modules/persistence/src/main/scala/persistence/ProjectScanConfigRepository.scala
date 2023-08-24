@@ -59,7 +59,7 @@ object ProjectScanConfigRepository:
         case Some(scanId) => SQL.setEnabled(scanId, enabled).run.transact(xa).void
 
 private object SQL:
-  import core.infra.persistance.sqlmappings.given
+  import persistance.sqlmappings.given
 
   private[persistance] case class RawConfig(
       projectName: String,
