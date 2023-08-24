@@ -38,7 +38,7 @@ CREATE TABLE toml_source (
 );
 CREATE TABLE dependency (
   id UUID PRIMARY KEY,
-  name TEXT NOT NULL
+  name TEXT NOT NULL UNIQUE
 );
 CREATE TABLE dependency_scan
 (
@@ -95,4 +95,4 @@ CREATE TABLE upkeep_request (
 );
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('20230816185152');
+  ('20230824143342');
