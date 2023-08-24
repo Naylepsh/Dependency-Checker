@@ -42,7 +42,7 @@ CREATE TABLE toml_source (
 
 CREATE TABLE dependency (
   id UUID PRIMARY KEY,
-  name TEXT NOT NULL
+  name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE dependency_scan

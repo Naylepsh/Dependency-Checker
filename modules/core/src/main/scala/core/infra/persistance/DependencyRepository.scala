@@ -29,20 +29,46 @@ object DependencyRepository:
         timestamp: DateTime
     ): F[List[ExistingDependency]] =
       for
-        resultsToSave <-
-          dependencies.traverse(dependency =>
+        existingDependencies <-
+          NonEmptyList
+            .fromList(dependencies.map(_.name))
+            .map: names =>
+              findDependencies(names).to[List].transact(xa)
+            .getOrElse(List.empty.pure)
+        existingDeps <- dependencies
+          .map: dependency =>
+            existingDependencies
+              .find: (id, name) =>
+                name == dependency.name
+              .map: (id, name) =>
+                id -> dependency
+          .collect:
+            case Some(id, dependency) => id -> dependency
+          .traverse: (id, dependency) =>
+            ResultToSave(id, dependency, timestamp)
+        newDeps <- dependencies
+          .map: dependency =>
+            if existingDependencies
+              .find: (id, name) =>
+                name == dependency.name
+              .isDefined
+            then None
+            else dependency.some
+          .collect:
+            case Some(dependency) => dependency
+          .traverse: dependency =>
             ResultToSave(dependency, timestamp)
-          )
-        _ <- save(resultsToSave).transact(xa)
-      yield resultsToSave.map(_.dependency)
-
-    private def save(resultsToSave: List[ResultToSave]) =
-      for
-        _ <- insertManyDependencies(resultsToSave.map(_.dependency))
-        _ <- insertManyDependencyScans(resultsToSave.map(_.scan))
+        allDeps = existingDeps ++ newDeps
         _ <-
-          insertManyVulnerabilities(resultsToSave.flatMap(_.vulnerabilities))
-      yield ()
+          val inserts =
+            for
+              _ <- insertManyDependencies(newDeps.map(_.dependency))
+              _ <- insertManyDependencyScans(allDeps.map(_.scan))
+              _ <-
+                insertManyVulnerabilities(allDeps.flatMap(_.vulnerabilities))
+            yield ()
+          inserts.transact(xa)
+      yield allDeps.map(_.dependency)
 
   private[DependencyRepository] case class ExistingDependencyScan(
       id: UUID,
@@ -67,10 +93,11 @@ object DependencyRepository:
   )
   private[DependencyRepository] object ResultToSave:
     def apply[F[_]: UUIDGen: Monad](
+        dependencyId: UUID,
         report: DependencyReport,
         timestamp: DateTime
     ): F[ResultToSave] =
-      (randomUUID, randomUUID).tupled.flatMap((dependencyId, scanId) =>
+      randomUUID.flatMap: scanId =>
         val dependency =
           ExistingDependency(dependencyId, report.name)
         val scan = ExistingDependencyScan(
@@ -83,14 +110,18 @@ object DependencyRepository:
           report.notes
         )
         report.vulnerabilities
-          .traverse(vulnerability =>
-            randomUUID.map(id =>
+          .traverse: vulnerability =>
+            randomUUID.map: id =>
               ExistingVulnerability(id, scanId, vulnerability)
-            )
-          ).map(vulnerabilities =>
+          .map: vulnerabilities =>
             ResultToSave(dependency, scan, vulnerabilities)
-          )
-      )
+
+    def apply[F[_]: UUIDGen: Monad](
+        report: DependencyReport,
+        timestamp: DateTime
+    ): F[ResultToSave] =
+      randomUUID.flatMap: dependencyId =>
+        ResultToSave(dependencyId, report, timestamp)
 
   private object DependencyRepositorySQL:
     import sqlmappings.given
@@ -149,3 +180,9 @@ object DependencyRepository:
       DELETE 
       FROM dependency
       WHERE """ ++ Fragments.in(fr"timestamp", timestamps)).update
+
+    def findDependencies(names: NonEmptyList[String]): Query0[(UUID, String)] =
+      (sql"""
+      SELECT id, name
+      FROM dependency
+      WHERE """ ++ Fragments.in(fr"name", names)).query[(UUID, String)]
