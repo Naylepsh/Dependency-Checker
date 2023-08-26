@@ -46,6 +46,7 @@ object severitySpec:
     name = "recent-dependency",
     currentVersion = Some("1.23.4"),
     latestVersion = "1.23.4",
+    currentVersionReleaseDate = None,
     latestReleaseDate = Some(DateTime.parse("2023-05-02")),
     vulnerabilities = List.empty
   )

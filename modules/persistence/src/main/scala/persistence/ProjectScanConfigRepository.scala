@@ -1,4 +1,4 @@
-package persistance
+package persistence
 
 import java.util.UUID
 
@@ -59,16 +59,16 @@ object ProjectScanConfigRepository:
         case Some(scanId) => SQL.setEnabled(scanId, enabled).run.transact(xa).void
 
 private object SQL:
-  import persistance.sqlmappings.given
+  import persistence.sqlmappings.given
 
-  private[persistance] case class RawConfig(
+  private[persistence] case class RawConfig(
       projectName: String,
       configId: UUID,
       gitlabId: Int,
       enabled: Boolean,
       branch: String
   )
-  private[persistance] object RawConfig:
+  private[persistence] object RawConfig:
     def toDomain(
         configs: List[RawConfig],
         txtSources: List[RawTxtSource],
@@ -96,8 +96,8 @@ private object SQL:
           config.branch
         )
 
-  private[persistance] case class RawTxtSource(configId: UUID, path: String)
-  private[persistance] case class RawTomlSource(
+  private[persistence] case class RawTxtSource(configId: UUID, path: String)
+  private[persistence] case class RawTomlSource(
       configId: UUID,
       path: String,
       group: Option[String]

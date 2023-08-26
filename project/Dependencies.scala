@@ -47,9 +47,10 @@ object Dependencies {
     val scalaTags         = "com.lihaoyi"                   %% "scalatags"           % V.scalaTags
 
     // db
-    val doobie       = "org.tpolecat" %% "doobie-core"   % V.doobie
-    val doobieHikari = "org.tpolecat" %% "doobie-hikari" % V.doobie
-    val sqliteJDB    = "org.xerial"    % "sqlite-jdbc"   % V.sqliteJDB
+    val doobie          = "org.tpolecat" %% "doobie-core"      % V.doobie
+    val doobieHikari    = "org.tpolecat" %% "doobie-hikari"    % V.doobie
+    val doobieScalaTest = "org.tpolecat" %% "doobie-scalatest" % V.doobie
+    val sqliteJDB       = "org.xerial"    % "sqlite-jdbc"      % V.sqliteJDB
 
     // logging
     val log4j = "org.apache.logging.log4j" % "log4j-core" % V.log4j

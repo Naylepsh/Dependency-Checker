@@ -1,4 +1,4 @@
-package persistance
+package persistenece
 
 import java.util.UUID
 
@@ -7,7 +7,11 @@ import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
 import core.domain.Grouped
-import core.domain.dependency.{ DependencyReport, DependencyRepository }
+import core.domain.dependency.{
+  DependencyLatestRelease,
+  DependencyReport,
+  DependencyRepository
+}
 import core.domain.project.*
 import doobie.*
 import doobie.implicits.*
@@ -58,12 +62,15 @@ object ScanResultRepository:
         projectNames: List[String],
         timestamp: DateTime
     ): F[List[ScanReport]] =
-      NonEmptyList.fromList(projectNames).fold(List.empty.pure)(names =>
-        getAll(names, timestamp)
-          .to[List]
-          .map(GetAllResult.toDomain)
-          .transact(xa)
-      )
+      ???
+      // NonEmptyList.fromList(projectNames).fold(List.empty.pure): names =>
+      //   dependencyRepository.findLatestReleases(projectNames).flatMap:
+      //     releases =>
+      //       getAll(names, timestamp)
+      //         .to[List]
+      //         .map: results =>
+      //           GetAllResult.toDomain(results, releases)
+      //         .transact(xa)
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       if limit > 0 then
@@ -76,14 +83,24 @@ object ScanResultRepository:
       ScanResultRepositorySQL
         .getScanTimestamps(projectName, limit = 1)
         .option
-        .flatMap: timestamp =>
-          timestamp.traverse: timestamp =>
-            getAll(NonEmptyList.of(projectName), timestamp)
-              .to[List]
-              .map(GetAllResult.toDomain)
-              .map(_.headOption)
-        .map(_.flatten)
         .transact(xa)
+        .flatMap:
+          case None => None.pure
+          case Some(timestamp) =>
+            for
+              dependencyIds <- ScanResultRepositorySQL
+                .getDependenciesOfProject(projectName, timestamp)
+                .to[List]
+                .transact(xa)
+              _ = println(s"ids: $dependencyIds, $timestamp: $timestamp")
+              releases <- dependencyRepository.findLatestReleases(dependencyIds)
+              report <- getAll(NonEmptyList.of(projectName), timestamp)
+                .to[List]
+                .map: results =>
+                  GetAllResult.toDomain(results, releases)
+                .map(_.headOption)
+                .transact(xa)
+            yield report
 
     def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]] =
       for
@@ -114,6 +131,8 @@ object ScanResultRepository:
            * instead of project, we can't just delete it without some shenanigans
            * with checking whether no other project relies on these records.
            * TL;DR dependency_scan table relations need revisiting
+           *
+           * TODO: Is the above still true?
            */
           ScanResultRepositorySQL
             .deleteOldDependencies(id, timestamp)
@@ -130,7 +149,7 @@ object ScanResultRepository:
   )
 
   object ScanResultRepositorySQL:
-    import persistance.sqlmappings.given
+    import persistence.sqlmappings.given
 
     def getProjectId(projectName: String) =
       sql"""
@@ -146,7 +165,8 @@ object ScanResultRepository:
         timestamp,
         project_id,
         group_name,
-        dependency_id)
+        dependency_id
+      )
       VALUES (?, ?, ?, ?)"""
       Update[ProjectDependency](sql).updateMany(projectDependencies)
 
@@ -155,39 +175,71 @@ object ScanResultRepository:
         groupName: String,
         dependencyId: String,
         dependencyName: String,
-        dependencyCurrentVersion: Option[String],
-        dependencyLatestVersion: String,
-        dependencyLatestReleaseDate: Option[DateTime],
+        dependencyVersion: Option[String],
+        dependencyReleaseDate: Option[DateTime],
         dependencyNotes: Option[String],
         dependencyVulnerability: Option[String]
     )
     object GetAllResult:
-      def toDomain(results: List[GetAllResult]): List[ScanReport] =
+      def toDomain(
+          results: List[GetAllResult],
+          latestReleases: List[DependencyLatestRelease]
+      ): List[ScanReport] =
         results.groupBy(_.projectName).map((projectName, projectResults) =>
           val reports = projectResults
             .groupBy(_.groupName)
             .map((groupName, groupResults) =>
+              // TODO: Instead of mapping and collecting, just foldRight
               val dependencies = groupResults
                 .groupBy(_.dependencyId)
-                .map((dependencyId, results) =>
+                .map: (dependencyId, results) =>
                   val vulnerabilities = results
                     .filter(_.dependencyVulnerability.isDefined)
                     .map(_.dependencyVulnerability.get)
                   // Safe, because groupBy guaranteed results to be non-empty
                   val result = results.head
-                  DependencyReport(
-                    result.dependencyName,
-                    result.dependencyCurrentVersion,
-                    result.dependencyLatestVersion,
-                    result.dependencyLatestReleaseDate,
-                    vulnerabilities,
-                    result.dependencyNotes
-                  )
-                ).toList
+                  println(s"project: $projectName")
+                  println(s"dependency: $dependencyId")
+                  results.foreach: result =>
+                    println(s"Result: $result")
+                  println(s"Releases: $latestReleases")
+                  val found = latestReleases
+                    .find: release =>
+                      release.name == result.dependencyName
+                  println(s"found: $found")
+                  println("-------------------------")
+                  latestReleases
+                    .find: release =>
+                      release.name == result.dependencyName
+                    .map: release =>
+                      DependencyReport(
+                        result.dependencyName,
+                        result.dependencyVersion,
+                        release.version,
+                        result.dependencyReleaseDate,
+                        release.releaseDate.some,
+                        vulnerabilities,
+                        result.dependencyNotes
+                      )
+                .toList
+                .collect:
+                  case Some(result) => result
               Grouped(groupName, dependencies)
             )
           ScanReport(projectName, reports.toList)
         ).toList
+
+    def getDependenciesOfProject(
+        projectName: String,
+        timestamp: DateTime
+    ): Query0[UUID] =
+      sql"""
+      SELECT dependency_id
+      FROM project
+      JOIN project_dependency ON project_dependency.project_id = project.id
+      WHERE project.name = $projectName
+      AND timestamp = $timestamp
+      """.query[UUID]
 
     def getAll(
         projectNames: NonEmptyList[String],
@@ -199,17 +251,15 @@ object ScanResultRepository:
           project_dependency.group_name,
           dependency.id,
           dependency.name,
-          dependency_scan.current_version,
-          dependency_scan.latest_version,
-          dependency_scan.latest_release_date,
-          dependency_scan.notes,
+          dependency.version,
+          dependency.release_date,
+          dependency.notes,
           vulnerability.name
         FROM project_dependency
         JOIN project ON project.id = project_dependency.project_id
         JOIN dependency ON dependency.id = project_dependency.dependency_id 
-        JOIN dependency_scan ON dependency_scan.dependency_id = dependency.id
-            AND dependency_scan.timestamp = $timestamp
-        LEFT JOIN vulnerability ON vulnerability.dependency_scan_id = dependency_scan.id
+            AND project_dependency.timestamp = $timestamp
+        LEFT JOIN vulnerability ON vulnerability.dependency_id = dependency.id
         WHERE """ ++ Fragments.in(
         fr"project.name",
         projectNames
