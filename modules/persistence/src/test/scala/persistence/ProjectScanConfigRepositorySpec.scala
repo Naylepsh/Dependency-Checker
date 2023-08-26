@@ -13,7 +13,7 @@ import core.infra.resources.database.*
 import core.domain.project.ProjectScanConfig
 import core.domain.project.Project
 import core.domain.dependency.DependencySource
-import persistance.ProjectScanConfigRepository
+import persistence.ProjectScanConfigRepository
 import core.application.config.AppConfig
 import cats.effect.kernel.Resource
 

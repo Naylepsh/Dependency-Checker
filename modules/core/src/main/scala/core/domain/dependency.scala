@@ -12,6 +12,12 @@ object dependency:
       currentVersion: Option[String]
   )
 
+  case class DependencyLatestRelease(
+      name: String,
+      version: String,
+      releaseDate: DateTime
+  )
+
   case class DependencyDetails(
       name: String,
       ofVersion: String,
@@ -25,6 +31,7 @@ object dependency:
       name: String,
       currentVersion: Option[String],
       latestVersion: String,
+      currentVersionReleaseDate: Option[DateTime],
       latestReleaseDate: Option[DateTime],
       vulnerabilities: List[String] = List(),
       notes: Option[String] = None
@@ -49,6 +56,7 @@ object dependency:
       dependency.name,
       dependency.currentVersion,
       details.latestVersion,
+      None, // TODO
       details.latestReleaseDate,
       details.vulnerabilities,
       notes
@@ -76,3 +84,5 @@ object dependency:
         timestamp: DateTime
     ): F[List[ExistingDependency]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
+    def findLatestReleases(ids: List[UUID])
+        : F[List[DependencyLatestRelease]]

@@ -31,7 +31,8 @@ val commonSettings = List(
     Libraries.sqliteJDB,
     Libraries.woof,
     Libraries.scalaTestDiscipline % Test,
-    Libraries.scalaTestCatsEffect % Test
+    Libraries.scalaTestCatsEffect % Test,
+    Libraries.doobieScalaTest     % Test
   )
 )
 
@@ -39,7 +40,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "ganyu",
-    version := "0.7.4",
+    version := "0.8.0",
     commonSettings
   )
   .aggregate(core, gitlab, parsers, scanning, upkeep)

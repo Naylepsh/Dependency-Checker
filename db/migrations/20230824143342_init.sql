@@ -42,23 +42,12 @@ CREATE TABLE toml_source (
 
 CREATE TABLE dependency (
   id UUID PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE dependency_scan
-(
-  id UUID PRIMARY KEY,
-  timestamp TIMESTAMP NOT NULL,
-  current_version TEXT,
-  latest_version TEXT NOT NULL,
-  latest_release_date TIMESTAMP,
+  name TEXT NOT NULL,
+  version TEXT,
+  release_date TIMESTAMP,
   notes TEXT,
-  dependency_id UUID NOT NULL,
 
-  CONSTRAINT fk_dependency_id
-    FOREIGN KEY (dependency_id)
-    REFERENCES dependency (id)
-    ON DELETE CASCADE
+  UNIQUE (name, version)
 );
 
 CREATE TABLE project_dependency
@@ -82,10 +71,10 @@ CREATE TABLE vulnerability
 (
   id UUID PRIMARY KEY,
   name TEXT NOT NULL,
-  dependency_scan_id UUID NOT NULL,
+  dependency_id UUID NOT NULL,
   CONSTRAINT fk_dependency_id
-    FOREIGN KEY (dependency_scan_id)
-    REFERENCES dependency_scan (id)
+    FOREIGN KEY (dependency_id)
+    REFERENCES dependency (id)
     ON DELETE CASCADE
 );
 
