@@ -62,7 +62,8 @@ object ScanResultRepository:
         projectNames: List[String],
         timestamp: DateTime
     ): F[List[ScanReport]] =
-      ???
+      // TODO: Fix it I guess? Although it's only being used by delta service which isn't really hooked up to anything right now
+      List.empty.pure
       // NonEmptyList.fromList(projectNames).fold(List.empty.pure): names =>
       //   dependencyRepository.findLatestReleases(projectNames).flatMap:
       //     releases =>
@@ -92,7 +93,6 @@ object ScanResultRepository:
                 .getDependenciesOfProject(projectName, timestamp)
                 .to[List]
                 .transact(xa)
-              _ = println(s"ids: $dependencyIds, $timestamp: $timestamp")
               releases <- dependencyRepository.findLatestReleases(dependencyIds)
               report <- getAll(NonEmptyList.of(projectName), timestamp)
                 .to[List]
@@ -198,16 +198,9 @@ object ScanResultRepository:
                     .map(_.dependencyVulnerability.get)
                   // Safe, because groupBy guaranteed results to be non-empty
                   val result = results.head
-                  println(s"project: $projectName")
-                  println(s"dependency: $dependencyId")
-                  results.foreach: result =>
-                    println(s"Result: $result")
-                  println(s"Releases: $latestReleases")
                   val found = latestReleases
                     .find: release =>
                       release.name == result.dependencyName
-                  println(s"found: $found")
-                  println("-------------------------")
                   latestReleases
                     .find: release =>
                       release.name == result.dependencyName

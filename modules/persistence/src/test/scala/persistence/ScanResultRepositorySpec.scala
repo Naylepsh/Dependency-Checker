@@ -70,10 +70,9 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
         cp.reportAll()
         Succeeded
 
-  // TODO: FIX IT
-  // "GetAllResult.toDomain constructs a proper report" in:
-  //   val scanReports = GetAllResult.toDomain(testGetAllResults, latestReleases)
-  //   scanReports should contain only (expectedFirstProjectReport, expectedSecondProjectReprort)
+  "GetAllResult.toDomain constructs a proper report" in:
+    val scanReports = GetAllResult.toDomain(testGetAllResults, latestReleases)
+    scanReports should contain only (expectedFirstProjectReport, expectedSecondProjectReport)
 
 object ScanResultRepositorySpec:
   val transactor = Resource.eval(AppConfig.load[IO]).flatMap: config =>
@@ -135,7 +134,7 @@ object ScanResultRepositorySpec:
       )
     )
   )
-  val expectedSecondProjectReprort = ScanReport(
+  val expectedSecondProjectReport = ScanReport(
     projectName = "second-project",
     dependenciesReports = List(
       Grouped(
@@ -155,7 +154,7 @@ object ScanResultRepositorySpec:
 
   val latestReleases = List(
     DependencyLatestRelease("Django", "4.5.6", now),
-    DependencyLatestRelease("Flask", "2.3.4", now)
+    DependencyLatestRelease("Flask", "2.3.5", now)
   )
 
   val testGetAllResults = List(
