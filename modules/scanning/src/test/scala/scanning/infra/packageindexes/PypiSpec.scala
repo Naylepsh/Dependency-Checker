@@ -15,7 +15,14 @@ class PypiSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers:
       HttpClientCatsBackend.resource[IO]().use: backend =>
         Pypi(backend)
           .getDetails(django)
-          .asserting(_.isRight shouldBe true)
+          .asserting:
+            case Right(dependency) =>
+              dependency.latestReleaseDate match
+                case Some(latestReleaseDate) =>
+                  dependency.releaseDate should be < latestReleaseDate
+                case None =>
+                  assert(false, "Did not extract latest release date")
+            case Left(error) => assert(false, s"Did not expect error: $error")
 
     "should parse package with different date format" in:
       HttpClientCatsBackend.resource[IO]().use: backend =>

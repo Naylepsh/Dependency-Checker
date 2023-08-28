@@ -34,9 +34,14 @@ object DependencyRepository:
       for
         existingDependencies <-
           NonEmptyList
-            .fromList(dependencies.map(_.name))
-            .map: names =>
-              findDependencies(names).to[List].transact(xa)
+            .fromList:
+              dependencies.flatMap: dependency =>
+                List(
+                  DependencyKey(dependency.name, dependency.currentVersion),
+                  DependencyKey(dependency.name, dependency.latestVersion.some)
+                )
+            .map: keys =>
+              findDependencies(keys).to[List].transact(xa)
             .getOrElse(List.empty.pure)
         /*
          * existingDeps and newDeps make the existingDependencies traversal twice.
@@ -45,9 +50,13 @@ object DependencyRepository:
         existingDeps <- dependencies
           .map: dependency =>
             existingDependencies
-              .find: (id, name) =>
-                name == dependency.name
-              .map: (id, name) =>
+              .find: (id, name, version) =>
+                val versionsMatch = (dependency.currentVersion, version) match
+                  case (Some(v1), Some(v2)) => v1 == v2
+                  case (None, None)         => true
+                  case _                    => false
+                name == dependency.name && versionsMatch
+              .map: (id, name, version) =>
                 id -> dependency
           .collect:
             case Some(id, dependency) => id -> dependency
@@ -56,8 +65,12 @@ object DependencyRepository:
         newDeps <- dependencies
           .map: dependency =>
             if existingDependencies
-                .find: (id, name) =>
-                  name == dependency.name
+                .find: (id, name, version) =>
+                  val versionsMatch = (dependency.currentVersion, version) match
+                    case (Some(v1), Some(v2)) => v1 == v2
+                    case (None, None)         => true
+                    case _                    => false
+                  name == dependency.name && versionsMatch
                 .isDefined
             then None
             else dependency.some
@@ -65,18 +78,28 @@ object DependencyRepository:
             case Some(dependency) => dependency
           .traverse: dependency =>
             ResultToSave(dependency)
-        latests <- dependencies.traverse: dependency =>
-          ResultToSave.forLatest(dependency)
+        newLatests <- dependencies
+          .map: dependency =>
+            if existingDependencies
+                .find: (id, name, version) =>
+                  val versionsMatch = (dependency.latestVersion, version) match
+                    case (v1, Some(v2)) => v1 == v2
+                    case _              => false
+                  name == dependency.name && versionsMatch
+                .isDefined
+            then None
+            else dependency.some
+          .collect:
+            case Some(dependency) => dependency
+          .traverse: dependency =>
+            ResultToSave.forLatest(dependency)
         allDeps = newDeps ++ existingDeps
         _ <-
           val changes =
-            NonEmptyList
-              .fromList(latests)
-              .map: latests =>
-                deleteLatest(latests.map(_.dependency.name)).run
-              .getOrElse(connectionIONoop)
-              *> insertDependencies
-                .updateMany((newDeps ++ latests).map(_.dependency))
+            insertDependencies
+              .updateMany(newDeps.map(_.dependency))
+              *> insertDependenciesIgnoreConflicts
+                .updateMany(newLatests.map(_.dependency))
               *> insertVulnerabilities
                 .updateMany((allDeps).flatMap(_.vulnerabilities))
           changes.transact(xa)
@@ -96,7 +119,7 @@ object DependencyRepository:
 
   private[persistence] case class ExistingVulnerability(
       id: UUID,
-      dependencyScanId: UUID,
+      dependencyId: UUID,
       name: String
   )
   private[persistence] case class DependencyToSave(
@@ -142,9 +165,14 @@ object DependencyRepository:
           report.name,
           report.latestVersion.some,
           report.latestReleaseDate,
-          "LATEST".some
+          None
         )
         new ResultToSave(dependency, List.empty)
+
+  private[persistence] case class DependencyKey(
+      name: String,
+      version: Option[String]
+  )
 
   private[persistence] object DependencyRepositorySQL:
     import sqlmappings.given
@@ -152,6 +180,13 @@ object DependencyRepository:
     val insertDependencies =
       val sql = """
         INSERT INTO dependency (id, name, version, release_date, notes)
+        VALUES (?, ?, ?, ?, ?)
+      """
+      Update[DependencyToSave](sql)
+
+    val insertDependenciesIgnoreConflicts =
+      val sql = """
+        INSERT OR IGNORE INTO dependency (id, name, version, release_date, notes)
         VALUES (?, ?, ?, ?, ?)
       """
       Update[DependencyToSave](sql)
@@ -169,20 +204,28 @@ object DependencyRepository:
       FROM dependency
       WHERE """ ++ Fragments.in(fr"timestamp", timestamps)).update
 
-    def findDependencies(names: NonEmptyList[String]): Query0[(UUID, String)] =
+    def findDependencies(keys: NonEmptyList[DependencyKey])
+        : Query0[(UUID, String, Option[String])] =
+      val parts = keys.collect:
+        case DependencyKey(name, Some(version)) =>
+          fr"(name = $name AND version = $version)"
+        case DependencyKey(name, None) =>
+          fr"(name = $name AND version IS NULL)"
+      val whereIsDependency = Fragments.or(parts.toList*)
+
       (sql"""
-      SELECT id, name
+      SELECT id, name, version
       FROM dependency
-      WHERE """ ++ Fragments.in(fr"name", names)).query[(UUID, String)]
+      WHERE ( """
+        ++ whereIsDependency
+        ++ sql")").query[(UUID, String, Option[String])]
 
     def deleteLatest(names: NonEmptyList[String]): Update0 =
       (sql"""
       DELETE 
       FROM dependency
-      WHERE notes = 'LATEST'
-      AND """ ++ Fragments.in(fr"name", names)).update
+      WHERE """ ++ Fragments.in(fr"name", names)).update
 
-    // TODO: Move this to scan result repo? Or expose it from Dependency Repo
     def findLatestReleases(ids: NonEmptyList[UUID])
         : Query0[DependencyLatestRelease] =
       val select =
@@ -201,8 +244,5 @@ object DependencyRepository:
           GROUP BY name
           """
       select.query[DependencyLatestRelease]
-
-    def findNames(ids: NonEmptyList[UUID]): Query0[String] =
-      ???
 
     val connectionIONoop = Free.pure[ConnectionOp, Unit](())
