@@ -126,13 +126,7 @@ object ScanResultRepository:
       (getLatestTimestamp, getProjectId(projectName)).tupled.flatMap:
         case (Some(timestamp), Some(id)) =>
           /**
-           * Ideally we'd clean dependency_scan table as well,
-           * but because it's attached to dependency (which can be shared by many projects)
-           * instead of project, we can't just delete it without some shenanigans
-           * with checking whether no other project relies on these records.
-           * TL;DR dependency_scan table relations need revisiting
-           *
-           * TODO: Is the above still true?
+           * TODO: Delete dependencies that are no longer attached any project?
            */
           ScanResultRepositorySQL
             .deleteOldDependencies(id, timestamp)
