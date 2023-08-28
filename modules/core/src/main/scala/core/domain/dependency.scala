@@ -21,6 +21,7 @@ object dependency:
   case class DependencyDetails(
       name: String,
       ofVersion: String,
+      releaseDate: DateTime,
       latestVersion: String,
       latestReleaseDate: Option[DateTime],
       vulnerabilities: List[String] = List(),
@@ -56,7 +57,7 @@ object dependency:
       dependency.name,
       dependency.currentVersion,
       details.latestVersion,
-      None, // TODO
+      Some(details.releaseDate),
       details.latestReleaseDate,
       details.vulnerabilities,
       notes
