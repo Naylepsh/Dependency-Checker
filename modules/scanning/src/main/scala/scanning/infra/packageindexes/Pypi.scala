@@ -26,20 +26,20 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
       : F[Either[String, DependencyDetails]] =
     (
       getLatestDependencyInfo(dependency),
-      getVulnerabilities(dependency)
-    ).tupled.map((_, _).tupled.map: (packageData, vulnerabilities) =>
-      val latestVersion = packageData.info.version
-      val latestInfo = packageData.releases
+      getCurrentDependencyInfo(dependency)
+    ).tupled.map((_, _).tupled.map: (latest, current) =>
+      val latestVersion = latest.info.version
+      val latestInfo = latest.releases
         .get(latestVersion)
         .flatMap(_.headOption)
 
       DependencyDetails(
         dependency.name,
         dependency.currentVersion.getOrElse(latestVersion),
-        packageData.urls.head.upload_time_iso_8601,
+        current.urls.head.upload_time_iso_8601,
         latestVersion,
         latestInfo.map(_.upload_time_iso_8601),
-        vulnerabilities.map(_.id),
+        current.vulnerabilities.map(_.id),
         latestInfo.flatMap(_.requires_python)
       )
     )
@@ -55,26 +55,26 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
       .send(backend)
       .map(_.body.leftMap(buildErrorMessage(infoEndpoint)))
 
-  private def getVulnerabilities(
+  private def getCurrentDependencyInfo(
       dependency: Dependency
-  ): F[Either[String, List[PackageVulnerability]]] =
-    val coreEndpoint = "https://pypi.org/pypi"
-    val endpoint = dependency.currentVersion match
-      case Some(version) =>
-        s"$coreEndpoint/${dependency.name}/${cleanupVersion(version)}"
-      case None => s"$coreEndpoint/${dependency.name}"
-    val vulnerabilitiesEndpoint = uri"$endpoint/json"
+  ): F[Either[String, PackageVersion]] =
+    val coreEndpoint = s"https://pypi.org/pypi/${dependency.name}" + dependency
+      .currentVersion
+      .map: version =>
+        s"/${cleanupVersion(version)}"
+      .getOrElse("")
+
+    val endpoint = uri"$coreEndpoint/json"
 
     basicRequest
-      .get(vulnerabilitiesEndpoint)
+      .get(endpoint)
       .readTimeout(10.seconds)
-      .response(asJson[VulnerabilitiesResponse])
+      .response(asJson[PackageVersion])
       .send(backend)
       .map: response =>
         response
           .body
-          .leftMap(buildErrorMessage(vulnerabilitiesEndpoint))
-          .map(_.vulnerabilities)
+          .leftMap(buildErrorMessage(endpoint))
 
   private def cleanupVersion(version: String): String =
     /**
@@ -119,6 +119,8 @@ object Pypi:
       vulnerabilities: List[PackageVulnerability]
   ) derives Decoder
 
-  case class VulnerabilitiesResponse(
+  case class PackageVersion(
+      info: PackageInfo,
+      urls: NonEmptyList[PackageUrl],
       vulnerabilities: List[PackageVulnerability]
   ) derives Decoder
