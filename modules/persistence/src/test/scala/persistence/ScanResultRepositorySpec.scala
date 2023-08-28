@@ -22,8 +22,7 @@ import core.domain.dependency.DependencyDetails
 import core.domain.dependency.Dependency
 import core.domain.dependency.DependencyLatestRelease
 import core.domain.Grouped
-import persistence.DependencyRepository
-import persistenece.ScanResultRepository
+import persistence.{DependencyRepository, ScanResultRepository}
 import ScanResultRepository.ScanResultRepositorySQL.GetAllResult
 import org.legogroup.woof.{ *, given }
 import core.domain.Time
@@ -63,7 +62,6 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
         val cp = Checkpoint()
         savedCount shouldBe 3
         savedCountAfterPurge shouldBe 1
-        println(s"Latest scan: $latestScan")
         latestScan.map(_.dependenciesReports.head.items.head) shouldBe Some(
           thirdResult.dependenciesReports.head.items.head
         )
@@ -99,6 +97,7 @@ object ScanResultRepositorySpec:
             DependencyDetails(
               dependency.name,
               dependency.currentVersion.getOrElse("-"),
+              now,
               latestVersion,
               Some(now)
             ),
