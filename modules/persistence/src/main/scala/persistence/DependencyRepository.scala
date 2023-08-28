@@ -68,8 +68,6 @@ object DependencyRepository:
         latests <- dependencies.traverse: dependency =>
           ResultToSave.forLatest(dependency)
         allDeps = newDeps ++ existingDeps
-        _       = println(s"Out of $dependencies")
-        _       = println(s"Saving deps: $allDeps")
         _ <-
           val changes =
             NonEmptyList
@@ -118,7 +116,6 @@ object DependencyRepository:
         dependencyId: UUID,
         report: DependencyReport
     ): F[ResultToSave] =
-      println(s"From: $report")
       val dependency = DependencyToSave(
         dependencyId,
         report.name,
@@ -126,7 +123,6 @@ object DependencyRepository:
         report.currentVersionReleaseDate,
         report.notes
       )
-      println(s"Dependency: $dependency")
       report.vulnerabilities
         .traverse: vulnerability =>
           randomUUID.map: id =>
