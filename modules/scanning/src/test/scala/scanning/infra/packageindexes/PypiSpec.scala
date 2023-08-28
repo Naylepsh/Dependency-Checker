@@ -11,32 +11,33 @@ class PypiSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers:
   import PypiSpec.*
 
   "Pypi " - {
-    "should parse package data" in {
-      HttpClientCatsBackend.resource[IO]().use { backend =>
+    "should parse package data" in:
+      HttpClientCatsBackend.resource[IO]().use: backend =>
         Pypi(backend)
           .getDetails(django)
           .asserting(_.isRight shouldBe true)
-      }
-    }
 
-    "should fail to parse package data of package with non-existing version" in {
-      HttpClientCatsBackend.resource[IO]().use { backend =>
+    "should parse package with different date format" in:
+      HttpClientCatsBackend.resource[IO]().use: backend =>
+        Pypi(backend)
+          .getDetails(django)
+          .asserting(_.isRight shouldBe true)
+
+    "should fail to parse package data of package with non-existing version" in:
+      HttpClientCatsBackend.resource[IO]().use: backend =>
         Pypi(backend)
           .getDetails(djangoWithNonExistingVersion)
           .asserting(_.isRight shouldBe false)
-      }
-    }
 
-    "should fail to parse package data of non-existing package" in {
-      HttpClientCatsBackend.resource[IO]().use { backend =>
+    "should fail to parse package data of non-existing package" in:
+      HttpClientCatsBackend.resource[IO]().use: backend =>
         Pypi(backend)
           .getDetails(nonExistingPackage)
           .asserting(_.isRight shouldBe false)
-      }
-    }
   }
 
 object PypiSpec:
+  val werkzeug                     = Dependency("werkzeug", Some("2.3.7"))
   val django                       = Dependency("django", Some("2.2.28"))
   val djangoWithNonExistingVersion = Dependency("django", Some("1337.42.0"))
   val nonExistingPackage           = Dependency("django-ognajd-foo-bar", None)

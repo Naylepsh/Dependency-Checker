@@ -94,12 +94,10 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     s"url: ${url.toString}, ${exception.getMessage()}"
 
 object Pypi:
-  private val formatter =
-    DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
   given Decoder[DateTime] = Decoder.decodeString.emap: str =>
     Either
       .catchNonFatal:
-        DateTime.parse(str, formatter)
+        DateTime.parse(str)
       .leftMap: error =>
         error.toString
 
