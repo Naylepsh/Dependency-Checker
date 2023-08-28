@@ -49,7 +49,7 @@ object UpkeepRepository:
       ).unique.map(_ > 0).transact(xa)
 
 object UpkeepRepositorySQL:
-  import persistance.sqlmappings.given
+  import persistence.sqlmappings.given
 
   def getProjectId(gitlabId: String) =
     sql"""

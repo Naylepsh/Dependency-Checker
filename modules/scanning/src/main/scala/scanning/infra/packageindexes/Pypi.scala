@@ -13,6 +13,8 @@ import scanning.domain.PackageIndex
 import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
+import cats.data.NonEmptyList
+import org.joda.time.DateTime
 
 class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     extends PackageIndex[F]:
@@ -25,24 +27,22 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     (
       getLatestDependencyInfo(dependency),
       getVulnerabilities(dependency)
-    ).tupled.map((_, _).tupled.map((packageData, vulnerabilities) =>
+    ).tupled.map((_, _).tupled.map: (packageData, vulnerabilities) =>
       val latestVersion = packageData.info.version
       val latestInfo = packageData.releases
         .get(latestVersion)
         .flatMap(_.headOption)
-      val latestReleaseDate = latestInfo.flatMap(pkg =>
-        Either.catchNonFatal(DateTime.parse(pkg.upload_time)).toOption
-      )
 
       DependencyDetails(
         dependency.name,
         dependency.currentVersion.getOrElse(latestVersion),
+        packageData.urls.head.upload_time_iso_8601,
         latestVersion,
-        latestReleaseDate,
+        latestInfo.map(_.upload_time_iso_8601),
         vulnerabilities.map(_.id),
         latestInfo.flatMap(_.requires_python)
       )
-    ))
+    )
 
   private def getLatestDependencyInfo(
       dependency: Dependency
@@ -70,9 +70,11 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
       .readTimeout(10.seconds)
       .response(asJson[VulnerabilitiesResponse])
       .send(backend)
-      .map(_.body.leftMap(
-        buildErrorMessage(vulnerabilitiesEndpoint)
-      ).map(_.vulnerabilities))
+      .map: response =>
+        response
+          .body
+          .leftMap(buildErrorMessage(vulnerabilitiesEndpoint))
+          .map(_.vulnerabilities)
 
   private def cleanupVersion(version: String): String =
     /**
@@ -92,18 +94,30 @@ class Pypi[F[_]: Monad: Sync](backend: SttpBackend[F, WebSockets])
     s"url: ${url.toString}, ${exception.getMessage()}"
 
 object Pypi:
+  private val formatter =
+    DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+  given Decoder[DateTime] = Decoder.decodeString.emap: str =>
+    Either
+      .catchNonFatal:
+        DateTime.parse(str, formatter)
+      .leftMap: error =>
+        error.toString
+
   case class PackageInfo(version: String) derives Decoder
 
   case class PackageRelease(
-      upload_time: String,
+      upload_time_iso_8601: DateTime,
       requires_python: Option[String]
   ) derives Decoder
+
+  case class PackageUrl(upload_time_iso_8601: DateTime) derives Decoder
 
   case class PackageVulnerability(id: String, details: String) derives Decoder
 
   case class Package(
       info: PackageInfo,
       releases: Map[String, List[PackageRelease]],
+      urls: NonEmptyList[PackageUrl],
       vulnerabilities: List[PackageVulnerability]
   ) derives Decoder
 

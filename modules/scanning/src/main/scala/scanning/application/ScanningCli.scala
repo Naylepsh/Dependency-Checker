@@ -14,7 +14,7 @@ import gitlab.GitlabApi
 import org.http4s.ember.server.EmberServerBuilder
 import org.joda.time.DateTime
 import org.legogroup.woof.Logger
-import persistance.{
+import persistence.{
   DependencyRepository,
   ProjectScanConfigRepository,
   ScanResultRepository
