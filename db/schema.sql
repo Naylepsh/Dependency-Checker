@@ -82,7 +82,8 @@ CREATE TABLE IF NOT EXISTS "vulnerability"
   CONSTRAINT fk_dependency_id
     FOREIGN KEY (dependency_id)
     REFERENCES dependency (id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+  UNIQUE (name, dependency_id)
 );
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
