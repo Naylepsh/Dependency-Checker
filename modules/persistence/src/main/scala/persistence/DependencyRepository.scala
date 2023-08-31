@@ -193,7 +193,7 @@ object DependencyRepository:
 
     val insertVulnerabilities: Update[ExistingVulnerability] =
       val sql = """
-          INSERT INTO vulnerability (id, dependency_id, name)
+          INSERT OR IGNORE INTO vulnerability (id, dependency_id, name)
           VALUES (?, ?, ?)
         """
       Update[ExistingVulnerability](sql)
