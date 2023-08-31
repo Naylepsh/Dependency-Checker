@@ -61,16 +61,6 @@ CREATE TABLE project_dependency
     REFERENCES project (id)
     ON DELETE CASCADE
 );
-CREATE TABLE vulnerability
-(
-  id UUID PRIMARY KEY,
-  name TEXT NOT NULL,
-  dependency_id UUID NOT NULL,
-  CONSTRAINT fk_dependency_id
-    FOREIGN KEY (dependency_id)
-    REFERENCES dependency (id)
-    ON DELETE CASCADE
-);
 CREATE TABLE upkeep_request (
   id UUID PRIMARY KEY,
   project_id UUID NOT NULL,
@@ -83,6 +73,18 @@ CREATE TABLE upkeep_request (
     REFERENCES project (id)
     ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS "vulnerability"
+(
+  id UUID PRIMARY KEY,
+  date_created TIMESTAMP NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  name TEXT NOT NULL,
+  dependency_id UUID NOT NULL,
+  CONSTRAINT fk_dependency_id
+    FOREIGN KEY (dependency_id)
+    REFERENCES dependency (id)
+    ON DELETE CASCADE
+);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('20230824143342');
+  ('20230824143342'),
+  ('20230831175728');
