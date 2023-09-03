@@ -58,8 +58,7 @@ object project:
         report: ScanReport
     ): ScanReport =
       val lt: (DependencyReport, DependencyReport) => Boolean =
-        (a, b) =>
-          if compare(a, b) >= 0 then false else true
+        (a, b) => compare(a, b) < 0
       report.copy(dependenciesReports =
         report
           .dependenciesReports
