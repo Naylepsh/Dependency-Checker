@@ -63,6 +63,28 @@ object dependency:
       notes
     )
 
+    def compareByNameAsc(a: DependencyReport, b: DependencyReport): Int =
+      a.name.toLowerCase.compare(b.name.toLowerCase)
+
+    def compareByNameDesc(a: DependencyReport, b: DependencyReport): Int =
+      b.name.toLowerCase.compare(a.name.toLowerCase)
+
+    def compareBySeverityAsc(now: DateTime)(
+        a: DependencyReport,
+        b: DependencyReport
+    ): Int =
+      val sa = severity.determineSeverity(now, a)
+      val sb = severity.determineSeverity(now, b)
+      sa.ordinal.compare(sb.ordinal)
+
+    def compareBySeverityDesc(now: DateTime)(
+        a: DependencyReport,
+        b: DependencyReport
+    ): Int =
+      val sa = severity.determineSeverity(now, a)
+      val sb = severity.determineSeverity(now, b)
+      sb.ordinal.compare(sa.ordinal)
+
   sealed trait DependencySource:
     val path: String
     val groupName: String
@@ -85,5 +107,4 @@ object dependency:
         timestamp: DateTime
     ): F[List[ExistingDependency]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
-    def findLatestReleases(ids: List[UUID])
-        : F[List[DependencyLatestRelease]]
+    def findLatestReleases(ids: List[UUID]): F[List[DependencyLatestRelease]]

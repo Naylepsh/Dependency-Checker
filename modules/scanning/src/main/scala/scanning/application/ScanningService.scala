@@ -73,13 +73,11 @@ object ScanningService:
   ): DetailsMap =
     dependenciesDetails
       .groupBy(_.name)
-      .map {
-        case (name, details) =>
-          val orderedByVersion = details.sortWith(_.ofVersion > _.ofVersion)
-          val latest           = orderedByVersion.head.copy(ofVersion = latestKey)
+      .map: (name, details) =>
+        val orderedByVersion = details.sortWith(_.ofVersion > _.ofVersion)
+        val latest           = orderedByVersion.head.copy(ofVersion = latestKey)
 
-          name -> (latest :: orderedByVersion).map(d => d.ofVersion -> d).toMap
-      }
+        name -> (latest :: orderedByVersion).map(d => d.ofVersion -> d).toMap
       .toMap
 
   private def buildReport(details: DetailsMap)(

@@ -52,3 +52,17 @@ object project:
       projectName: String,
       dependenciesReports: List[Grouped[DependencyReport]]
   )
+  object ScanReport:
+    def sortGroups(
+        compare: (DependencyReport, DependencyReport) => Int,
+        report: ScanReport
+    ): ScanReport =
+      val lt: (DependencyReport, DependencyReport) => Boolean =
+        (a, b) =>
+          if compare(a, b) > 0 then false else true
+      report.copy(dependenciesReports =
+        report
+          .dependenciesReports
+          .map: group =>
+            group.copy(items = group.items.sortWith(lt))
+      )
