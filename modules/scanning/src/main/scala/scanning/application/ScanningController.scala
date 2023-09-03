@@ -141,19 +141,56 @@ object ScanningController:
       val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
 
 private object ScanningViews:
+  private def renderSortByNameAction(
+      projectName: String,
+      sortedByProperty: SortByProperty,
+      sortedInDirection: SortDirection
+  ) =
+    val background = sortedByProperty match
+      case SortByProperty.Name => "bg-gray-900"
+      case _                   => "bg-gray-800"
+    val link = (sortedByProperty, sortedInDirection) match
+      case (SortByProperty.Name, SortDirection.Asc) =>
+        s"/scan/$projectName/latest?sort-by=name&sort-dir=desc"
+      case (SortByProperty.Name, SortDirection.Desc) =>
+        s"/scan/$projectName/latest?sort-by=name&sort-dir=asc"
+      case _ =>
+        s"/scan/$projectName/latest?sort-by=name&sort-dir=asc"
+
+    a(
+      cls  := s"$background border-2 border-r-0 border-gray-700 p-1",
+      href := link,
+      "Name"
+    )
+
+  private def renderSortBySeverityAction(
+      projectName: String,
+      sortedByProperty: SortByProperty,
+      sortedInDirection: SortDirection
+  ) =
+    val background = sortedByProperty match
+      case SortByProperty.Severity => "bg-gray-900"
+      case _                       => "bg-gray-800"
+    val link = (sortedByProperty, sortedInDirection) match
+      case (SortByProperty.Severity, SortDirection.Asc) =>
+        s"/scan/$projectName/latest?sort-by=severity&sort-dir=desc"
+      case (SortByProperty.Severity, SortDirection.Desc) =>
+        s"/scan/$projectName/latest?sort-by=severity&sort-dir=asc"
+      case _ =>
+        s"/scan/$projectName/latest?sort-by=severity&sort-dir=asc"
+
+    a(
+      cls  := s"$background border-2 border-gray-700 p-1",
+      href := link,
+      "Severity"
+    )
+
   def renderScanResult(
       now: DateTime,
       scanResult: ScanReport,
       sortedByProperty: SortByProperty,
       sortedInDirection: SortDirection
   ) =
-    val nameSortBackground = sortedByProperty match
-      case SortByProperty.Name => "bg-gray-900"
-      case _                   => "bg-gray-800"
-    val severitySortBackground = sortedByProperty match
-      case SortByProperty.Severity => "bg-gray-900"
-      case _                       => "bg-gray-800"
-
     div(
       cls := "container mx-auto my-10",
       h2(
@@ -167,13 +204,15 @@ private object ScanningViews:
           id  := "sorting",
           cls := "ml-auto",
           span(cls := "mr-1", "Sort by:"),
-          a(
-            cls := s"$nameSortBackground border-2 border-r-0 border-gray-700 p-1",
-            "Name"
+          renderSortByNameAction(
+            scanResult.projectName,
+            sortedByProperty,
+            sortedInDirection
           ),
-          a(
-            cls := s"$severitySortBackground border-2 border-gray-700 p-1",
-            "Severity"
+          renderSortBySeverityAction(
+            scanResult.projectName,
+            sortedByProperty,
+            sortedInDirection
           )
         )
       ),
