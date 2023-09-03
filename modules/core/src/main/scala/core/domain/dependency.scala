@@ -64,10 +64,10 @@ object dependency:
     )
 
     def compareByNameAsc(a: DependencyReport, b: DependencyReport): Int =
-      a.name.toLowerCase.compare(b.name.toLowerCase)
+      a.name.toLowerCase.compare(b.name.toLowerCase).sign
 
     def compareByNameDesc(a: DependencyReport, b: DependencyReport): Int =
-      b.name.toLowerCase.compare(a.name.toLowerCase)
+      b.name.toLowerCase.compare(a.name.toLowerCase).sign
 
     def compareBySeverityAsc(now: DateTime)(
         a: DependencyReport,
@@ -75,7 +75,7 @@ object dependency:
     ): Int =
       val sa = severity.determineSeverity(now, a)
       val sb = severity.determineSeverity(now, b)
-      sa.ordinal.compare(sb.ordinal)
+      sa.ordinal.compare(sb.ordinal).sign
 
     def compareBySeverityDesc(now: DateTime)(
         a: DependencyReport,
@@ -83,7 +83,7 @@ object dependency:
     ): Int =
       val sa = severity.determineSeverity(now, a)
       val sb = severity.determineSeverity(now, b)
-      sb.ordinal.compare(sa.ordinal)
+      sb.ordinal.compare(sa.ordinal).sign
 
   sealed trait DependencySource:
     val path: String
