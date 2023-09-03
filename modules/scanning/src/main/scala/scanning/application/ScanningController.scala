@@ -2,7 +2,9 @@ package scanning.application
 
 import cats.syntax.all.*
 import cats.{ Monad, MonadThrow }
+import cats.data.{ Validated, ValidatedNel }
 import core.application.controller.Controller
+import core.domain.severity
 import core.domain.Time
 import core.domain.Time.DeltaUnit
 import core.domain.project.{
@@ -20,9 +22,41 @@ import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import scalatags.Text.all.*
 import scanning.application.services.ScanningService
+import org.http4s.dsl.impl.OptionalValidatingQueryParamDecoderMatcher
+import core.domain.dependency.DependencyReport
+import cats.data.NonEmptyList
 
 object ScanningController:
   import ScanningViews.*
+
+  enum SortDirection:
+    case Asc, Desc
+  object SortDirection:
+    given QueryParamDecoder[SortDirection] = QueryParamDecoder[String].emap:
+      case "asc"  => SortDirection.Asc.asRight
+      case "desc" => SortDirection.Desc.asRight
+      case other =>
+        val message = s"$other is not a valid sort direction"
+        ParseFailure(message, message).asLeft
+
+  enum SortByProperty:
+    case Name, Severity
+  object SortByProperty:
+    given QueryParamDecoder[SortByProperty] = QueryParamDecoder[String].emap:
+      case "name"     => SortByProperty.Name.asRight
+      case "severity" => SortByProperty.Severity.asRight
+      case other =>
+        val message = s"$other is not a valid property to sort by"
+        ParseFailure(message, message).asLeft
+
+  object SortByPropertyQueryParamMatcher
+      extends OptionalValidatingQueryParamDecoderMatcher[SortByProperty](
+        "sort-by"
+      )
+  object SortDirectionPropertyQueryParamMatcher
+      extends OptionalValidatingQueryParamDecoderMatcher[SortDirection](
+        "sort-dir"
+      )
 
   def make[F[_]: MonadThrow: Time: Logger](
       service: ScanningService[F],
@@ -31,20 +65,42 @@ object ScanningController:
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
-        case GET -> Root / projectName / "latest" =>
-          service
-            .getLatestScan(projectName)
-            .flatMap:
-              case None =>
-                views.layout(renderNoScanResult).pure
-              case Some(scanReport) =>
-                Time[F].currentDateTime.map: now =>
-                  views.layout(renderScanResult(now, scanReport))
-            .flatMap: html =>
-              Ok(html.toString, `Content-Type`(MediaType.text.html))
-            .handleErrorWith: error =>
-              Logger[F].error(error.toString)
-                *> InternalServerError("Oops, something went wrong")
+        case GET -> Root / projectName / "latest"
+            :? SortByPropertyQueryParamMatcher(maybeSortByProperty)
+            +& SortDirectionPropertyQueryParamMatcher(maybeSortDirection) =>
+          Time[F].currentDateTime.flatMap: now =>
+            (maybeSortByProperty, maybeSortDirection)
+              .tupled
+              .map: (validatedProperty, validatedDirection) =>
+                (validatedProperty, validatedDirection)
+                  .tupled
+                  .map:
+                    case (SortByProperty.Name, SortDirection.Asc) =>
+                      DependencyReport.compareByNameAsc
+                    case (SortByProperty.Name, SortDirection.Desc) =>
+                      DependencyReport.compareByNameDesc
+                    case (SortByProperty.Severity, SortDirection.Asc) =>
+                      DependencyReport.compareBySeverityAsc(now)
+                    case (SortByProperty.Severity, SortDirection.Desc) =>
+                      DependencyReport.compareBySeverityDesc(now)
+              .getOrElse(DependencyReport.compareByNameAsc.validNel)
+              .fold(
+                errors => BadRequest(errors.toString),
+                compare =>
+                  service
+                    .getLatestScan(projectName)
+                    .map:
+                      case None =>
+                        views.layout(renderNoScanResult)
+                      case Some(scanReport) =>
+                        val report = ScanReport.sortGroups(compare, scanReport)
+                        views.layout(renderScanResult(now, report))
+                    .flatMap: html =>
+                      Ok(html.toString, `Content-Type`(MediaType.text.html))
+                    .handleErrorWith: error =>
+                      Logger[F].error(error.toString)
+                        *> InternalServerError("Oops, something went wrong")
+              )
 
         case POST -> Root / "all" =>
           repository.all.flatMap: configs =>
@@ -80,13 +136,30 @@ private object ScanningViews:
         cls := "text-center font-semibold text-5xl",
         scanResult.projectName
       ),
+      div(
+        id  := "actions",
+        cls := "flex w-100 ml-auto",
+        div(
+          id  := "sorting",
+          cls := "ml-auto",
+          span(cls := "mr-1", "Sort by:"),
+          button(
+            cls := "bg-gray-800 border-2 border-r-0 border-gray-700 p-1",
+            "Name"
+          ),
+          button(
+            cls := "bg-gray-800 border-2 border-gray-700 p-1",
+            "Severity"
+          )
+        )
+      ),
       scanResult.dependenciesReports.map: group =>
         div(
           cls := "my-5",
           h3(cls := "text-2xl", s"> ${group.groupName}"),
           div(
             cls := "ml-5",
-            group.items.sortBy(_.name.toLowerCase).map: dependencyReport =>
+            group.items.map: dependencyReport =>
               val items = List(
                 div(
                   cls := "flex justify-between",
