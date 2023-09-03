@@ -25,30 +25,30 @@ import scanning.application.services.ScanningService
 import org.http4s.dsl.impl.OptionalValidatingQueryParamDecoderMatcher
 import core.domain.dependency.DependencyReport
 import cats.data.NonEmptyList
+import cats.data.Validated.Valid
+
+enum SortDirection:
+  case Asc, Desc
+object SortDirection:
+  given QueryParamDecoder[SortDirection] = QueryParamDecoder[String].emap:
+    case "asc"  => SortDirection.Asc.asRight
+    case "desc" => SortDirection.Desc.asRight
+    case other =>
+      val message = s"$other is not a valid sort direction"
+      ParseFailure(message, message).asLeft
+
+enum SortByProperty:
+  case Name, Severity
+object SortByProperty:
+  given QueryParamDecoder[SortByProperty] = QueryParamDecoder[String].emap:
+    case "name"     => SortByProperty.Name.asRight
+    case "severity" => SortByProperty.Severity.asRight
+    case other =>
+      val message = s"$other is not a valid property to sort by"
+      ParseFailure(message, message).asLeft
 
 object ScanningController:
   import ScanningViews.*
-
-  enum SortDirection:
-    case Asc, Desc
-  object SortDirection:
-    given QueryParamDecoder[SortDirection] = QueryParamDecoder[String].emap:
-      case "asc"  => SortDirection.Asc.asRight
-      case "desc" => SortDirection.Desc.asRight
-      case other =>
-        val message = s"$other is not a valid sort direction"
-        ParseFailure(message, message).asLeft
-
-  enum SortByProperty:
-    case Name, Severity
-  object SortByProperty:
-    given QueryParamDecoder[SortByProperty] = QueryParamDecoder[String].emap:
-      case "name"     => SortByProperty.Name.asRight
-      case "severity" => SortByProperty.Severity.asRight
-      case other =>
-        val message = s"$other is not a valid property to sort by"
-        ParseFailure(message, message).asLeft
-
   object SortByPropertyQueryParamMatcher
       extends OptionalValidatingQueryParamDecoderMatcher[SortByProperty](
         "sort-by"
@@ -57,6 +57,21 @@ object ScanningController:
       extends OptionalValidatingQueryParamDecoderMatcher[SortDirection](
         "sort-dir"
       )
+
+  private def makeComparator(
+      now: DateTime,
+      property: SortByProperty,
+      direction: SortDirection
+  ) =
+    (property, direction) match
+      case (SortByProperty.Name, SortDirection.Asc) =>
+        DependencyReport.compareByNameAsc
+      case (SortByProperty.Name, SortDirection.Desc) =>
+        DependencyReport.compareByNameDesc
+      case (SortByProperty.Severity, SortDirection.Asc) =>
+        DependencyReport.compareBySeverityAsc(now)
+      case (SortByProperty.Severity, SortDirection.Desc) =>
+        DependencyReport.compareBySeverityDesc(now)
 
   def make[F[_]: MonadThrow: Time: Logger](
       service: ScanningService[F],
@@ -72,29 +87,26 @@ object ScanningController:
             (maybeSortByProperty, maybeSortDirection)
               .tupled
               .map: (validatedProperty, validatedDirection) =>
-                (validatedProperty, validatedDirection)
-                  .tupled
-                  .map:
-                    case (SortByProperty.Name, SortDirection.Asc) =>
-                      DependencyReport.compareByNameAsc
-                    case (SortByProperty.Name, SortDirection.Desc) =>
-                      DependencyReport.compareByNameDesc
-                    case (SortByProperty.Severity, SortDirection.Asc) =>
-                      DependencyReport.compareBySeverityAsc(now)
-                    case (SortByProperty.Severity, SortDirection.Desc) =>
-                      DependencyReport.compareBySeverityDesc(now)
-              .getOrElse(DependencyReport.compareByNameAsc.validNel)
+                (validatedProperty, validatedDirection).tupled
+              .getOrElse(Valid(SortByProperty.Name, SortDirection.Asc))
               .fold(
                 errors => BadRequest(errors.toString),
-                compare =>
+                (sortByProperty, sortDirection) =>
                   service
                     .getLatestScan(projectName)
                     .map:
                       case None =>
                         views.layout(renderNoScanResult)
                       case Some(scanReport) =>
+                        val compare =
+                          makeComparator(now, sortByProperty, sortDirection)
                         val report = ScanReport.sortGroups(compare, scanReport)
-                        views.layout(renderScanResult(now, report))
+                        views.layout(renderScanResult(
+                          now,
+                          report,
+                          sortByProperty,
+                          sortDirection
+                        ))
                     .flatMap: html =>
                       Ok(html.toString, `Content-Type`(MediaType.text.html))
                     .handleErrorWith: error =>
@@ -129,7 +141,19 @@ object ScanningController:
       val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
 
 private object ScanningViews:
-  def renderScanResult(now: DateTime, scanResult: ScanReport) =
+  def renderScanResult(
+      now: DateTime,
+      scanResult: ScanReport,
+      sortedByProperty: SortByProperty,
+      sortedInDirection: SortDirection
+  ) =
+    val nameSortBackground = sortedByProperty match
+      case SortByProperty.Name => "bg-gray-900"
+      case _                   => "bg-gray-800"
+    val severitySortBackground = sortedByProperty match
+      case SortByProperty.Severity => "bg-gray-900"
+      case _                       => "bg-gray-800"
+
     div(
       cls := "container mx-auto my-10",
       h2(
@@ -143,12 +167,12 @@ private object ScanningViews:
           id  := "sorting",
           cls := "ml-auto",
           span(cls := "mr-1", "Sort by:"),
-          button(
-            cls := "bg-gray-800 border-2 border-r-0 border-gray-700 p-1",
+          a(
+            cls := s"$nameSortBackground border-2 border-r-0 border-gray-700 p-1",
             "Name"
           ),
-          button(
-            cls := "bg-gray-800 border-2 border-gray-700 p-1",
+          a(
+            cls := s"$severitySortBackground border-2 border-gray-700 p-1",
             "Severity"
           )
         )
