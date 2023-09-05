@@ -40,7 +40,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "ganyu",
-    version := "0.8.2",
+    version := "0.8.3",
     commonSettings
   )
   .aggregate(core, gitlab, parsers, scanning, upkeep)
@@ -79,6 +79,17 @@ lazy val upkeep = project
   .settings(commonSettings: _*)
   .dependsOn(core, parsers, gitlab, persistence)
 
-enablePlugins(JavaAppPackaging)
+enablePlugins(sbtdocker.DockerPlugin, JavaAppPackaging)
+
+docker / dockerfile := {
+  val appDir: File = stage.value
+  val targetDir = "/app"
+
+  new Dockerfile {
+    from("openjdk:8-jre")
+    entryPoint(s"$targetDir/bin/${executableScriptName.value}")
+    copy(appDir, targetDir, chown = "daemon:daemon")
+  }
+}
 
 addCommandAlias("lint", ";scalafmtAll ;scalafixAll --rules OrganizeImports")
