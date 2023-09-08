@@ -81,7 +81,18 @@ lazy val upkeep = project
 
 enablePlugins(sbtdocker.DockerPlugin, JavaAppPackaging)
 
-Universal / mappings += file("static/stuff.js") -> "static/stuff.js"
+def mapFiles(root: File): List[(File, String)] =
+  if (root.isDirectory) {
+    root
+      .listFiles()
+      .toList
+      .flatMap(mapFiles _)
+  } else {
+    List(root -> root.asPath.toString)
+  }
+
+Universal / mappings ++= mapFiles(file("static")).toSeq
+Universal / mappings ++= mapFiles(file("db")).toSeq
 
 docker / dockerfile := {
   val appDir: File = stage.value
