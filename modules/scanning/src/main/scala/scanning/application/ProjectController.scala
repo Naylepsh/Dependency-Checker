@@ -442,7 +442,7 @@ private object ProjectViews:
         name     := s"txtSources[path]",
         required := true,
         value    := "requirements.txt",
-        pattern  := "[.]txt$"
+        pattern  := ".*[.]txt$"
       )
     )
 
@@ -467,7 +467,7 @@ private object ProjectViews:
           name     := s"tomlSources[path]",
           required := true,
           value    := "pyproject.toml",
-          pattern  := "[.].toml$"
+          pattern  := ".*[.]toml$"
         )
       ),
       div(

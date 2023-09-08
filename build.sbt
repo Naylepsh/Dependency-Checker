@@ -40,7 +40,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "ganyu",
-    version := "0.8.3",
+    version := "0.8.4",
     commonSettings
   )
   .aggregate(core, gitlab, parsers, scanning, upkeep)
@@ -85,7 +85,7 @@ Universal / mappings += file("static/stuff.js") -> "static/stuff.js"
 
 docker / dockerfile := {
   val appDir: File = stage.value
-  val targetDir = "/app"
+  val targetDir    = "/app"
 
   new Dockerfile {
     from("public.ecr.aws/docker/library/openjdk:17-jdk")
