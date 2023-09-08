@@ -180,9 +180,10 @@ object ScanningCli:
             )
 
           val routes =
-            scanReportController.routes
-              <+> projectController.routes
-              <+> staticFileController.routes
+            LoggingMiddleware.wrap:
+              scanReportController.routes
+                <+> projectController.routes
+                <+> staticFileController.routes
 
           EmberServerBuilder
             .default[IO]
