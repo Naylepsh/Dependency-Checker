@@ -5,9 +5,9 @@ import scanning.application.ScanningCli
 import upkeep.application.UpkeepCli
 
 object Main extends CommandIOApp(
-      name = "sentinel",
+      name = "ganyu",
       header = "",
-      version = "0.6.3"
+      version = "0.8.3"
     ):
 
   def main: Opts[IO[ExitCode]] =
