@@ -89,7 +89,8 @@ docker / dockerfile := {
 
   new Dockerfile {
     from("public.ecr.aws/docker/library/openjdk:17-jdk")
-    entryPoint(s"$targetDir/bin/${executableScriptName.value}")
+    workDir(targetDir)
+    entryPoint(s"./bin/${executableScriptName.value}")
     copy(appDir, targetDir, chown = "daemon:daemon")
   }
 }
