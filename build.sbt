@@ -101,6 +101,14 @@ docker / dockerfile := {
   new Dockerfile {
     from("public.ecr.aws/docker/library/openjdk:17-jdk")
     workDir(targetDir)
+    run(
+      "curl",
+      "-fsSL",
+      "-o",
+      "/usr/local/bin/dbmate",
+      "https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64"
+    )
+    run("chmod", "+x", "/usr/local/bin/dbmate")
     entryPoint(s"./bin/${executableScriptName.value}")
     copy(appDir, targetDir, chown = "daemon:daemon")
   }
