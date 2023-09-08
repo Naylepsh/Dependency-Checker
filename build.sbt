@@ -86,7 +86,7 @@ docker / dockerfile := {
   val targetDir = "/app"
 
   new Dockerfile {
-    from("public.ecr.aws/docker/library/openjdk:17-jre")
+    from("public.ecr.aws/docker/library/openjdk:17-jdk")
     entryPoint(s"$targetDir/bin/${executableScriptName.value}")
     copy(appDir, targetDir, chown = "daemon:daemon")
   }
