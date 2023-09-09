@@ -4,7 +4,6 @@ import cats.Monad
 import cats.data.EitherT
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
-import core.domain.registry.{ Registry, RegistryRepository }
 import gitlab.*
 import org.joda.time.DateTime
 import org.legogroup.woof.{ Logger, given }

@@ -5,7 +5,6 @@ import cats.implicits.*
 import com.monovore.decline.*
 import core.application.cli.*
 import core.application.cli as CoreCli
-import core.infra.persistance.RegistryRepository
 import gitlab.GitlabApi
 import org.legogroup.woof.Logger
 import upkeep.infra.{ ProjectRepository, UpkeepRepository }
@@ -15,15 +14,9 @@ object UpkeepCli:
       extends CoreCli.Command[IO]:
     def run(): IO[ExitCode] =
       withContext: context =>
-        val registryRepository = RegistryRepository.fileBased(registryPath)
-
-        registryRepository.get().flatMap {
-          case Left(_) => ExitCode.Error.pure
-          case Right(registry) =>
-            makeUpkeepService(registryRepository, registry, context)
-              .updateAffectedProjects(dependencyName)
-              .as(ExitCode.Success)
-        }
+        makeUpkeepService(context)
+          .updateAffectedProjects(dependencyName)
+          .as(ExitCode.Success)
 
   private val dependencyNameOpt =
     Opts.option[String](
@@ -43,8 +36,6 @@ object UpkeepCli:
   ).mapN(UpkeepSingle.apply))
 
   private def makeUpkeepService(
-      registryRepository: core.domain.registry.RegistryRepository[IO],
-      registry: core.domain.registry.Registry,
       context: Context
   )(using Logger[IO]) =
     val gitlabApi = GitlabApi.make(
@@ -54,7 +45,7 @@ object UpkeepCli:
     )
     val upkeepRepository = UpkeepRepository.make(context.xa)
     val projectRepository =
-      ProjectRepository.make(context.xa, registryRepository)
+      ProjectRepository.make(context.xa)
     UpkeepService.makeForGitlab(
       gitlabApi,
       projectRepository,

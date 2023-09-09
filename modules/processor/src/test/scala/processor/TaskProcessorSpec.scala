@@ -6,7 +6,6 @@ import cats.effect.{ IO, Ref }
 import core.domain.task.TaskProcessor
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.*
-import core.domain.registry.ProjectScanConfig
 import concurrent.duration.*
 import org.legogroup.woof.{ *, given }
 import org.legogroup.woof.Logger.StringLocal

@@ -5,7 +5,6 @@ import org.scalatest.*
 
 import flatspec.*
 import matchers.*
-import registry.*
 import dependency.DependencyReport
 
 class DeltaSpec extends AnyFlatSpec with should.Matchers:
