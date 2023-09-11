@@ -54,8 +54,10 @@ object ScanningCli:
           DependencyRepository.make(context.xa)
         )
         val projectRepository = ProjectScanConfigRepository.make(context.xa)
-        val projectService    = ProjectService.make(projectRepository)
-        val projectController = ProjectController.make(projectService)
+        val projectService    = ProjectScanConfigService.make(projectRepository)
+        val summaryService    = ProjectSummaryService.make(scanResultRepository)
+        val projectController =
+          ProjectController.make(projectService, summaryService)
 
         val staticFileController = StaticFileController.make[IO]
 

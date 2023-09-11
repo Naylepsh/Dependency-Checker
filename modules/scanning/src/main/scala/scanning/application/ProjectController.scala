@@ -16,6 +16,7 @@ import org.http4s.server.Router
 import org.legogroup.woof.{ *, given }
 import scalatags.Text.TypedTag
 import scalatags.Text.all.*
+import scanning.domain.ProjectSummary
 
 object ProjectController:
   // TODO: Move this to a dedicated module
@@ -24,13 +25,15 @@ object ProjectController:
   import ProjectPayloads.*
 
   def make[F[_]: MonadThrow: Logger: Concurrent](
-      service: ProjectService[F]
+      configService: ProjectScanConfigService[F],
+      summaryService: ProjectSummaryService[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
         case GET -> Root =>
-          service
+          configService
             .all
+            .flatMap(summaryService.enrichWithScanSummary)
             .map: projects =>
               views.layout(renderProjects(projects))
             .flatMap: html =>
@@ -38,24 +41,27 @@ object ProjectController:
             .handleErrorWith: error =>
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
+
         case req @ POST -> Root =>
           req
             .as[ProjectPayload]
             .flatMap: payload =>
-              service.add(payload.toDomain)
+              configService.add(payload.toDomain)
                 *> Ok(renderProjectForm(info =
                   s"Project ${payload.name} added successfully".some
                 ).toString)
             .handleErrorWith: error =>
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
+
         case GET -> Root / "new" =>
           Ok(
             views.layout(renderProjectForm(info = None)).toString,
             `Content-Type`(MediaType.text.html)
           )
+
         case GET -> Root / projectName / "detailed" =>
-          service
+          configService
             .find(projectName)
             .flatMap:
               case None => ???
@@ -63,24 +69,31 @@ object ProjectController:
                   renderProjectDetails(project).toString,
                   `Content-Type`(MediaType.text.html)
                 )
+
         case GET -> Root / projectName / "short" =>
-          service
+          configService
             .find(projectName)
             .flatMap:
               case None => ???
-              case Some(project) => Ok(
-                  renderProjectShort(project).toString,
-                  `Content-Type`(MediaType.text.html)
-                )
+              case Some(config) =>
+                summaryService
+                  .enrichWithScanSummary(config)
+                  .flatMap: summary =>
+                    Ok(
+                      renderProjectShort(summary).toString,
+                      `Content-Type`(MediaType.text.html)
+                    )
+
         case PATCH -> Root / projectName / "enable" =>
-          service.setEnabled(projectName, true).flatMap:
+          configService.setEnabled(projectName, true).flatMap:
             case None => ???
             case Some(project) => Ok(
                 renderProjectDetails(project).toString,
                 `Content-Type`(MediaType.text.html)
               )
+
         case PATCH -> Root / projectName / "disable" =>
-          service.setEnabled(projectName, false).flatMap:
+          configService.setEnabled(projectName, false).flatMap:
             case None => ???
             case Some(project) => Ok(
                 renderProjectDetails(project).toString,
@@ -137,7 +150,7 @@ private object ProjectPayloads:
       jsonOf[F, ProjectPayload]
 
 private object ProjectViews:
-  def renderProjects(projects: List[ProjectScanConfig]) =
+  def renderProjects(projects: List[ProjectSummary]) =
     div(
       cls := "container mx-auto my-10",
       h2(
@@ -162,32 +175,32 @@ private object ProjectViews:
       )
     )
 
-  def renderProjectShort(config: ProjectScanConfig) =
+  def renderProjectShort(config: ProjectSummary) =
     // TODO: Add some animations when details unfold
     div(
-      id  := config.project.name,
+      id  := config.config.project.name,
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
       div(
         cls := "flex justify-between",
         p(
           cls                   := "grow text-2xl",
-          htmx.ajax.get         := s"/project/${config.project.name}/detailed",
+          htmx.ajax.get         := s"/project/${config.config.project.name}/detailed",
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
-          htmx.target.attribute := s"#${config.project.name}",
-          config.project.name
+          htmx.target.attribute := s"#${config.config.project.name}",
+          config.config.project.name
         ),
         div(
           cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/${config.project.name}",
+            htmx.ajax.post         := s"/scan/${config.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan/${config.project.name}/latest",
+            href := s"/scan/${config.config.project.name}/latest",
             "Scan report"
           )
         )

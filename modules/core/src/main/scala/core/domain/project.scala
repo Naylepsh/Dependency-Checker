@@ -34,6 +34,8 @@ object project:
       dependenciesReports: List[Grouped[DependencyReport]]
   )
 
+  case class VulnerabilitySummary(projectName: String, vulnerabilityCount: Int)
+
   trait ScanResultRepository[F[_]: Functor]:
     def save(results: List[ScanResult], timestamp: DateTime): F[Unit]
     def getScanReports(
@@ -45,6 +47,8 @@ object project:
     def getLatestScanTimestamp(): F[Option[DateTime]] =
       getLatestScansTimestamps(1).map(_.headOption)
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
+    def getVulnerabilitySummary(projectNames: NonEmptyList[String])
+        : F[List[VulnerabilitySummary]]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
     def deleteOld(projectName: String): F[Unit]
 
