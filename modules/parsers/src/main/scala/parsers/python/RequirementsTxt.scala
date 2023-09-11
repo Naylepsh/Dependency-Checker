@@ -17,29 +17,26 @@ object RequirementsTxt:
       cleanedLine.split("==", 2).toList match
         case Nil => None
 
-        case name :: Nil =>
+        case namePart :: Nil =>
           dependencyNamePattern
-            .findFirstIn(name)
-            .map(cleanName =>
+            .findFirstIn(namePart)
+            .map: name =>
               Dependency(
-                name = cleanName,
+                name = removeExtras(name),
                 currentVersion = None
               )
-            )
 
         case name :: currentVersion :: _ =>
           dependencyNamePattern
             .findFirstIn(name)
-            .flatMap(cleanName =>
+            .flatMap: name =>
               dependencyVersionPattern
                 .findFirstIn(currentVersion)
-                .map(cleanVersion =>
+                .map: cleanVersion =>
                   Dependency(
-                    name = cleanName,
+                    name = removeExtras(name),
                     currentVersion = Some(cleanVersion)
                   )
-                )
-            )
 
   private val preProcess = stripFlags andThen normalizeVersionSpecification
 
@@ -58,9 +55,14 @@ object RequirementsTxt:
     line.startsWith("#") || line.startsWith("-") || line.contains("git+")
 
   private val dependencyNamePattern: Regex =
-    "[-._a-zA-Z0-9]+".r
+    "[-._a-zA-Z0-9\\[\\]]+".r
 
   private val dependencyVersionPattern: Regex =
     "[-*._^~a-zA-Z0-9]+".r
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
+
+  private val extrasPattern: Regex = "\\[[-._a-zA-Z0-9]+\\]".r
+
+  private def removeExtras(dependencyName: String): String =
+    extrasPattern.replaceFirstIn(dependencyName, "")
