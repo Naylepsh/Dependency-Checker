@@ -278,9 +278,21 @@ private object ScanningViews:
       div(
         cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
         vulnerabilities.map: vulnerability =>
+          val maybeLink = if vulnerability.startsWith("GHSA-") then
+            s"https://github.com/advisories/$vulnerability".some
+          else if vulnerability.startsWith("PYSEC-") then
+            s"https://vulners.com/osv/OSV:$vulnerability".some
+          else None
+
+          val elem = maybeLink match
+            case Some(link) =>
+              a(cls := "my-auto", href := link, vulnerability)
+            case None =>
+              p(cls := "my-auto", vulnerability)
+
           div(
             cls := "px-3 flex justify-between",
-            p(cls      := "my-auto", vulnerability),
+            elem,
             button(cls := "bg-teal-500 m-1 py-1 px-3 text-gray-100", "Ignore")
           )
       )
