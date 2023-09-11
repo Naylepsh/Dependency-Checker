@@ -114,6 +114,13 @@ object ScanResultRepository:
         _ <- Logger[F].info(s"Reports count: ${reports.length}")
       yield reports
 
+    def getVulnerabilitySummary(projectNames: NonEmptyList[String])
+        : F[List[VulnerabilitySummary]] =
+      ScanResultRepositorySQL
+        .getVulnerabilitySummary(projectNames)
+        .to[List]
+        .transact(xa)
+
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
       dependencyRepository.delete(timestamps)
 
@@ -144,6 +151,10 @@ object ScanResultRepository:
 
   object ScanResultRepositorySQL:
     import persistence.sqlmappings.given
+
+    given Read[VulnerabilitySummary] =
+      Read[(String, Int)].map: (projectName, vulnerabilityCount) =>
+        VulnerabilitySummary(projectName, vulnerabilityCount)
 
     def getProjectId(projectName: String) =
       sql"""
@@ -281,3 +292,12 @@ object ScanResultRepository:
       WHERE project_id = $projectId
       AND project_dependency.timestamp < $maxTimestamp
       """.update
+
+    def getVulnerabilitySummary(projectNames: NonEmptyList[String]) =
+      sql"""
+      SELECT project.name, COUNT(vulnerability.name)
+      FROM project
+      LEFT JOIN project_dependency ON project_dependency.project_id = project.id
+      LEFT JOIN vulnerability ON vulnerability.dependency_id = project_dependency.dependency_id
+      GROUP BY project.name
+      """.query[VulnerabilitySummary]
