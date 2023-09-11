@@ -102,3 +102,12 @@ class RequirementsTxtSpec extends AnyFlatSpec with should.Matchers:
 
     dependencies should contain only (Dependency("library", Some("~1.2.3")))
   }
+
+  it should "detect dependency with extras in the name" in:
+    val requirements = """
+    | library[foo]==1.2.3
+    """
+
+    val dependencies = extract(requirements)
+
+    dependencies should contain only (Dependency("library", Some("1.2.3")))

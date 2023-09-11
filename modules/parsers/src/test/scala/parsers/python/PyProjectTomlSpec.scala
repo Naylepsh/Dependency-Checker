@@ -77,3 +77,4 @@ class PyProjectTomlSpec extends AnyFlatSpec with should.Matchers:
 
     names should contain only "foo"
   }
+
