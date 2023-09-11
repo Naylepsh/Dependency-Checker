@@ -19,10 +19,6 @@ import persistence.{
 }
 import processor.TaskProcessor
 import scanning.application.services.*
-import scanning.infra.exporters.{
-  ScanDeltaExcelExporter,
-  ScanReportExcelExporter
-}
 import scanning.infra.packageindexes.Pypi
 import scanning.infra.sources.GitlabSource
 
