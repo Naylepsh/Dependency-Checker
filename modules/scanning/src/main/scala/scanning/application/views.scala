@@ -16,7 +16,8 @@ object views:
         )
       ),
       body(
-        cls := "text-gray-200 bg-gray-900",
+        cls              := "text-gray-200 bg-gray-900",
+        attr("hx-boost") := "true",
         navBar,
         bodyContent
       )
