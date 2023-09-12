@@ -1,7 +1,7 @@
 package scanning.application
 
 import cats.syntax.all.*
-import cats.{ Monad, MonadThrow }
+import cats.Monad
 import cats.data.{ Validated, ValidatedNel }
 import core.controller.Controller
 import core.domain.severity
@@ -73,7 +73,7 @@ object ScanningController:
       case (SortByProperty.Severity, SortDirection.Desc) =>
         DependencyReport.compareBySeverityDesc(now)
 
-  def make[F[_]: MonadThrow: Time: Logger](
+  def make[F[_]: Monad: Time: Logger](
       service: ScanningService[F],
       repository: ProjectScanConfigRepository[F],
       taskProcessor: TaskProcessor[F]
@@ -109,9 +109,6 @@ object ScanningController:
                         ))
                     .flatMap: html =>
                       Ok(html.toString, `Content-Type`(MediaType.text.html))
-                    .handleErrorWith: error =>
-                      Logger[F].error(error.toString)
-                        *> InternalServerError("Oops, something went wrong")
               )
 
         case POST -> Root / "all" =>

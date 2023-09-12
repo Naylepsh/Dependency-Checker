@@ -2,7 +2,7 @@ package scanning.application
 
 import cats.effect.kernel.{ Concurrent, Sync }
 import cats.syntax.all.*
-import cats.{ Monad, MonadThrow }
+import cats.Monad
 import core.controller.Controller
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 import core.domain.project.{ Project, ProjectScanConfig }
@@ -24,7 +24,7 @@ object ProjectController:
   import ProjectViews.*
   import ProjectPayloads.*
 
-  def make[F[_]: MonadThrow: Logger: Concurrent](
+  def make[F[_]: Monad: Logger: Concurrent](
       configService: ProjectScanConfigService[F],
       summaryService: ProjectSummaryService[F]
   ): Controller[F] =
@@ -38,9 +38,6 @@ object ProjectController:
               views.layout(renderProjects(projects))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
-            .handleErrorWith: error =>
-              Logger[F].error(error.toString)
-                *> InternalServerError("Oops, something went wrong")
 
         case req @ POST -> Root =>
           req
@@ -50,9 +47,6 @@ object ProjectController:
                 *> Ok(renderProjectForm(info =
                   s"Project ${payload.name} added successfully".some
                 ).toString)
-            .handleErrorWith: error =>
-              Logger[F].error(error.toString)
-                *> InternalServerError("Oops, something went wrong")
 
         case GET -> Root / "new" =>
           Ok(
