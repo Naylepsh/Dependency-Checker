@@ -65,10 +65,14 @@ object ProjectController:
             .find(projectName)
             .flatMap:
               case None => ???
-              case Some(project) => Ok(
-                  renderProjectDetails(project).toString,
-                  `Content-Type`(MediaType.text.html)
-                )
+              case Some(config) =>
+                summaryService
+                  .enrichWithScanSummary(config)
+                  .flatMap: summary =>
+                    Ok(
+                      renderProjectDetails(summary).toString,
+                      `Content-Type`(MediaType.text.html)
+                    )
 
         case GET -> Root / projectName / "short" =>
           configService
@@ -87,18 +91,26 @@ object ProjectController:
         case PATCH -> Root / projectName / "enable" =>
           configService.setEnabled(projectName, true).flatMap:
             case None => ???
-            case Some(project) => Ok(
-                renderProjectDetails(project).toString,
-                `Content-Type`(MediaType.text.html)
-              )
+            case Some(config) =>
+              summaryService
+                .enrichWithScanSummary(config)
+                .flatMap: summary =>
+                  Ok(
+                    renderProjectDetails(summary).toString,
+                    `Content-Type`(MediaType.text.html)
+                  )
 
         case PATCH -> Root / projectName / "disable" =>
           configService.setEnabled(projectName, false).flatMap:
             case None => ???
-            case Some(project) => Ok(
-                renderProjectDetails(project).toString,
-                `Content-Type`(MediaType.text.html)
-              )
+            case Some(config) =>
+              summaryService
+                .enrichWithScanSummary(config)
+                .flatMap: summary =>
+                  Ok(
+                    renderProjectDetails(summary).toString,
+                    `Content-Type`(MediaType.text.html)
+                  )
 
       val routes: HttpRoutes[F] = Router("project" -> httpRoutes)
 
@@ -175,8 +187,26 @@ private object ProjectViews:
       )
     )
 
+  def iconWithTooltip(iconClass: String, tooltipText: String) =
+    div(
+      cls := "group flex relative",
+      i(cls := iconClass),
+      div(
+        role := "tooltip",
+        cls  := "group-hover:opacity-100 transition-opacity bg-gray-900 p-1 px-2 text-sm text-gray-100 rounded-md absolute left-1/2 -top-6 -translate-x-1/2 -translate-y-full opacity-0 m-4 mx-auto w-fit whitespace-nowrap",
+        tooltipText
+      )
+    )
+
   def renderProjectShort(config: ProjectSummary) =
     // TODO: Add some animations when details unfold
+    var icons = List.empty[TypedTag[String]]
+    if config.vulnerabilityCount > 0 then
+      icons = iconWithTooltip(
+        "fa fa-solid fa-triangle-exclamation text-red-400",
+        s"${config.vulnerabilityCount} vulnerabilities"
+      ) :: icons
+
     div(
       id  := config.config.project.name,
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
@@ -188,6 +218,10 @@ private object ProjectViews:
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
           htmx.target.attribute := s"#${config.config.project.name}",
           config.config.project.name
+        ),
+        div(
+          cls := "my-auto px-8",
+          icons
         ),
         div(
           cls := "my-auto",
@@ -268,11 +302,11 @@ private object ProjectViews:
     "checked:focus:before:transition-[box-shadow_0.2s,transform_0.2s]"
   ).mkString(" ")
 
-  def renderProjectDetails(config: ProjectScanConfig) =
+  def renderProjectDetails(summary: ProjectSummary) =
     val toggleUrl =
-      if config.enabled
-      then s"/project/${config.project.name}/disable"
-      else s"/project/${config.project.name}/enable"
+      if summary.config.enabled
+      then s"/project/${summary.config.project.name}/disable"
+      else s"/project/${summary.config.project.name}/enable"
     var enabledCheckboxAttrs = List(
       cls                    := checkboxClass,
       `type`                 := "checkbox",
@@ -281,44 +315,60 @@ private object ProjectViews:
       htmx.trigger.attribute := htmx.trigger.value.change,
       htmx.swap.attribute    := htmx.swap.value.outerHTML,
       htmx.target.attribute := htmx.target.value.closest(
-        s"#${config.project.name}"
+        s"#${summary.config.project.name}"
       )
     )
-    if config.enabled
+    if summary.config.enabled
     then enabledCheckboxAttrs = (checked := "1") :: enabledCheckboxAttrs
+    var icons = List.empty[TypedTag[String]]
+    if summary.vulnerabilityCount > 0 then
+      icons = iconWithTooltip(
+        "fa fa-solid fa-triangle-exclamation text-red-400",
+        s"${summary.vulnerabilityCount} vulnerabilities"
+      ) :: icons
 
     div(
-      id  := config.project.name,
+      id  := summary.config.project.name,
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700",
       div(
         cls := "pb-3 flex justify-between",
         div(
           cls                   := "grow text-2xl",
-          htmx.ajax.get         := s"/project/${config.project.name}/short",
+          htmx.ajax.get         := s"/project/${summary.config.project.name}/short",
           htmx.swap.attribute   := htmx.swap.value.outerHTML,
-          htmx.target.attribute := s"#${config.project.name}",
-          config.project.name
+          htmx.target.attribute := s"#${summary.config.project.name}",
+          summary.config.project.name
+        ),
+        div(
+          cls := "my-auto px-8",
+          icons
         ),
         div(
           cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/${config.project.name}",
+            htmx.ajax.post         := s"/scan/${summary.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan/${config.project.name}/latest",
+            href := s"/scan/${summary.config.project.name}/latest",
             "Scan report"
           )
         )
       ),
       div(
         cls := "pt-3",
-        p(span(cls := "font-semibold", "Gitlab ID: "), config.project.id),
-        p(span(cls := "font-semibold", "Target branch: "), config.branch),
+        p(
+          span(cls := "font-semibold", "Gitlab ID: "),
+          summary.config.project.id
+        ),
+        p(
+          span(cls := "font-semibold", "Target branch: "),
+          summary.config.branch
+        ),
         p(
           span(cls := "font-semibold", "Enabled: "),
           input(enabledCheckboxAttrs)
@@ -326,7 +376,8 @@ private object ProjectViews:
         div(
           cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
           span(cls := "font-semibold", "Sources:"),
-          config
+          summary
+            .config
             .sources
             .map:
               case TxtSource(path) => path
