@@ -3,7 +3,7 @@ package scanning.application
 import cats.effect.kernel.{ Concurrent, Sync }
 import cats.syntax.all.*
 import cats.{ Monad, MonadThrow }
-import core.application.controller.Controller
+import core.controller.Controller
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 import core.domain.project.{ Project, ProjectScanConfig }
 import io.circe.*

@@ -9,12 +9,11 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import core.infra.resources.database.*
+import database.*
 import core.domain.project.ProjectScanConfig
 import core.domain.project.Project
 import core.domain.dependency.DependencySource
 import persistence.ProjectScanConfigRepository
-import core.application.config.AppConfig
 import cats.effect.kernel.Resource
 
 class ProjectScanConfigRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
@@ -39,8 +38,8 @@ class ProjectScanConfigRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
       )
 
 object ProjectScanConfigRepositorySpec:
-  val transactor = Resource.eval(AppConfig.load[IO]).flatMap: config =>
-    makeSqliteTransactorResource[IO](config.database).evalTap: xa =>
+  val transactor = Resource.eval(config.load[IO]).flatMap: config =>
+    makeSqliteTransactorResource[IO](config).evalTap: xa =>
       val freshStart =
         for
           _ <- sql"DELETE FROM project".update.run

@@ -3,7 +3,7 @@ package scanning.application
 import cats.syntax.all.*
 import cats.{ Monad, MonadThrow }
 import cats.data.{ Validated, ValidatedNel }
-import core.application.controller.Controller
+import core.controller.Controller
 import core.domain.severity
 import core.domain.Time
 import core.domain.Time.DeltaUnit

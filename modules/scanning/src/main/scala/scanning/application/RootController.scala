@@ -3,7 +3,7 @@ package scanning.application
 import cats.effect.kernel.Sync
 import cats.syntax.all.*
 import cats.{ Monad, MonadError }
-import core.application.controller.Controller
+import core.controller.Controller
 import fs2.io.file.Files
 import org.http4s.*
 import org.http4s.dsl.Http4sDsl

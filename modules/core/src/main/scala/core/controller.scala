@@ -1,4 +1,4 @@
-package core.application
+package core
 
 import org.http4s.HttpRoutes
 

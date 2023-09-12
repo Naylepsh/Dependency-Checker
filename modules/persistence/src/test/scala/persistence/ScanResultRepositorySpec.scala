@@ -10,11 +10,9 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import core.infra.resources.database.*
 import core.domain.project.ProjectScanConfig
 import core.domain.project.Project
 import core.domain.dependency.DependencySource
-import core.application.config.AppConfig
 import cats.effect.kernel.Resource
 import core.domain.project.ScanResult
 import core.domain.dependency.DependencyReport
@@ -22,7 +20,7 @@ import core.domain.dependency.DependencyDetails
 import core.domain.dependency.Dependency
 import core.domain.dependency.DependencyLatestRelease
 import core.domain.Grouped
-import persistence.{DependencyRepository, ScanResultRepository}
+import persistence.{ DependencyRepository, ScanResultRepository }
 import ScanResultRepository.ScanResultRepositorySQL.GetAllResult
 import org.legogroup.woof.{ *, given }
 import core.domain.Time
@@ -30,6 +28,7 @@ import org.scalatest.Checkpoints.Checkpoint
 import org.scalatest.Succeeded
 import org.joda.time.DateTime
 import core.domain.project.ScanReport
+import database.*
 
 class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
     with Matchers:
@@ -42,18 +41,22 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
           .query[Int]
           .unique
           .transact(xa)
+
       given Filter  = Filter.everything
       given Printer = NoColorPrinter()
       for
         given Logger[IO] <- DefaultLogger.makeIo(noop)
         dependencyRepository = DependencyRepository.make(xa)
         repository           = ScanResultRepository.make(xa, dependencyRepository)
-        dt1                  <- Time[IO].currentDateTime
-        _                    <- repository.save(List(firstResult), dt1)
-        dt2                  <- Time[IO].currentDateTime
-        _                    <- repository.save(List(secondResult), dt2)
-        dt3                  <- Time[IO].currentDateTime
-        _                    <- repository.save(List(thirdResult), dt3)
+        dt1 <- Time[IO].currentDateTime
+        firstScan = makeResult("4.2.0", dt1)
+        _   <- repository.save(List(firstScan), dt1)
+        dt2 <- Time[IO].currentDateTime
+        secondScan = makeResult("4.2.1", dt2)
+        _   <- repository.save(List(secondScan), dt2)
+        dt3 <- Time[IO].currentDateTime
+        thirdScan = makeResult("4.2.2", dt3)
+        _                    <- repository.save(List(thirdScan), dt3)
         savedCount           <- countScans
         _                    <- repository.deleteOld(project.name)
         savedCountAfterPurge <- countScans
@@ -63,7 +66,7 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
         savedCount shouldBe 3
         savedCountAfterPurge shouldBe 1
         latestScan.map(_.dependenciesReports.head.items.head) shouldBe Some(
-          thirdResult.dependenciesReports.head.items.head
+          thirdScan.dependenciesReports.head.items.head
         )
         cp.reportAll()
         Succeeded
@@ -73,8 +76,8 @@ class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
     scanReports should contain only (expectedFirstProjectReport, expectedSecondProjectReport)
 
 object ScanResultRepositorySpec:
-  val transactor = Resource.eval(AppConfig.load[IO]).flatMap: config =>
-    makeSqliteTransactorResource[IO](config.database).evalTap: xa =>
+  val transactor = Resource.eval(config.load[IO]).flatMap: config =>
+    makeSqliteTransactorResource[IO](config).evalTap: xa =>
       val freshStart =
         for
           _ <- sql"DELETE FROM project".update.run
@@ -82,11 +85,11 @@ object ScanResultRepositorySpec:
         yield ()
       freshStart.transact(xa)
 
-  val now = DateTime.now()
+  val now        = DateTime.now()
   val project    = Project("420", "foo")
   val dependency = Dependency("bar", Some("1.0.0"))
 
-  private def makeResult(latestVersion: String) =
+  private def makeResult(latestVersion: String, releaseDate: DateTime) =
     ScanResult(
       project,
       List(Grouped(
@@ -99,17 +102,13 @@ object ScanResultRepositorySpec:
               dependency.currentVersion.getOrElse("-"),
               now,
               latestVersion,
-              Some(now)
+              Some(releaseDate)
             ),
             None
           )
         )
       ))
     )
-
-  val firstResult  = makeResult("4.2.0")
-  val secondResult = makeResult("4.2.1")
-  val thirdResult  = makeResult("4.2.2")
 
   val noop: Output[IO] = new:
     override def output(str: String): IO[Unit]      = IO.unit
