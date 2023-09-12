@@ -60,6 +60,7 @@ object ScanningCli:
           ProjectController.make(projectService, summaryService)
 
         val staticFileController = StaticFileController.make[IO]
+        val rootController = RootController.make[IO]
 
         TaskProcessor.make[IO](
           context.config.workerCount,
@@ -76,9 +77,10 @@ object ScanningCli:
 
           val routes =
             LoggingMiddleware.wrap:
-              scanReportController.routes
-                <+> projectController.routes
-                <+> staticFileController.routes
+                rootController.routes
+                  <+> scanReportController.routes
+                  <+> projectController.routes
+                  <+> staticFileController.routes
 
           EmberServerBuilder
             .default[IO]
