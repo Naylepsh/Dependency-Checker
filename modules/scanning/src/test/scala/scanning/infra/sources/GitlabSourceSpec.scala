@@ -4,7 +4,6 @@ import cats.*
 import cats.implicits.*
 import core.domain.dependency.*
 import core.domain.project.{ Project, ProjectScanConfig }
-import core.infra.*
 import gitlab.*
 import org.legogroup.woof.Logger.StringLocal
 import org.legogroup.woof.{ *, given }
