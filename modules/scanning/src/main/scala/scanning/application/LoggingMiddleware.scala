@@ -13,4 +13,3 @@ object LoggingMiddleware:
         _   <- OptionT.liftF(Logger[F].info(s"${req.method} ${req.uri}"))
         res <- routes(req)
       yield res
-

@@ -1,9 +1,7 @@
-package core.application
-
 import cats.effect.kernel.Async
 import cats.implicits.*
 import ciris.*
-import core.infra.resources.database.Config as DatabaseConfig
+import persistence.database.Config as DatabaseConfig
 
 object config:
   case class GitlabConfig(
@@ -18,18 +16,10 @@ object config:
   )
   object AppConfig:
     def load[F[_]: Async] =
-      (databaseConfig, gitlabConfig, tasksConfig).parTupled.map(
-        AppConfig.apply
-      ).load[F]
-
-  private val databaseConfig =
-    (
-      env("DATABASE_PATH"),
-      env("DATABASE_USER"),
-      env("DATABASE_PASSWORD")
-    ).parMapN {
-      (path, user, password) => DatabaseConfig(path, user, password)
-    }
+      (persistence.database.config, gitlabConfig, tasksConfig)
+        .parTupled
+        .map(AppConfig.apply)
+        .load[F]
 
   private val gitlabConfig = (
     env("GITLAB_TOKEN").option,

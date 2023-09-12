@@ -7,9 +7,8 @@ import cats.syntax.all.*
 import cats.effect.unsafe.implicits.global
 import doobie.*
 import doobie.implicits.*
-import core.infra.resources.database.*
-import core.application.config.AppConfig
-import DependencyRepository.{DependencyRepositorySQL => SQL}
+import database.*
+import DependencyRepository.{ DependencyRepositorySQL as SQL }
 
 class DependencyRepositorySQLSpec extends freespec.AnyFreeSpec
     with matchers.must.Matchers
@@ -17,14 +16,14 @@ class DependencyRepositorySQLSpec extends freespec.AnyFreeSpec
 
   override val colors = doobie.util.Colors.None // just for docs
 
-  val transactor = AppConfig
+  val transactor = config
     .load[IO]
     .map: config =>
       Transactor.fromDriverManager[IO](
         driver = "org.sqlite.JDBC",
-        url = s"jdbc:${config.database.path}",
-        user = config.database.username,
-        pass = config.database.password
+        url = s"jdbc:${config.path}",
+        user = config.username,
+        pass = config.password
       )
     .unsafeRunSync()
 
@@ -41,7 +40,7 @@ class DependencyRepositorySQLSpec extends freespec.AnyFreeSpec
   /*
    * And bulk updates don't work either ;)
    */
-  // 
+  //
   // "Check vulnerability insertion" taggedAs (DatabaseTest) in:
   //   check(SQL.insertVulnerabilities)
   //

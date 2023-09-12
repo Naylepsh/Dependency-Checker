@@ -1,4 +1,4 @@
-package core.infra.resources
+package persistence
 
 import cats.*
 import cats.effect.*
@@ -14,6 +14,14 @@ object database:
       username: String,
       password: String
   )
+
+  val config =
+    (
+      env("DATABASE_PATH"),
+      env("DATABASE_USER"),
+      env("DATABASE_PASSWORD")
+    ).parMapN: (path, user, password) =>
+      Config(path, user, password)
 
   def makeSqliteTransactorResource[F[_]: Async](
       config: Config
