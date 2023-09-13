@@ -170,7 +170,7 @@ private object ProjectViews:
       ),
       button(
         cls                    := "block w-full my-3 p-4 bg-orange-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
-        htmx.ajax.post         := "/scan/all",
+        htmx.ajax.post         := "/scan/project/all",
         htmx.trigger.attribute := htmx.trigger.value.click,
         htmx.swap.attribute    := htmx.swap.value.outerHTML,
         "Scan all projects"
@@ -221,14 +221,14 @@ private object ProjectViews:
           cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/${config.config.project.name}",
+            htmx.ajax.post         := s"/scan/project/${config.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan/${config.config.project.name}/latest",
+            href := s"/scan/project/${config.config.project.name}/latest",
             "Scan report"
           )
         )

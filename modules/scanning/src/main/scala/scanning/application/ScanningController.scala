@@ -26,6 +26,7 @@ import org.http4s.dsl.impl.OptionalValidatingQueryParamDecoderMatcher
 import core.domain.dependency.DependencyReport
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
+import core.domain.project.ProjectVulnerability
 
 enum SortDirection:
   case Asc, Desc
@@ -80,7 +81,7 @@ object ScanningController:
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
-        case GET -> Root / projectName / "latest"
+        case GET -> Root / "project" / projectName / "latest"
             :? SortByPropertyQueryParamMatcher(maybeSortByProperty)
             +& SortDirectionPropertyQueryParamMatcher(maybeSortDirection) =>
           Time[F].currentDateTime.flatMap: now =>
@@ -91,6 +92,7 @@ object ScanningController:
               .getOrElse(Valid(SortByProperty.Name, SortDirection.Asc))
               .fold(
                 errors => BadRequest(errors.toString),
+                // get project's latest scan
                 (sortByProperty, sortDirection) =>
                   service
                     .getLatestScan(projectName)
@@ -111,7 +113,7 @@ object ScanningController:
                       Ok(html.toString, `Content-Type`(MediaType.text.html))
               )
 
-        case POST -> Root / "all" =>
+        case POST -> Root / "project" / "all" =>
           repository.all.flatMap: configs =>
             configs
               .filter(_.enabled)
@@ -123,7 +125,7 @@ object ScanningController:
                   `Content-Type`(MediaType.text.html)
                 )
 
-        case POST -> Root / projectName =>
+        case POST -> Root / "project" / projectName =>
           repository.all.flatMap: configs =>
             configs
               .find: config =>
@@ -134,6 +136,17 @@ object ScanningController:
                     renderScanScheduledButton.toString,
                     `Content-Type`(MediaType.text.html)
                   )
+
+        case GET -> Root / "vulnerability" =>
+          // TODO: take time from query params
+          // TODO: add input for time
+          for
+            now <- Time[F].currentDateTime
+            time = now.minusDays(30)
+            vulnerabilities <- service.getVulnerabilitiesSince(time)
+            html = views.layout(renderProjectsVulnerabilities(vulnerabilities))
+            result <- Ok(html.toString, `Content-Type`(MediaType.text.html))
+          yield result
 
       val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
 
@@ -330,4 +343,46 @@ private object ScanningViews:
     a(
       cls := "block w-full my-3 p-4 bg-gray-400 text-gray-100 border-2 border-gray-700 cursor-pointer text-center animate-pulse",
       "Scans scheduled"
+    )
+
+  def renderProjectsVulnerabilities(
+      projectsVulnerabilities: List[ProjectVulnerability]
+  ) =
+    div(
+      cls := "container mx-auto my-10",
+      table(
+        cls := "w-full text-left",
+        thead(
+          cls := "border-b font-medium border-neutral-500",
+          tr(
+            th(cls := "px-6 py-4", "Project"),
+            th(cls := "px-6 py-4", "Dependency name"),
+            th(cls := "px-6 py-4", "Dependency version"),
+            th(cls := "px-6 py-4", "Vulnerability name"),
+            th(cls := "px-6 py-4", "Vulnerability severity")
+          )
+        ),
+        tbody(
+          cls := "border-b border-neutral-500",
+          projectsVulnerabilities.zipWithIndex.map: (projectVulnerability, i) =>
+            val bg = if i % 2 == 0 then "bg-gray-800" else "bg-gray-900"
+            tr(
+              cls := s"border-b border-neutral-500 $bg",
+              td(
+                cls := "whitespace-nowrap px-6 py-4",
+                projectVulnerability.projectName
+              ),
+              td(
+                cls := "whitespace-nowrap px-6 py-4",
+                projectVulnerability.dependencyName
+              ),
+              td(cls := "whitespace-nowrap px-6 py-4", "-"),
+              td(
+                cls := "whitespace-nowrap px-6 py-4",
+                projectVulnerability.vulnerabilityName
+              ),
+              td(cls := "whitespace-nowrap px-6 py-4", "-")
+            )
+        )
+      )
     )
