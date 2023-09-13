@@ -39,6 +39,7 @@ object project:
   case class ProjectVulnerability(
       vulnerabilityName: String,
       dependencyName: String,
+      dependencyVersion: Option[String],
       projectName: String
   )
 
