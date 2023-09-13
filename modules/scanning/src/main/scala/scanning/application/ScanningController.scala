@@ -409,7 +409,10 @@ private object ScanningViews:
                     cls := "whitespace-nowrap px-6 py-4",
                     projectVulnerability.dependencyName
                   ),
-                  td(cls := "whitespace-nowrap px-6 py-4", "-"),
+                  td(
+                    cls := "whitespace-nowrap px-6 py-4",
+                    projectVulnerability.dependencyVersion.getOrElse("-")
+                  ),
                   td(
                     cls := "whitespace-nowrap px-6 py-4",
                     projectVulnerability.vulnerabilityName
