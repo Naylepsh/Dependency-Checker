@@ -121,6 +121,12 @@ object ScanResultRepository:
         .to[List]
         .transact(xa)
 
+    def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]] =
+      ScanResultRepositorySQL
+        .getVulnerabilitiesSince(time)
+        .to[List]
+        .transact(xa)
+
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
       dependencyRepository.delete(timestamps)
 
@@ -301,3 +307,17 @@ object ScanResultRepository:
       LEFT JOIN vulnerability ON vulnerability.dependency_id = project_dependency.dependency_id
       GROUP BY project.name
       """.query[VulnerabilitySummary]
+
+    given Read[ProjectVulnerability] = Read[(String, String, String)].map:
+      (vulnName, depName, projectName) =>
+        ProjectVulnerability(vulnName, depName, projectName)
+
+    def getVulnerabilitiesSince(time: DateTime) =
+      sql"""
+      SELECT vulnerability.name, dependency.name, project.name
+      FROM vulnerability
+      JOIN dependency ON dependency.id = vulnerability.dependency_id
+      JOIN project_dependency ON project_dependency.dependency_id = dependency.id
+      JOIN project ON project.id = project_dependency.project_id
+      WHERE vulnerability.date_created > $time
+      """.query[ProjectVulnerability]

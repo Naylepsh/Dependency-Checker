@@ -17,6 +17,7 @@ trait ScanningService[F[_]]:
   def scan(project: ProjectScanConfig): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
   def getLatestScan(projectName: String): F[Option[ScanReport]]
+  def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
@@ -58,6 +59,9 @@ object ScanningService:
 
     def getLatestScan(projectName: String): F[Option[ScanReport]] =
       repository.getLatestScanReport(projectName)
+
+    def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]] =
+      repository.getVulnerabilitiesSince(time)
 
   private val latestKey = "LATEST"
 
