@@ -19,6 +19,7 @@ object htmx:
     val attribute = attr("hx-swap")
     object value:
       val outerHTML = "outerHTML"
+      val innerHTML = "innerHTML"
       val beforeEnd = "beforeend"
       val delete    = "delete"
 

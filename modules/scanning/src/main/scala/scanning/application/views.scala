@@ -40,6 +40,11 @@ object views:
           cls  := "block mt-4 lg:inline-block lg:mt-0 hover:text-white mr-4",
           href := "/project",
           "Projects"
+        ),
+        a(
+          cls  := "block mt-4 lg:inline-block lg:mt-0 hover:text-white mr-4",
+          href := "/scan/vulnerability",
+          "Vulnerabilities"
         )
       )
     )

@@ -23,10 +23,12 @@ import org.legogroup.woof.{ *, given }
 import scalatags.Text.all.*
 import scanning.application.services.ScanningService
 import org.http4s.dsl.impl.OptionalValidatingQueryParamDecoderMatcher
+import org.http4s.dsl.impl.ValidatingQueryParamDecoderMatcher
 import core.domain.dependency.DependencyReport
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import core.domain.project.ProjectVulnerability
+import cats.data.Validated.Invalid
 
 enum SortDirection:
   case Asc, Desc
@@ -58,6 +60,8 @@ object ScanningController:
       extends OptionalValidatingQueryParamDecoderMatcher[SortDirection](
         "sort-dir"
       )
+  object DaysSinceQueryParamMatcher
+      extends OptionalValidatingQueryParamDecoderMatcher[Int]("days-since")
 
   private def makeComparator(
       now: DateTime,
@@ -137,16 +141,26 @@ object ScanningController:
                     `Content-Type`(MediaType.text.html)
                   )
 
-        case GET -> Root / "vulnerability" =>
-          // TODO: take time from query params
-          // TODO: add input for time
-          for
-            now <- Time[F].currentDateTime
-            time = now.minusDays(30)
-            vulnerabilities <- service.getVulnerabilitiesSince(time)
-            html = views.layout(renderProjectsVulnerabilities(vulnerabilities))
-            result <- Ok(html.toString, `Content-Type`(MediaType.text.html))
-          yield result
+        case GET -> Root / "vulnerability"
+            :? DaysSinceQueryParamMatcher(daysSince) =>
+          daysSince match
+            case None =>
+              val html =
+                views.layout(renderProjectsVulnerabilitiesView(List.empty))
+              Ok(html.toString, `Content-Type`(MediaType.text.html))
+            case Some(Valid(daysSince)) =>
+              for
+                now <- Time[F].currentDateTime
+                time = now.minusDays(daysSince)
+                vulnerabilities <- service.getVulnerabilitiesSince(time)
+                html =
+                  views.layout(
+                    renderProjectsVulnerabilitiesView(vulnerabilities)
+                  )
+                result <- Ok(html.toString, `Content-Type`(MediaType.text.html))
+              yield result
+            case Some(Invalid(errors)) =>
+              BadRequest(errors.toString)
 
       val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
 
@@ -345,44 +359,63 @@ private object ScanningViews:
       "Scans scheduled"
     )
 
-  def renderProjectsVulnerabilities(
+  def renderProjectsVulnerabilitiesView(
       projectsVulnerabilities: List[ProjectVulnerability]
   ) =
     div(
       cls := "container mx-auto my-10",
-      table(
-        cls := "w-full text-left",
-        thead(
-          cls := "border-b font-medium border-neutral-500",
-          tr(
-            th(cls := "px-6 py-4", "Project"),
-            th(cls := "px-6 py-4", "Dependency name"),
-            th(cls := "px-6 py-4", "Dependency version"),
-            th(cls := "px-6 py-4", "Vulnerability name"),
-            th(cls := "px-6 py-4", "Vulnerability severity")
-          )
-        ),
-        tbody(
-          cls := "border-b border-neutral-500",
-          projectsVulnerabilities.zipWithIndex.map: (projectVulnerability, i) =>
-            val bg = if i % 2 == 0 then "bg-gray-800" else "bg-gray-900"
-            tr(
-              cls := s"border-b border-neutral-500 $bg",
-              td(
-                cls := "whitespace-nowrap px-6 py-4",
-                projectVulnerability.projectName
-              ),
-              td(
-                cls := "whitespace-nowrap px-6 py-4",
-                projectVulnerability.dependencyName
-              ),
-              td(cls := "whitespace-nowrap px-6 py-4", "-"),
-              td(
-                cls := "whitespace-nowrap px-6 py-4",
-                projectVulnerability.vulnerabilityName
-              ),
-              td(cls := "whitespace-nowrap px-6 py-4", "-")
-            )
+      div(
+        form(
+          cls    := "text-xl",
+          action := "/scan/vulnerability",
+          p(cls := "inline-block", "Show vulnerabilities found within"),
+          input(
+            cls         := "text-black text-base mx-2",
+            name        := "days-since",
+            placeholder := 1,
+            `type`      := "number",
+            min         := 0
+          ),
+          label("days")
         )
-      )
+      ),
+      if projectsVulnerabilities.isEmpty
+      then div()
+      else
+        table(
+          cls := "w-full text-left",
+          thead(
+            cls := "border-b font-medium border-neutral-500",
+            tr(
+              th(cls := "px-6 py-4", "Project"),
+              th(cls := "px-6 py-4", "Dependency name"),
+              th(cls := "px-6 py-4", "Dependency version"),
+              th(cls := "px-6 py-4", "Vulnerability name"),
+              th(cls := "px-6 py-4", "Vulnerability severity")
+            )
+          ),
+          tbody(
+            cls := "border-b border-neutral-500",
+            projectsVulnerabilities.zipWithIndex.map:
+              (projectVulnerability, i) =>
+                val bg = if i % 2 == 0 then "bg-gray-800" else "bg-gray-900"
+                tr(
+                  cls := s"border-b border-neutral-500 $bg",
+                  td(
+                    cls := "whitespace-nowrap px-6 py-4",
+                    projectVulnerability.projectName
+                  ),
+                  td(
+                    cls := "whitespace-nowrap px-6 py-4",
+                    projectVulnerability.dependencyName
+                  ),
+                  td(cls := "whitespace-nowrap px-6 py-4", "-"),
+                  td(
+                    cls := "whitespace-nowrap px-6 py-4",
+                    projectVulnerability.vulnerabilityName
+                  ),
+                  td(cls := "whitespace-nowrap px-6 py-4", "-")
+                )
+          )
+        )
     )
