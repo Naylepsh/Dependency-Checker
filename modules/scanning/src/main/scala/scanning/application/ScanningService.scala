@@ -65,14 +65,28 @@ object ScanningService:
 
     def obtainUnknownSeveritiesOfVulnerabilities: F[Unit] =
       repository.getVulnerabilitiesOfUnknownSeverity.flatMap: vulnerabilities =>
-        vulnerabilities
-          .traverse: vulnerability =>
-            advisory
-              .getVulnerabilitySeverity(vulnerability)
-              .flatMap: severity =>
-                severity.fold(Monad[F].unit): severity =>
-                  repository.setVulnerabilitySeverity(vulnerability, severity)
-          .void
+        Logger[F].info(
+          s"Found ${vulnerabilities.length} vulnerabilities of unknown severity"
+        )
+          .flatMap: _ =>
+            vulnerabilities
+              .traverse: vulnerability =>
+                advisory
+                  .getVulnerabilitySeverity(vulnerability)
+                  .flatTap: severity =>
+                    Logger[F].info(
+                      s"""$vulnerabilities's severity is ${severity.getOrElse(
+                          "Unknown"
+                        )}"""
+                    )
+                  .flatMap: severity =>
+                    severity.fold(Monad[F].unit): severity =>
+                      repository.setVulnerabilitySeverity(
+                        vulnerability,
+                        severity
+                      )
+          .flatMap: _ =>
+            Logger[F].info("Done with the severity checks")
 
     def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]] =
       repository.getVulnerabilitiesSince(time)
