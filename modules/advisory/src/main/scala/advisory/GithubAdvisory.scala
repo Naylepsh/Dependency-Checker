@@ -34,8 +34,8 @@ object GithubAdvisory:
 
     private def convertToSeverity(str: String): Option[VulnerabilitySeverity] =
       str match
-        case "low"      => VulnerabilitySeverity.Low.some
-        case "moderate" => VulnerabilitySeverity.Medium.some
-        case "high"     => VulnerabilitySeverity.High.some
-        case "critical" => VulnerabilitySeverity.Critical.some
+        case "Low"      => VulnerabilitySeverity.Low.some
+        case "Moderate" => VulnerabilitySeverity.Medium.some
+        case "High"     => VulnerabilitySeverity.High.some
+        case "Critical" => VulnerabilitySeverity.Critical.some
         case _          => None
