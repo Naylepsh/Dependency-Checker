@@ -24,6 +24,7 @@ val commonSettings = List(
     Libraries.http4sCirce,
     Libraries.doobie,
     Libraries.scalaTags,
+    Libraries.scalaScraper,
     Libraries.doobieHikari,
     Libraries.sqliteJDB,
     Libraries.woof,
@@ -45,6 +46,10 @@ lazy val root = project
 
 lazy val core = project
   .in(file("modules/core"))
+  .settings(commonSettings: _*)
+
+lazy val advisory = project
+  .in(file("modules/advisory"))
   .settings(commonSettings: _*)
 
 lazy val gitlab = project
