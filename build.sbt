@@ -51,6 +51,7 @@ lazy val core = project
 lazy val advisory = project
   .in(file("modules/advisory"))
   .settings(commonSettings: _*)
+  .dependsOn(core)
 
 lazy val gitlab = project
   .in(file("modules/gitlab"))
