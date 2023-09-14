@@ -2,15 +2,16 @@ import sbt._
 
 object Dependencies {
   object V {
-    val sttp       = "3.8.15"
-    val toml4j     = "0.7.2"
-    val catsCore   = "2.9.0"
-    val catsEffect = "3.5.0"
-    val circe      = "0.14.5"
-    val scalaTime  = "2.32.0"
-    val ciris      = "3.2.0"
-    val http4s     = "0.23.23"
-    val scalaTags  = "0.12.0"
+    val sttp         = "3.8.15"
+    val toml4j       = "0.7.2"
+    val catsCore     = "2.9.0"
+    val catsEffect   = "3.5.0"
+    val circe        = "0.14.5"
+    val scalaTime    = "2.32.0"
+    val ciris        = "3.2.0"
+    val http4s       = "0.23.23"
+    val scalaTags    = "0.12.0"
+    val scalaScraper = "3.1.0"
 
     val doobie    = "1.0.0-RC2"
     val sqliteJDB = "3.42.0.0"
@@ -28,18 +29,19 @@ object Dependencies {
     val sttp = "com.softwaremill.sttp.client3" %% "core" % V.sttp
     val sttpCats =
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % V.sttp
-    val sttpCirce         = "com.softwaremill.sttp.client3" %% "circe"               % V.sttp
-    val circe             = "io.circe"                      %% "circe-core"          % V.circe
-    val circeGeneric      = "io.circe"                      %% "circe-generic"       % V.circe
-    val toml4j            = "com.moandjiezana.toml"          % "toml4j"              % V.toml4j
-    val catsCore          = "org.typelevel"                 %% "cats-core"           % V.catsCore
-    val catsEffect        = "org.typelevel"                 %% "cats-effect"         % V.catsEffect
-    val scalaTime         = "com.github.nscala-time"        %% "nscala-time"         % V.scalaTime
-    val ciris             = "is.cir"                        %% "ciris"               % V.ciris
-    val http4sServer      = "org.http4s"                    %% "http4s-ember-server" % V.http4s
-    val http4sDsl         = "org.http4s"                    %% "http4s-dsl"          % V.http4s
-    val http4sCirce       = "org.http4s"                    %% "http4s-circe"        % V.http4s
-    val scalaTags         = "com.lihaoyi"                   %% "scalatags"           % V.scalaTags
+    val sttpCirce    = "com.softwaremill.sttp.client3" %% "circe"               % V.sttp
+    val circe        = "io.circe"                      %% "circe-core"          % V.circe
+    val circeGeneric = "io.circe"                      %% "circe-generic"       % V.circe
+    val toml4j       = "com.moandjiezana.toml"          % "toml4j"              % V.toml4j
+    val catsCore     = "org.typelevel"                 %% "cats-core"           % V.catsCore
+    val catsEffect   = "org.typelevel"                 %% "cats-effect"         % V.catsEffect
+    val scalaTime    = "com.github.nscala-time"        %% "nscala-time"         % V.scalaTime
+    val ciris        = "is.cir"                        %% "ciris"               % V.ciris
+    val http4sServer = "org.http4s"                    %% "http4s-ember-server" % V.http4s
+    val http4sDsl    = "org.http4s"                    %% "http4s-dsl"          % V.http4s
+    val http4sCirce  = "org.http4s"                    %% "http4s-circe"        % V.http4s
+    val scalaTags    = "com.lihaoyi"                   %% "scalatags"           % V.scalaTags
+    val scalaScraper = "net.ruippeixotog"              %% "scala-scraper"       % V.scalaScraper
 
     // db
     val doobie          = "org.tpolecat" %% "doobie-core"      % V.doobie
