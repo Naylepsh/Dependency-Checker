@@ -75,7 +75,7 @@ object ScanningService:
                   .getVulnerabilitySeverity(vulnerability)
                   .flatTap: severity =>
                     Logger[F].info(
-                      s"""$vulnerabilities's severity is ${severity.getOrElse(
+                      s"""$vulnerability's severity is ${severity.getOrElse(
                           "Unknown"
                         )}"""
                     )
