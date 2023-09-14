@@ -12,19 +12,22 @@ import core.domain.project.{ ProjectScanConfig, * }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import scanning.domain.Source
+import advisory.Advisory
 
 trait ScanningService[F[_]]:
   def scan(project: ProjectScanConfig): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
   def getLatestScan(projectName: String): F[Option[ScanReport]]
   def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]]
+  def obtainUnknownSeveritiesOfVulnerabilities: F[Unit]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
   def make[F[_]: Monad: Logger: Parallel: Time](
       source: Source[F, ProjectScanConfig],
       scanner: DependencyScanner[F],
-      repository: ScanResultRepository[F]
+      repository: ScanResultRepository[F],
+      advisory: Advisory[F]
   ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
       Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
@@ -59,6 +62,17 @@ object ScanningService:
 
     def getLatestScan(projectName: String): F[Option[ScanReport]] =
       repository.getLatestScanReport(projectName)
+
+    def obtainUnknownSeveritiesOfVulnerabilities: F[Unit] =
+      repository.getVulnerabilitiesOfUnknownSeverity.flatMap: vulnerabilities =>
+        vulnerabilities
+          .traverse: vulnerability =>
+            advisory
+              .getVulnerabilitySeverity(vulnerability)
+              .flatMap: severity =>
+                severity.fold(Monad[F].unit): severity =>
+                  repository.setVulnerabilitySeverity(vulnerability, severity)
+          .void
 
     def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]] =
       repository.getVulnerabilitiesSince(time)

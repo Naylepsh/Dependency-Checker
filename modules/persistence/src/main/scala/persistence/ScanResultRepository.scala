@@ -127,6 +127,22 @@ object ScanResultRepository:
         .to[List]
         .transact(xa)
 
+    def getVulnerabilitiesOfUnknownSeverity: F[List[String]] =
+      ScanResultRepositorySQL
+        .getVulnerabilitiesOfUnknownSeverity
+        .to[List]
+        .transact(xa)
+
+    def setVulnerabilitySeverity(
+        vulnerabilityName: String,
+        severity: VulnerabilitySeverity
+    ): F[Unit] =
+      ScanResultRepositorySQL
+        .setVulnerabilitySeverity(vulnerabilityName, severity)
+        .run
+        .transact(xa)
+        .void
+
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit] =
       dependencyRepository.delete(timestamps)
 
@@ -245,6 +261,18 @@ object ScanResultRepository:
       AND timestamp = $timestamp
       """.query[UUID]
 
+    def deleteOldDependencies(
+        projectId: UUID,
+        maxTimestamp: DateTime
+    ): Update0 =
+      // delete everything but the latest dependencies
+      sql"""
+      DELETE
+      FROM project_dependency
+      WHERE project_id = $projectId
+      AND project_dependency.timestamp < $maxTimestamp
+      """.update
+
     def getAll(
         projectNames: NonEmptyList[String],
         timestamp: DateTime
@@ -287,18 +315,6 @@ object ScanResultRepository:
       LIMIT $limit
       """.query[DateTime]
 
-    def deleteOldDependencies(
-        projectId: UUID,
-        maxTimestamp: DateTime
-    ): Update0 =
-      // delete everything but the latest dependencies
-      sql"""
-      DELETE
-      FROM project_dependency
-      WHERE project_id = $projectId
-      AND project_dependency.timestamp < $maxTimestamp
-      """.update
-
     def getVulnerabilitySummary(projectNames: NonEmptyList[String]) =
       sql"""
       SELECT project.name, COUNT(vulnerability.name)
@@ -310,6 +326,9 @@ object ScanResultRepository:
 
     given Get[VulnerabilitySeverity] =
       Get[Int].map(VulnerabilitySeverity.fromOrdinal)
+
+    given Put[VulnerabilitySeverity] =
+      Put[Int].contramap(_.ordinal)
 
     given Read[ProjectVulnerability] =
       Read[(
@@ -336,3 +355,20 @@ object ScanResultRepository:
       JOIN project ON project.id = project_dependency.project_id
       WHERE vulnerability.date_created > $time
       """.query[ProjectVulnerability]
+
+    def getVulnerabilitiesOfUnknownSeverity =
+      sql"""
+      SELECT DISTINCT (name)
+      FROM vulnerability
+      WHERE severity IS NULL
+      """.query[String]
+
+    def setVulnerabilitySeverity(
+        vulnerabilityName: String,
+        severity: VulnerabilitySeverity
+    ) =
+      sql"""
+      UPDATE vulnerability
+      SET severity = $severity
+      WHERE name = $vulnerabilityName
+      """.update

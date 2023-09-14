@@ -61,6 +61,11 @@ object project:
     def getVulnerabilitySummary(projectNames: NonEmptyList[String])
         : F[List[VulnerabilitySummary]]
     def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]]
+    def getVulnerabilitiesOfUnknownSeverity: F[List[String]]
+    def setVulnerabilitySeverity(
+        vulnerabilityName: String,
+        severity: VulnerabilitySeverity
+    ): F[Unit]
     def delete(timestamps: NonEmptyList[DateTime]): F[Unit]
     def deleteOld(projectName: String): F[Unit]
 
