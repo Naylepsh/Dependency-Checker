@@ -36,8 +36,12 @@ object project:
 
   case class VulnerabilitySummary(projectName: String, vulnerabilityCount: Int)
 
+  enum VulnerabilitySeverity:
+    case Low, Medium, High, Critical
+
   case class ProjectVulnerability(
       vulnerabilityName: String,
+      vulnerabilitySeverity: Option[VulnerabilitySeverity],
       dependencyName: String,
       dependencyVersion: Option[String],
       projectName: String

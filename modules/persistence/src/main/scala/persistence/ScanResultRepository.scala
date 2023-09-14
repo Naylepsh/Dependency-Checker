@@ -308,14 +308,28 @@ object ScanResultRepository:
       GROUP BY project.name
       """.query[VulnerabilitySummary]
 
+    given Get[VulnerabilitySeverity] =
+      Get[Int].map(VulnerabilitySeverity.fromOrdinal)
+
     given Read[ProjectVulnerability] =
-      Read[(String, String, Option[String], String)].map:
-        (vulnName, depName, depVersion, projectName) =>
-          ProjectVulnerability(vulnName, depName, depVersion, projectName)
+      Read[(
+          String,
+          Option[VulnerabilitySeverity],
+          String,
+          Option[String],
+          String
+      )].map: (vulnName, vulnSeverity, depName, depVersion, projectName) =>
+        ProjectVulnerability(
+          vulnName,
+          vulnSeverity,
+          depName,
+          depVersion,
+          projectName
+        )
 
     def getVulnerabilitiesSince(time: DateTime) =
       sql"""
-      SELECT vulnerability.name, dependency.name, dependency.version, project.name
+      SELECT vulnerability.name, vulnerability.severity, dependency.name, dependency.version, project.name
       FROM vulnerability
       JOIN dependency ON dependency.id = vulnerability.dependency_id
       JOIN project_dependency ON project_dependency.dependency_id = dependency.id
