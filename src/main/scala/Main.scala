@@ -22,6 +22,8 @@ import scanning.application.services.ScanningService
 import com.comcast.ip4s.*
 import org.http4s.ember.server.EmberServerBuilder
 import config.AppConfig
+import advisory.GithubAdvisory
+import advisory.Advisory
 
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
@@ -49,8 +51,9 @@ object Main extends IOApp:
             config.gitlab.host,
             config.gitlab.token
           )
-          val source  = GitlabSource.make(gitlabApi)
-          val scanner = DependencyScanner.make(Pypi(backend))
+          val source   = GitlabSource.make(gitlabApi)
+          val scanner  = DependencyScanner.make(Pypi(backend))
+          val advisory = Advisory.make(GithubAdvisory.make[IO])
 
           val scanResultRepository = ScanResultRepository.make(
             xa,
@@ -68,7 +71,12 @@ object Main extends IOApp:
           val summaryService =
             ProjectSummaryService.make(scanResultRepository)
           val scanningService =
-            ScanningService.make[IO](source, scanner, scanResultRepository)
+            ScanningService.make[IO](
+              source,
+              scanner,
+              scanResultRepository,
+              advisory
+            )
 
           val projectController =
             ProjectController.make(projectService, summaryService)

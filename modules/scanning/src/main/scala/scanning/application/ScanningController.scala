@@ -118,16 +118,22 @@ object ScanningController:
               )
 
         case POST -> Root / "project" / "all" =>
-          repository.all.flatMap: configs =>
-            configs
-              .filter(_.enabled)
-              .traverse: config =>
-                taskProcessor.add(service.scan(config))
-              .flatMap: _ =>
-                Ok(
-                  renderAllScansScheduledButton.toString,
-                  `Content-Type`(MediaType.text.html)
-                )
+          repository
+            .all
+            .flatMap: configs =>
+              configs
+                .filter(_.enabled)
+                .traverse: config =>
+                  taskProcessor.add(service.scan(config))
+            .flatMap: _ =>
+              taskProcessor.add(
+                service.obtainUnknownSeveritiesOfVulnerabilities
+              )
+            .flatMap: _ =>
+              Ok(
+                renderAllScansScheduledButton.toString,
+                `Content-Type`(MediaType.text.html)
+              )
 
         case POST -> Root / "project" / projectName =>
           repository.all.flatMap: configs =>

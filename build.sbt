@@ -41,8 +41,8 @@ lazy val root = project
     version := "0.9.4",
     commonSettings
   )
-  .aggregate(core, gitlab, parsers, scanning, upkeep)
-  .dependsOn(core, gitlab, parsers, scanning, upkeep)
+  .aggregate(core, advisory, gitlab, parsers, scanning, upkeep)
+  .dependsOn(core, advisory, gitlab, parsers, scanning, upkeep)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -75,7 +75,7 @@ lazy val persistence = project
 lazy val scanning = project
   .in(file("modules/scanning"))
   .settings(commonSettings: _*)
-  .dependsOn(core, parsers, gitlab, processor, persistence)
+  .dependsOn(core, advisory, parsers, gitlab, processor, persistence)
 
 lazy val upkeep = project
   .in(file("modules/upkeep"))
