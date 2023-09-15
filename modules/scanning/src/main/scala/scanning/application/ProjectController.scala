@@ -341,14 +341,14 @@ private object ProjectViews:
           cls := "my-auto",
           a(
             cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/${summary.config.project.name}",
+            htmx.ajax.post         := s"/scan/project/${summary.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
             cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan/${summary.config.project.name}/latest",
+            href := s"/scan/project/${summary.config.project.name}/latest",
             "Scan report"
           )
         )
