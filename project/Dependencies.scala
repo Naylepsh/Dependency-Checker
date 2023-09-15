@@ -2,11 +2,11 @@ import sbt._
 
 object Dependencies {
   object V {
-    val sttp         = "3.8.15"
+    val sttp         = "3.9.0"
     val toml4j       = "0.7.2"
-    val catsCore     = "2.9.0"
-    val catsEffect   = "3.5.0"
-    val circe        = "0.14.5"
+    val catsCore     = "2.10.0"
+    val catsEffect   = "3.5.1"
+    val circe        = "0.14.6"
     val scalaTime    = "2.32.0"
     val ciris        = "3.2.0"
     val http4s       = "0.23.23"
@@ -14,10 +14,10 @@ object Dependencies {
     val scalaScraper = "3.1.0"
 
     val doobie    = "1.0.0-RC2"
-    val sqliteJDB = "3.42.0.0"
+    val sqliteJDB = "3.43.0.0"
 
     val log4j = "2.20.0"
-    val woof  = "0.6.0"
+    val woof  = "0.6.1"
 
     val scalaTestDiscipline = "2.2.0"
     val scalaTestCatsEffect = "1.5.0"
