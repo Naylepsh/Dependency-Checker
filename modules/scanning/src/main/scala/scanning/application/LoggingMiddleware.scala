@@ -16,10 +16,13 @@ object LoggingMiddleware:
       : Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       val routes = Kleisli: (req: Request[F]) =>
+        // Note that it won't log "404 Not Found" for unregistered routes
         for
           _ <- OptionT.liftF(Logger[F].info(s"${req.method} ${req.uri}"))
           res <- service(req).handleErrorWith: error =>
             OptionT.liftF:
               Logger[F].error(error.toString)
                 *> InternalServerError("Oops, something went wrong")
+          _ <- OptionT.liftF:
+            Logger[F].info(s"${req.method} ${req.uri} - ${res.status}")
         yield res

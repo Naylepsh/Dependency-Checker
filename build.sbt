@@ -13,7 +13,6 @@ val commonSettings = List(
     Libraries.sttpCirce,
     Libraries.circe,
     Libraries.circeGeneric,
-    Libraries.log4j,
     Libraries.toml4j,
     Libraries.catsCore,
     Libraries.catsEffect,
