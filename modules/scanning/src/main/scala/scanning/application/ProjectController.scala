@@ -261,7 +261,11 @@ private object ProjectViews:
         cls := "pb-3 flex justify-between",
         div(
           cls                        := "grow text-2xl",
-          htmx.hyperscript.attribute := s"on click toggle .hidden on #$detailsId",
+          htmx.hyperscript.attribute := s"""
+              on click toggle .hidden on #$detailsId 
+              then wait 10ms
+              then toggle .opacity-0 on #$detailsId 
+              then toggle .opacity-100 on #$detailsId""",
           summary.config.project.name
         ),
         div(
@@ -286,7 +290,7 @@ private object ProjectViews:
       ),
       div(
         id  := detailsId,
-        cls := "pt-3 hidden",
+        cls := "pt-3 hidden opacity-0 transition-opacity duration-1000 ease-out",
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
           summary.config.project.id
