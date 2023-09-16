@@ -265,7 +265,8 @@ private object ProjectViews:
               on click toggle .hidden on #$detailsId 
               then wait 10ms
               then toggle .opacity-0 on #$detailsId 
-              then toggle .opacity-100 on #$detailsId""",
+              then toggle .opacity-100 on #$detailsId
+              then toggle .-translate-y-12 on #$detailsId""",
           summary.config.project.name
         ),
         div(
@@ -290,7 +291,7 @@ private object ProjectViews:
       ),
       div(
         id  := detailsId,
-        cls := "pt-3 hidden opacity-0 transition-opacity duration-1000 ease-out",
+        cls := "pt-3 hidden opacity-0 transition-all duration-500 ease-out -translate-y-12",
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
           summary.config.project.id
