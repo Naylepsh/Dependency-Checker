@@ -16,8 +16,7 @@ object Dependencies {
     val doobie    = "1.0.0-RC2"
     val sqliteJDB = "3.43.0.0"
 
-    val log4j = "2.20.0"
-    val woof  = "0.6.1"
+    val woof = "0.6.1"
 
     val scalaTestDiscipline = "2.2.0"
     val scalaTestCatsEffect = "1.5.0"
@@ -50,8 +49,7 @@ object Dependencies {
     val sqliteJDB       = "org.xerial"    % "sqlite-jdbc"      % V.sqliteJDB
 
     // logging
-    val log4j = "org.apache.logging.log4j" % "log4j-core" % V.log4j
-    val woof  = "org.legogroup"           %% "woof-core"  % V.woof
+    val woof      = "org.legogroup" %% "woof-core"  % V.woof
 
     // test
     val scalaTestDiscipline =

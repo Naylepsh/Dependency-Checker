@@ -182,16 +182,16 @@ private object ScanningViews:
     val (link, maybeIcon) = (sortedByProperty, sortedInDirection) match
       case (SortByProperty.Name, SortDirection.Asc) =>
         (
-          s"/scan/$projectName/latest?sort-by=name&sort-dir=desc",
+          s"/scan/project/$projectName/latest?sort-by=name&sort-dir=desc",
           i(cls := "fa fa-solid fa-up-long ml-1").some
         )
       case (SortByProperty.Name, SortDirection.Desc) =>
         (
-          s"/scan/$projectName/latest?sort-by=name&sort-dir=asc",
+          s"/scan/project/$projectName/latest?sort-by=name&sort-dir=asc",
           i(cls := "fa fa-solid fa-down-long ml-1").some
         )
       case _ =>
-        (s"/scan/$projectName/latest?sort-by=name&sort-dir=asc", None)
+        (s"/scan/project/$projectName/latest?sort-by=name&sort-dir=asc", None)
 
     a(
       cls  := s"$background border-2 border-r-0 border-gray-700 p-1",
@@ -211,16 +211,16 @@ private object ScanningViews:
     val (link, maybeIcon) = (sortedByProperty, sortedInDirection) match
       case (SortByProperty.Severity, SortDirection.Asc) =>
         (
-          s"/scan/$projectName/latest?sort-by=severity&sort-dir=desc",
+          s"/scan/project/$projectName/latest?sort-by=severity&sort-dir=desc",
           i(cls := "fa fa-solid fa-up-long ml-1").some
         )
       case (SortByProperty.Severity, SortDirection.Desc) =>
         (
-          s"/scan/$projectName/latest?sort-by=severity&sort-dir=asc",
+          s"/scan/project/$projectName/latest?sort-by=severity&sort-dir=asc",
           i(cls := "fa fa-solid fa-down-long ml-1").some
         )
       case _ =>
-        (s"/scan/$projectName/latest?sort-by=severity&sort-dir=asc", None)
+        (s"/scan/project/$projectName/latest?sort-by=severity&sort-dir=asc", None)
 
     a(
       cls  := s"$background border-2 border-gray-700 p-1",
