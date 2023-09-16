@@ -54,37 +54,9 @@ object ProjectController:
             `Content-Type`(MediaType.text.html)
           )
 
-        case GET -> Root / projectName / "detailed" =>
-          configService
-            .find(projectName)
-            .flatMap:
-              case None => ???
-              case Some(config) =>
-                summaryService
-                  .enrichWithScanSummary(config)
-                  .flatMap: summary =>
-                    Ok(
-                      renderProjectDetails(summary).toString,
-                      `Content-Type`(MediaType.text.html)
-                    )
-
-        case GET -> Root / projectName / "short" =>
-          configService
-            .find(projectName)
-            .flatMap:
-              case None => ???
-              case Some(config) =>
-                summaryService
-                  .enrichWithScanSummary(config)
-                  .flatMap: summary =>
-                    Ok(
-                      renderProjectShort(summary).toString,
-                      `Content-Type`(MediaType.text.html)
-                    )
-
         case PATCH -> Root / projectName / "enable" =>
           configService.setEnabled(projectName, true).flatMap:
-            case None => ???
+            case None => NotFound(s"$projectName does not exist")
             case Some(config) =>
               summaryService
                 .enrichWithScanSummary(config)
@@ -96,7 +68,7 @@ object ProjectController:
 
         case PATCH -> Root / projectName / "disable" =>
           configService.setEnabled(projectName, false).flatMap:
-            case None => ???
+            case None => NotFound(s"$projectName does not exist")
             case Some(config) =>
               summaryService
                 .enrichWithScanSummary(config)
@@ -177,7 +149,7 @@ private object ProjectViews:
       ),
       div(
         cls := "my-5",
-        projects.map(renderProjectShort)
+        projects.map(renderProjectDetails)
       )
     )
 
@@ -189,49 +161,6 @@ private object ProjectViews:
         role := "tooltip",
         cls  := "group-hover:opacity-100 transition-opacity bg-gray-900 p-1 px-2 text-sm text-gray-100 rounded-md absolute left-1/2 -top-6 -translate-x-1/2 -translate-y-full opacity-0 m-4 mx-auto w-fit whitespace-nowrap",
         tooltipText
-      )
-    )
-
-  def renderProjectShort(config: ProjectSummary) =
-    // TODO: Add some animations when details unfold
-    var icons = List.empty[TypedTag[String]]
-    if config.vulnerabilityCount > 0 then
-      icons = iconWithTooltip(
-        "fa fa-solid fa-triangle-exclamation text-red-400",
-        s"${config.vulnerabilityCount} vulnerabilities"
-      ) :: icons
-
-    div(
-      id  := config.config.project.name,
-      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer",
-      div(
-        cls := "flex justify-between",
-        p(
-          cls                   := "grow text-2xl",
-          htmx.ajax.get         := s"/project/${config.config.project.name}/detailed",
-          htmx.swap.attribute   := htmx.swap.value.outerHTML,
-          htmx.target.attribute := s"#${config.config.project.name}",
-          config.config.project.name
-        ),
-        div(
-          cls := "my-auto px-8",
-          icons
-        ),
-        div(
-          cls := "my-auto",
-          a(
-            cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
-            htmx.ajax.post         := s"/scan/project/${config.config.project.name}",
-            htmx.trigger.attribute := htmx.trigger.value.click,
-            htmx.swap.attribute    := htmx.swap.value.outerHTML,
-            "Scan"
-          ),
-          a(
-            cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
-            href := s"/scan/project/${config.config.project.name}/latest",
-            "Scan report"
-          )
-        )
       )
     )
 
@@ -301,6 +230,7 @@ private object ProjectViews:
       if summary.config.enabled
       then s"/project/${summary.config.project.name}/disable"
       else s"/project/${summary.config.project.name}/enable"
+
     var enabledCheckboxAttrs = List(
       cls                    := checkboxClass,
       `type`                 := "checkbox",
@@ -314,12 +244,15 @@ private object ProjectViews:
     )
     if summary.config.enabled
     then enabledCheckboxAttrs = (checked := "1") :: enabledCheckboxAttrs
+
     var icons = List.empty[TypedTag[String]]
     if summary.vulnerabilityCount > 0 then
       icons = iconWithTooltip(
         "fa fa-solid fa-triangle-exclamation text-red-400",
         s"${summary.vulnerabilityCount} vulnerabilities"
       ) :: icons
+
+    val detailsId = s"${summary.config.project.name}-details"
 
     div(
       id  := summary.config.project.name,
@@ -328,9 +261,7 @@ private object ProjectViews:
         cls := "pb-3 flex justify-between",
         div(
           cls                   := "grow text-2xl",
-          htmx.ajax.get         := s"/project/${summary.config.project.name}/short",
-          htmx.swap.attribute   := htmx.swap.value.outerHTML,
-          htmx.target.attribute := s"#${summary.config.project.name}",
+          attr("_", raw = true) := s"on click toggle .hidden on #$detailsId",
           summary.config.project.name
         ),
         div(
@@ -354,7 +285,8 @@ private object ProjectViews:
         )
       ),
       div(
-        cls := "pt-3",
+        id  := detailsId,
+        cls := "pt-3 hidden",
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
           summary.config.project.id
