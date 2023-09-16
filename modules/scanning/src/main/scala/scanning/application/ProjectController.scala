@@ -260,8 +260,8 @@ private object ProjectViews:
       div(
         cls := "pb-3 flex justify-between",
         div(
-          cls                   := "grow text-2xl",
-          attr("_", raw = true) := s"on click toggle .hidden on #$detailsId",
+          cls                        := "grow text-2xl",
+          htmx.hyperscript.attribute := s"on click toggle .hidden on #$detailsId",
           summary.config.project.name
         ),
         div(

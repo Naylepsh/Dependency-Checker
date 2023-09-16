@@ -27,3 +27,6 @@ object htmx:
     val attribute = attr("hx-target")
     object value:
       def closest(selector: String): String = s"closest $selector"
+
+  object hyperscript:
+    val attribute = attr("_", raw = true)
