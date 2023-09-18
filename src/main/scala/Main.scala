@@ -28,11 +28,16 @@ import advisory.Advisory
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
 
-  private def resources(config: AppConfig) = (
+  private def resources(config: AppConfig)(using Logger[IO]) = (
     persistence.database
       .makeSqliteTransactorResource[IO](config.database)
       .evalTap(persistence.database.checkSQLiteConnection),
-    HttpClientCatsBackend.resource[IO]()
+    HttpClientCatsBackend.resource[IO](),
+    TaskProcessor.make[IO](
+      config.workerCount,
+      false.pure,
+      10.seconds.some
+    )
   ).tupled
 
   private val ioLogger: IO[DefaultLogger[IO]] =
@@ -41,11 +46,10 @@ object Main extends IOApp:
     DefaultLogger.makeIo(Output.fromConsole)
 
   def runServer =
-    AppConfig.load[IO].flatMap: config =>
-      resources(config).use: (xa, backend) =>
-        ioLogger.flatMap: logger =>
-          given Logger[IO] = logger
-
+    ioLogger.flatMap: logger =>
+      given Logger[IO] = logger
+      AppConfig.load[IO].flatMap: config =>
+        resources(config).use: (xa, backend, processor) =>
           val gitlabApi = GitlabApi.make[IO](
             backend,
             config.gitlab.host,
@@ -65,7 +69,6 @@ object Main extends IOApp:
             xa,
             DependencyRepository.make(xa)
           )
-
           val projectService =
             ProjectScanConfigService.make(projectRepository)
           val summaryService =
@@ -82,31 +85,21 @@ object Main extends IOApp:
             ProjectController.make(projectService, summaryService)
           val staticFileController = StaticFileController.make[IO]
           val rootController       = RootController.make[IO]
+          val scanReportController =
+            ScanningController.make(
+              scanningService,
+              projectRepository,
+              processor
+            )
 
-          TaskProcessor.make[IO](
-            config.workerCount,
-            false.pure,
-            10.seconds.some
-          ).use: processor =>
-            val scanReportController =
-              ScanningController.make(
-                scanningService,
-                projectRepository,
-                processor
-              )
+          val routes =
+            LoggingMiddleware.wrap:
+              rootController.routes
+                <+> scanReportController.routes
+                <+> projectController.routes
+                <+> staticFileController.routes
 
-            val routes =
-              LoggingMiddleware.wrap:
-                rootController.routes
-                  <+> scanReportController.routes
-                  <+> projectController.routes
-                  <+> staticFileController.routes
-
-            EmberServerBuilder
-              .default[IO]
-              .withHost(ipv4"0.0.0.0")
-              .withPort(port"8080")
-              .withHttpApp(routes.orNotFound)
-              .build
-              .useForever
-              .as(ExitCode.Success)
+          HttpServer[IO]
+            .newEmber(config.server, routes.orNotFound)
+            .useForever
+            .as(ExitCode.Success)
