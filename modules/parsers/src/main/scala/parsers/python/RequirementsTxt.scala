@@ -55,14 +55,14 @@ object RequirementsTxt:
     line.startsWith("#") || line.startsWith("-") || line.contains("git+")
 
   private val dependencyNamePattern: Regex =
-    "[-._a-zA-Z0-9\\[\\]]+".r
+    "[,-._a-zA-Z0-9\\[\\]]+".r
 
   private val dependencyVersionPattern: Regex =
     "[-*._^~a-zA-Z0-9]+".r
 
   private def ltrim(s: String): String = s.replaceAll("^\\s+", "")
 
-  private val extrasPattern: Regex = "\\[[-._a-zA-Z0-9]+\\]".r
+  private val extrasPattern: Regex = "\\[[,-._a-zA-Z0-9]+\\]".r
 
   private def removeExtras(dependencyName: String): String =
     extrasPattern.replaceFirstIn(dependencyName, "")
