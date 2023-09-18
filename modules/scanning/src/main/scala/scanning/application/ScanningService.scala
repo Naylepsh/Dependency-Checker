@@ -23,6 +23,8 @@ trait ScanningService[F[_]]:
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
 
 object ScanningService:
+  import Logger.*
+
   def make[F[_]: Monad: Logger: Parallel: Time](
       source: Source[F, ProjectScanConfig],
       scanner: DependencyScanner[F],
@@ -35,27 +37,30 @@ object ScanningService:
         >> Logger[F].info("Successfully deleted the scan(s)")
 
     def scan(config: ProjectScanConfig): F[Unit] =
-      for
-        _ <- Logger[F].info(s"Scanning dependencies of ${config.project.name}")
-        projectDependencies <- source
-          .extract(config)
-          .map: dependencies =>
-            ProjectDependencies(config.project, dependencies)
-        allDependencies = projectDependencies
-          .dependencies
-          .flatMap(_.items)
-        _ <- Logger[F].info(
-          s"Checking the details of ${allDependencies.length} dependencies"
-        )
-        details <- scanner.getDetails(allDependencies)
-        report = buildReport(buildDetailsMap(details))(projectDependencies)
-        _   <- Logger[F].info("Saving the scan results")
-        now <- Time[F].currentDateTime
-        _   <- repository.save(List(report), now)
-        _   <- Logger[F].info("Deleting the old scans")
-        _   <- repository.deleteOld(config.project.name)
-        _   <- Logger[F].info("Done with the scan")
-      yield ()
+      val program =
+        for
+          _ <-
+            Logger[F].info(s"Scanning dependencies of ${config.project.name}")
+          projectDependencies <- source
+            .extract(config)
+            .map: dependencies =>
+              ProjectDependencies(config.project, dependencies)
+          allDependencies = projectDependencies
+            .dependencies
+            .flatMap(_.items)
+          _ <- Logger[F].info(
+            s"Checking the details of ${allDependencies.length} dependencies"
+          )
+          details <- scanner.getDetails(allDependencies)
+          report = buildReport(buildDetailsMap(details))(projectDependencies)
+          _   <- Logger[F].info("Saving the scan results")
+          now <- Time[F].currentDateTime
+          _   <- repository.save(List(report), now)
+          _   <- Logger[F].info("Deleting the old scans")
+          _   <- repository.deleteOld(config.project.name)
+          _   <- Logger[F].info("Done with the scan")
+        yield ()
+      program.withLogContext("project", config.project.name)
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       repository.getLatestScansTimestamps(limit)
