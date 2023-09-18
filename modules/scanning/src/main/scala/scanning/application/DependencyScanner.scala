@@ -11,7 +11,11 @@ object DependencyScanner:
       : DependencyScanner[F] = new:
     def getDetails(dependencies: List[Dependency]): F[List[DependencyDetails]] =
       dependencies
-        .traverse(packageIndex.getDetails)
+        .traverse: dependency =>
+          Logger[F].debug(s"Asking package index for ${dependency.name}")
+            *> packageIndex.getDetails(dependency)
+        .flatTap: _ =>
+          Logger[F].debug("Aggregating results")
         .map(aggregateResults)
         .flatMap: (errors, details) =>
           errors.traverse(Logger[F].error) *> details.pure
