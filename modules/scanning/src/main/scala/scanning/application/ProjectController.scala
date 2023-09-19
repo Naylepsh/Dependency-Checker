@@ -256,17 +256,18 @@ private object ProjectViews:
 
     div(
       id  := summary.config.project.name,
-      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700",
+      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700 transition-all",
       div(
-        cls := "pb-3 flex justify-between",
+        cls := "flex justify-between",
         div(
           cls                        := "grow text-2xl",
-          htmx.hyperscript.attribute := s"""
-              on click toggle .hidden on #$detailsId 
-              then wait 10ms
-              then toggle .opacity-0 on #$detailsId 
-              then toggle .opacity-100 on #$detailsId
-              then toggle .-translate-y-12 on #$detailsId""",
+          htmx.hyperscript.attribute := s"""on click 
+              | toggle .h-0 on #$detailsId 
+              | then toggle .opacity-0 on #$detailsId 
+              | then toggle .opacity-100 on #$detailsId
+              | then toggle .-translate-y-12 on #$detailsId
+              | then toggle .pt-3 on #$detailsId
+              | then toggle .pb-3 on the closest parent <div/>""".stripMargin,
           summary.config.project.name
         ),
         div(
@@ -291,7 +292,7 @@ private object ProjectViews:
       ),
       div(
         id  := detailsId,
-        cls := "pt-3 hidden opacity-0 transition-all duration-500 ease-out -translate-y-12",
+        cls := "h-0 opacity-0 transition-all duration-200 ease-out -translate-y-12 pointer-events-none",
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
           summary.config.project.id
