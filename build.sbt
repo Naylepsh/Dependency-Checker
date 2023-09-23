@@ -37,7 +37,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "ganyu",
-    version := "0.10.4",
+    version := "0.10.5",
     commonSettings
   )
   .aggregate(core, advisory, gitlab, parsers, scanning, upkeep)
