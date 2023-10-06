@@ -137,11 +137,11 @@ private object ProjectViews:
       ),
       a(
         href := "/project/new",
-        cls  := "block w-full my-3 p-4 bg-teal-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
+        cls  := "block w-full my-3 p-4 bg-purple-200 text-gray-800 border-2 border-gray-700 cursor-pointer text-center",
         "Add new project"
       ),
       button(
-        cls                    := "block w-full my-3 p-4 bg-orange-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
+        cls                    := "block w-full my-3 p-4 bg-blue-300 text-gray-800 border-2 border-gray-700 cursor-pointer text-center",
         htmx.ajax.post         := "/scan/project/all",
         htmx.trigger.attribute := htmx.trigger.value.click,
         htmx.swap.attribute    := htmx.swap.value.outerHTML,
@@ -190,7 +190,7 @@ private object ProjectViews:
     "after:shadow-[0_0px_3px_0_rgb(0_0_0_/_7%),_0_2px_2px_0_rgb(0_0_0_/_4%)]",
     "after:transition-[background-color_0.2s,transform_0.2s]",
     "after:content-['']",
-    "checked:bg-teal-500",
+    "checked:bg-purple-200",
     "checked:after:absolute",
     "checked:after:z-[2]",
     "checked:after:-mt-[3px]",
@@ -256,7 +256,7 @@ private object ProjectViews:
 
     div(
       id  := summary.config.project.name,
-      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700 transition-all",
+      cls := "my-3 p-3 bg-blue-300 text-white border-2 border-gray-700 cursor-pointer divide-y divide-gray-700 transition-all",
       div(
         cls := "flex justify-between",
         div(
@@ -277,14 +277,14 @@ private object ProjectViews:
         div(
           cls := "my-auto",
           a(
-            cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
+            cls                    := "bg-blue-500 m-1 py-2 px-3 text-white cursor-pointer",
             htmx.ajax.post         := s"/scan/project/${summary.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
-            cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
+            cls  := "bg-purple-200 m-1 py-2 px-3 text-gray-800",
             href := s"/scan/project/${summary.config.project.name}/latest",
             "Scan report"
           )
@@ -408,7 +408,7 @@ private object ProjectViews:
               )
             )
           ),
-          button(cls := "w-full bg-teal-500 py-2 px-3", "Submit")
+          button(cls := "w-full bg-purple-200 py-2 px-3", "Submit")
         ),
         txtSourceInputTemplate,
         tomlSourceInputTemplate
@@ -426,7 +426,7 @@ private object ProjectViews:
         cls := "flex",
         h4(cls := "w-full mb-3", "TXT source"),
         button(
-          cls     := "px-3 bg-teal-500",
+          cls     := "px-3 bg-purple-200",
           onclick := "removeClosest(this, '.form-group')",
           `type`  := "button",
           "X"
@@ -450,7 +450,7 @@ private object ProjectViews:
         cls := "flex",
         h4(cls := "w-full mb-3", "TOML source"),
         button(
-          cls     := "px-3 bg-teal-500",
+          cls     := "px-3 bg-purple-200",
           onclick := "removeClosest(this, '.form-group')",
           `type`  := "button",
           "X"

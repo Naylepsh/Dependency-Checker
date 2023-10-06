@@ -17,7 +17,7 @@ object views:
         )
       ),
       body(
-        cls              := "text-gray-200 bg-gray-900",
+        cls              := "text-gray-800 bg-white",
         attr("hx-boost") := "true",
         navBar,
         bodyContent
@@ -27,9 +27,9 @@ object views:
   private val nav = tag("nav")
 
   private val navBar = nav(
-    cls := "flex items-center justify-between flex-wrap bg-gray-950 p-6 text-teal-200 text-2xl",
+    cls := "flex items-center justify-between flex-wrap bg-blue-500 p-6 text-white text-2xl",
     a(
-      cls  := "text-gray-200 mr-5",
+      cls  := "mr-5",
       href := "/project",
       i(cls := "fa fa-solid fa-house")
     ),
