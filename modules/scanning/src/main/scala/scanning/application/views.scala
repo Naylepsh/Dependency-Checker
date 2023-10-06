@@ -27,7 +27,7 @@ object views:
   private val nav = tag("nav")
 
   private val navBar = nav(
-    cls := "flex items-center justify-between flex-wrap bg-gray-950 p-6 text-teal-200 text-2xl",
+    cls := "flex items-center justify-between flex-wrap bg-gray-950 p-6 text-gray-300 text-2xl",
     a(
       cls  := "text-gray-200 mr-5",
       href := "/project",

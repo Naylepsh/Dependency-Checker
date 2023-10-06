@@ -137,11 +137,11 @@ private object ProjectViews:
       ),
       a(
         href := "/project/new",
-        cls  := "block w-full my-3 p-4 bg-teal-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
+        cls  := "block w-full my-3 p-4 bg-blue-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
         "Add new project"
       ),
       button(
-        cls                    := "block w-full my-3 p-4 bg-orange-500 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
+        cls                    := "block w-full my-3 p-4 bg-blue-300 text-gray-200 border-2 border-gray-700 cursor-pointer text-center",
         htmx.ajax.post         := "/scan/project/all",
         htmx.trigger.attribute := htmx.trigger.value.click,
         htmx.swap.attribute    := htmx.swap.value.outerHTML,
@@ -190,7 +190,7 @@ private object ProjectViews:
     "after:shadow-[0_0px_3px_0_rgb(0_0_0_/_7%),_0_2px_2px_0_rgb(0_0_0_/_4%)]",
     "after:transition-[background-color_0.2s,transform_0.2s]",
     "after:content-['']",
-    "checked:bg-teal-500",
+    "checked:bg-blue-500",
     "checked:after:absolute",
     "checked:after:z-[2]",
     "checked:after:-mt-[3px]",
@@ -277,14 +277,14 @@ private object ProjectViews:
         div(
           cls := "my-auto",
           a(
-            cls                    := "bg-orange-500 m-1 py-2 px-3 text-gray-100 cursor-pointer",
+            cls                    := "bg-blue-300 m-1 py-2 px-3 text-gray-100 cursor-pointer",
             htmx.ajax.post         := s"/scan/project/${summary.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.swap.attribute    := htmx.swap.value.outerHTML,
             "Scan"
           ),
           a(
-            cls  := "bg-teal-500 m-1 py-2 px-3 text-gray-100",
+            cls  := "bg-blue-500 m-1 py-2 px-3 text-gray-100",
             href := s"/scan/project/${summary.config.project.name}/latest",
             "Scan report"
           )
@@ -338,7 +338,7 @@ private object ProjectViews:
         info
           .map: info =>
             div(
-              cls := "info bg-teal-100 flex p-2 my-2 text-sm text-gray-900",
+              cls := "info bg-gray-300 flex p-2 my-2 text-sm text-gray-900",
               p(cls := "mr-auto", info),
               button(
                 `type`  := "button",
@@ -408,7 +408,7 @@ private object ProjectViews:
               )
             )
           ),
-          button(cls := "w-full bg-teal-500 py-2 px-3", "Submit")
+          button(cls := "w-full bg-blue-500 py-2 px-3", "Submit")
         ),
         txtSourceInputTemplate,
         tomlSourceInputTemplate
@@ -426,7 +426,7 @@ private object ProjectViews:
         cls := "flex",
         h4(cls := "w-full mb-3", "TXT source"),
         button(
-          cls     := "px-3 bg-teal-500",
+          cls     := "px-3 bg-blue-500",
           onclick := "removeClosest(this, '.form-group')",
           `type`  := "button",
           "X"
@@ -450,7 +450,7 @@ private object ProjectViews:
         cls := "flex",
         h4(cls := "w-full mb-3", "TOML source"),
         button(
-          cls     := "px-3 bg-teal-500",
+          cls     := "px-3 bg-blue-500",
           onclick := "removeClosest(this, '.form-group')",
           `type`  := "button",
           "X"
