@@ -38,6 +38,7 @@ lazy val root = project
   .settings(
     name    := "ganyu",
     version := "0.10.5",
+    fork    := true,
     commonSettings
   )
   .aggregate(core, advisory, gitlab, parsers, scanning, upkeep)
