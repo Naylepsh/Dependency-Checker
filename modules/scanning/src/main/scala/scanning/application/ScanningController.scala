@@ -304,6 +304,13 @@ private object ScanningViews:
         )
     )
 
+  private def inferLink(vulnerability: String) =
+    if vulnerability.startsWith("GHSA-") then
+      s"https://github.com/advisories/$vulnerability".some
+    else if vulnerability.startsWith("PYSEC-") then
+      s"https://osv.dev/vulnerability/$vulnerability".some
+    else None
+
   private def renderVulnerabilities(vulnerabilities: List[String]) =
     if vulnerabilities.isEmpty
     then div()
@@ -311,15 +318,9 @@ private object ScanningViews:
       div(
         cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
         vulnerabilities.map: vulnerability =>
-          val maybeLink = if vulnerability.startsWith("GHSA-") then
-            s"https://github.com/advisories/$vulnerability".some
-          else if vulnerability.startsWith("PYSEC-") then
-            s"https://vulners.com/osv/OSV:$vulnerability".some
-          else None
-
-          val elem = maybeLink match
+          val elem = inferLink(vulnerability) match
             case Some(link) =>
-              a(cls := "my-auto", href := link, vulnerability)
+              a(cls := "my-auto text-blue-300", href := link, vulnerability)
             case None =>
               p(cls := "my-auto", vulnerability)
 
@@ -406,6 +407,16 @@ private object ScanningViews:
             cls := "border-b border-neutral-500",
             projectsVulnerabilities.zipWithIndex.map:
               (projectVulnerability, i) =>
+                val vulnerabilityElem =
+                  inferLink(projectVulnerability.vulnerabilityName) match
+                    case Some(link) =>
+                      a(
+                        cls  := "text-blue-300",
+                        href := link,
+                        projectVulnerability.vulnerabilityName
+                      )
+                    case None =>
+                      p(projectVulnerability.vulnerabilityName)
                 val bg = if i % 2 == 0 then "bg-gray-800" else "bg-gray-900"
                 tr(
                   cls := s"border-b border-neutral-500 $bg",
@@ -423,7 +434,7 @@ private object ScanningViews:
                   ),
                   td(
                     cls := "whitespace-nowrap px-6 py-4",
-                    projectVulnerability.vulnerabilityName
+                    vulnerabilityElem
                   ),
                   td(
                     cls := "whitespace-nowrap px-6 py-4",
