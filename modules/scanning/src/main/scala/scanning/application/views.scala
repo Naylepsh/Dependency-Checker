@@ -36,7 +36,7 @@ object views:
     div(
       cls := "w-full block flex-grow lg:flex lg:items-center lg:w-auto",
       div(
-        cls := "text-sm lg:flex-grow",
+        cls := "text-sm lg:flex-grow text-blue-300",
         a(
           cls  := "block mt-4 lg:inline-block lg:mt-0 hover:text-white mr-4",
           href := "/project",
