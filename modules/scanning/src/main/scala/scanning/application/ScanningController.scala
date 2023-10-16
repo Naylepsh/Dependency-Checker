@@ -220,7 +220,10 @@ private object ScanningViews:
           i(cls := "fa fa-solid fa-down-long ml-1").some
         )
       case _ =>
-        (s"/scan/project/$projectName/latest?sort-by=severity&sort-dir=asc", None)
+        (
+          s"/scan/project/$projectName/latest?sort-by=severity&sort-dir=asc",
+          None
+        )
 
     a(
       cls  := s"$background border-2 border-gray-700 p-1",
@@ -321,9 +324,8 @@ private object ScanningViews:
               p(cls := "my-auto", vulnerability)
 
           div(
-            cls := "px-3 flex justify-between",
-            elem,
-            button(cls := "bg-teal-500 m-1 py-1 px-3 text-gray-100", "Ignore")
+            cls := "px-3 py-2",
+            elem
           )
       )
 
