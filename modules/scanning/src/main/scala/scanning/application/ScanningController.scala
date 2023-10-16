@@ -376,7 +376,7 @@ private object ScanningViews:
           action := "/scan/vulnerability",
           p(cls := "inline-block", "Show vulnerabilities found within"),
           input(
-            cls         := "text-black text-base mx-2",
+            cls         := "text-base mx-2 bg-gray-900 w-12",
             name        := "days-since",
             placeholder := 1,
             `type`      := "number",
