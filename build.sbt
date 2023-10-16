@@ -1,7 +1,7 @@
 import Dependencies.Libraries
 
 ThisBuild / scalafixDependencies += Libraries.organizeImports
-ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / scalaVersion := "3.3.1"
 
 Global / semanticdbEnabled := true
 Global / semanticdbVersion := scalafixSemanticdb.revision
