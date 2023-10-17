@@ -3,7 +3,8 @@ package core.domain
 import org.joda.time.DateTime
 import org.scalatest.*
 
-import dependency.DependencyReport
+import vulnerability.VulnerabilitySeverity
+import dependency.{DependencyScanReport, DependencyVulnerability}
 import severity.determineSeverity
 import flatspec.*
 import matchers.*
@@ -16,7 +17,7 @@ class severitySpec extends AnyFlatSpec with should.Matchers:
     determineSeverity(
       recentDate,
       recentDependency.copy(vulnerabilities =
-        List("some-spooky-numbers-here")
+        List(DependencyVulnerability("some-spooky-numbers-here", Some(VulnerabilitySeverity.Medium)))
       )
     ) shouldBe Severity.High
   }
@@ -42,7 +43,7 @@ class severitySpec extends AnyFlatSpec with should.Matchers:
 object severitySpec:
   val oldDate    = DateTime.parse("2019-04-02")
   val recentDate = DateTime.parse("2023-05-03")
-  val recentDependency = DependencyReport(
+  val recentDependency = DependencyScanReport(
     name = "recent-dependency",
     currentVersion = Some("1.23.4"),
     latestVersion = "1.23.4",
