@@ -12,6 +12,7 @@ import core.domain.project.{
   ScanReport,
   ScanResult
 }
+import core.domain.dependency.{ DependencyScanReport, DependencyVulnerability }
 import core.domain.severity.{ Severity, determineSeverity }
 import core.domain.task.TaskProcessor
 import org.http4s.*
@@ -70,13 +71,13 @@ object ScanningController:
   ) =
     (property, direction) match
       case (SortByProperty.Name, SortDirection.Asc) =>
-        DependencyReport.compareByNameAsc
+        DependencyScanReport.compareByNameAsc
       case (SortByProperty.Name, SortDirection.Desc) =>
-        DependencyReport.compareByNameDesc
+        DependencyScanReport.compareByNameDesc
       case (SortByProperty.Severity, SortDirection.Asc) =>
-        DependencyReport.compareBySeverityAsc(now)
+        DependencyScanReport.compareBySeverityAsc(now)
       case (SortByProperty.Severity, SortDirection.Desc) =>
-        DependencyReport.compareBySeverityDesc(now)
+        DependencyScanReport.compareBySeverityDesc(now)
 
   def make[F[_]: Monad: Time: Logger](
       service: ScanningService[F],
@@ -311,22 +312,35 @@ private object ScanningViews:
       s"https://osv.dev/vulnerability/$vulnerability".some
     else None
 
-  private def renderVulnerabilities(vulnerabilities: List[String]) =
+  private def renderVulnerabilities(
+      vulnerabilities: List[DependencyVulnerability]
+  ) =
     if vulnerabilities.isEmpty
     then div()
     else
       div(
         cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
         vulnerabilities.map: vulnerability =>
-          val elem = inferLink(vulnerability) match
+          val nameElem = inferLink(vulnerability.name) match
             case Some(link) =>
-              a(cls := "my-auto text-blue-300", href := link, vulnerability)
+              a(
+                cls  := "my-auto text-blue-300",
+                href := link,
+                vulnerability.name
+              )
             case None =>
-              p(cls := "my-auto", vulnerability)
+              p(cls := "my-auto", vulnerability.name)
+
+          val severityElem =
+            p(
+              cls := "my-auto",
+              s"${vulnerability.severity.map(_.show).getOrElse("Unknown")} severity"
+            )
 
           div(
             cls := "px-3 py-2",
-            elem
+            nameElem,
+            severityElem
           )
       )
 

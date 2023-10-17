@@ -6,6 +6,8 @@ import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.*
 import org.joda.time.Days
 
+import vulnerability.*
+
 object dependency:
   case class Dependency(
       name: String,
@@ -63,23 +65,54 @@ object dependency:
       notes
     )
 
-    def compareByNameAsc(a: DependencyReport, b: DependencyReport): Int =
+  case class DependencyVulnerability(
+      name: String,
+      severity: Option[VulnerabilitySeverity]
+  )
+
+  case class DependencyScanReport(
+      name: String,
+      currentVersion: Option[String],
+      latestVersion: String,
+      currentVersionReleaseDate: Option[DateTime],
+      latestReleaseDate: Option[DateTime],
+      vulnerabilities: List[DependencyVulnerability] = List()
+  ):
+    /**
+     * Naively assume that any package that had at least one release
+     * within the last 3 years is still maintained
+     */
+    def isMaintained(now: DateTime): Option[Boolean] = latestReleaseDate.map:
+      date =>
+        Days.daysBetween(
+          date.toLocalDate(),
+          now.toLocalDate()
+        ).getDays() < 3 * 365
+
+  object DependencyScanReport:
+    def compareByNameAsc(
+        a: DependencyScanReport,
+        b: DependencyScanReport
+    ): Int =
       a.name.toLowerCase.compare(b.name.toLowerCase).sign
 
-    def compareByNameDesc(a: DependencyReport, b: DependencyReport): Int =
+    def compareByNameDesc(
+        a: DependencyScanReport,
+        b: DependencyScanReport
+    ): Int =
       b.name.toLowerCase.compare(a.name.toLowerCase).sign
 
     def compareBySeverityAsc(now: DateTime)(
-        a: DependencyReport,
-        b: DependencyReport
+        a: DependencyScanReport,
+        b: DependencyScanReport
     ): Int =
       val sa = severity.determineSeverity(now, a)
       val sb = severity.determineSeverity(now, b)
       sa.ordinal.compare(sb.ordinal).sign
 
     def compareBySeverityDesc(now: DateTime)(
-        a: DependencyReport,
-        b: DependencyReport
+        a: DependencyScanReport,
+        b: DependencyScanReport
     ): Int =
       val sa = severity.determineSeverity(now, a)
       val sb = severity.determineSeverity(now, b)

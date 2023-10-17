@@ -2,7 +2,7 @@ package core.domain
 
 import org.joda.time.DateTime
 
-import dependency.DependencyReport
+import dependency.DependencyScanReport
 
 object severity:
   import semver.*
@@ -10,7 +10,7 @@ object severity:
   enum Severity:
     case Unknown, None, Low, Medium, High
 
-  def determineSeverity(now: DateTime, dependency: DependencyReport): Severity =
+  def determineSeverity(now: DateTime, dependency: DependencyScanReport): Severity =
     (
       dependency.vulnerabilities.isEmpty,
       determineSeverityOnVersionDiff(dependency),
@@ -23,7 +23,7 @@ object severity:
       case (true, versionSeverity, _)            => versionSeverity
 
   private def determineSeverityOnVersionDiff(
-      dependency: DependencyReport
+      dependency: DependencyScanReport
   ): Severity =
     dependency.currentVersion
       .map(current =>

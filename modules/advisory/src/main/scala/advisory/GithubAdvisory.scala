@@ -6,7 +6,7 @@ import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract.*
 import net.ruippeixotog.scalascraper.dsl.DSL.Parse.*
 import net.ruippeixotog.scalascraper.dsl.DSL.*
-import core.domain.project.VulnerabilitySeverity
+import core.domain.vulnerability.VulnerabilitySeverity
 
 opaque type GHSAId = String
 object GHSAId:

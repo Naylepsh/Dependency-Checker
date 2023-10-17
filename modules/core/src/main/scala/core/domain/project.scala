@@ -5,9 +5,11 @@ import java.util.UUID
 import cats.*
 import cats.data.NonEmptyList
 import cats.implicits.*
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Days}
+import com.github.nscala_time.time.Imports.*
 
 import dependency.*
+import vulnerability.*
 
 object project:
   case class Project(id: String, name: String)
@@ -35,9 +37,6 @@ object project:
   )
 
   case class VulnerabilitySummary(projectName: String, vulnerabilityCount: Int)
-
-  enum VulnerabilitySeverity:
-    case Low, Medium, High, Critical
 
   case class ProjectVulnerability(
       vulnerabilityName: String,
@@ -71,14 +70,14 @@ object project:
 
   case class ScanReport(
       projectName: String,
-      dependenciesReports: List[Grouped[DependencyReport]]
+      dependenciesReports: List[Grouped[DependencyScanReport]]
   )
   object ScanReport:
     def sortGroups(
-        compare: (DependencyReport, DependencyReport) => Int,
+        compare: (DependencyScanReport, DependencyScanReport) => Int,
         report: ScanReport
     ): ScanReport =
-      val lt: (DependencyReport, DependencyReport) => Boolean =
+      val lt: (DependencyScanReport, DependencyScanReport) => Boolean =
         (a, b) => compare(a, b) < 0
       report.copy(dependenciesReports =
         report
