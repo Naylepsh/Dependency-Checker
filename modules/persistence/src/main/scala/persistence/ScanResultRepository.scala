@@ -10,9 +10,12 @@ import core.domain.Grouped
 import core.domain.dependency.{
   DependencyLatestRelease,
   DependencyReport,
-  DependencyRepository
+  DependencyScanReport,
+  DependencyRepository,
+  DependencyVulnerability
 }
 import core.domain.project.*
+import core.domain.vulnerability.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
@@ -205,49 +208,54 @@ object ScanResultRepository:
         dependencyVersion: Option[String],
         dependencyReleaseDate: Option[DateTime],
         dependencyNotes: Option[String],
-        dependencyVulnerability: Option[String]
+        vulnerabilityName: Option[String],
+        vulnerabilitySeverity: Option[VulnerabilitySeverity]
     )
     object GetAllResult:
       def toDomain(
           results: List[GetAllResult],
           latestReleases: List[DependencyLatestRelease]
       ): List[ScanReport] =
-        results.groupBy(_.projectName).map((projectName, projectResults) =>
-          val reports = projectResults
-            .groupBy(_.groupName)
-            .map((groupName, groupResults) =>
-              // TODO: Instead of mapping and collecting, just foldRight
-              val dependencies = groupResults
-                .groupBy(_.dependencyId)
-                .map: (dependencyId, results) =>
-                  val vulnerabilities = results
-                    .filter(_.dependencyVulnerability.isDefined)
-                    .map(_.dependencyVulnerability.get)
-                  // Safe, because groupBy guaranteed results to be non-empty
-                  val result = results.head
-                  val found = latestReleases
-                    .find: release =>
-                      release.name == result.dependencyName
-                  latestReleases
-                    .find: release =>
-                      release.name == result.dependencyName
-                    .map: release =>
-                      DependencyReport(
-                        result.dependencyName,
-                        result.dependencyVersion,
-                        release.version,
-                        result.dependencyReleaseDate,
-                        release.releaseDate.some,
-                        vulnerabilities,
-                        result.dependencyNotes
-                      )
-                .toList
-                .collect:
-                  case Some(result) => result
-              Grouped(groupName, dependencies)
-            )
-          ScanReport(projectName, reports.toList)
-        ).toList
+        results
+          .groupBy(_.projectName)
+          .map: (projectName, projectResults) =>
+            val reports = projectResults
+              .groupBy(_.groupName)
+              .map: (groupName, groupResults) =>
+                // TODO: Instead of mapping and collecting, just foldRight
+                val dependencies = groupResults
+                  .groupBy(_.dependencyId)
+                  .map: (dependencyId, results) =>
+                    val vulnerabilities = results
+                      .filter(_.vulnerabilityName.isDefined)
+                      .map: result =>
+                        DependencyVulnerability(
+                          result.vulnerabilityName.get,
+                          result.vulnerabilitySeverity
+                        )
+                    // Safe, because groupBy guaranteed results to be non-empty
+                    val result = results.head
+                    val found = latestReleases
+                      .find: release =>
+                        release.name == result.dependencyName
+                    latestReleases
+                      .find: release =>
+                        release.name == result.dependencyName
+                      .map: release =>
+                        DependencyScanReport(
+                          result.dependencyName,
+                          result.dependencyVersion,
+                          release.version,
+                          result.dependencyReleaseDate,
+                          release.releaseDate.some,
+                          vulnerabilities
+                        )
+                  .toList
+                  .collect:
+                    case Some(result) => result
+                Grouped(groupName, dependencies)
+            ScanReport(projectName, reports.toList)
+          .toList
 
     def getDependenciesOfProject(
         projectName: String,
@@ -286,7 +294,8 @@ object ScanResultRepository:
           dependency.version,
           dependency.release_date,
           dependency.notes,
-          vulnerability.name
+          vulnerability.name,
+          vulnerability.severity
         FROM project_dependency
         JOIN project ON project.id = project_dependency.project_id
         JOIN dependency ON dependency.id = project_dependency.dependency_id 

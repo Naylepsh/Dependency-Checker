@@ -1,6 +1,6 @@
 package advisory
 
-import core.domain.project.VulnerabilitySeverity
+import core.domain.vulnerability.VulnerabilitySeverity
 import cats.syntax.all.*
 import cats.Applicative
 

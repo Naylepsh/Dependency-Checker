@@ -6,6 +6,7 @@ object Dependencies {
     val toml4j       = "0.7.2"
     val catsCore     = "2.10.0"
     val catsEffect   = "3.5.1"
+    val kittens      = "3.0.0"
     val circe        = "0.14.6"
     val scalaTime    = "2.32.0"
     val ciris        = "3.2.0"
@@ -34,6 +35,7 @@ object Dependencies {
     val toml4j       = "com.moandjiezana.toml"          % "toml4j"              % V.toml4j
     val catsCore     = "org.typelevel"                 %% "cats-core"           % V.catsCore
     val catsEffect   = "org.typelevel"                 %% "cats-effect"         % V.catsEffect
+    val kittens      = "org.typelevel"                 %% "kittens"             % V.kittens
     val scalaTime    = "com.github.nscala-time"        %% "nscala-time"         % V.scalaTime
     val ciris        = "is.cir"                        %% "ciris"               % V.ciris
     val http4sServer = "org.http4s"                    %% "http4s-ember-server" % V.http4s
@@ -49,7 +51,7 @@ object Dependencies {
     val sqliteJDB       = "org.xerial"    % "sqlite-jdbc"      % V.sqliteJDB
 
     // logging
-    val woof      = "org.legogroup" %% "woof-core"  % V.woof
+    val woof = "org.legogroup" %% "woof-core" % V.woof
 
     // test
     val scalaTestDiscipline =
