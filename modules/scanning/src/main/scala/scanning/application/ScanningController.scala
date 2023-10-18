@@ -281,7 +281,7 @@ private object ScanningViews:
                   renderSeverityBar(determineSeverity(now, dependencyReport))
                 ),
                 div(
-                  cls := "my-3 flex justify-between",
+                  cls := "mt-3 pt-3 flex justify-between",
                   p(
                     s"""Current version: ${dependencyReport.currentVersion.getOrElse(
                         "-"
@@ -293,7 +293,7 @@ private object ScanningViews:
               )
 
               div(
-                cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
+                cls := "mt-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
                 if dependencyReport.vulnerabilities.isEmpty
                 then items
                 else
@@ -319,7 +319,7 @@ private object ScanningViews:
     then div()
     else
       div(
-        cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
+        cls := "mt-3 grid grid-cols-1 divide-y divide-gray-700 divide-dashed",
         vulnerabilities.map: vulnerability =>
           val nameElem = inferLink(vulnerability.name) match
             case Some(link) =>
