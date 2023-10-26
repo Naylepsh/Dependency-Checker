@@ -160,7 +160,7 @@ object ScanningController:
               val html =
                 views.layout(
                   title,
-                  renderProjectsVulnerabilitiesView(List.empty)
+                  renderProjectsVulnerabilitiesView(List.empty, None)
                 )
               Ok(html.toString, `Content-Type`(MediaType.text.html))
             case Some(Valid(daysSince)) =>
@@ -171,7 +171,10 @@ object ScanningController:
                 html =
                   views.layout(
                     title,
-                    renderProjectsVulnerabilitiesView(vulnerabilities)
+                    renderProjectsVulnerabilitiesView(
+                      vulnerabilities,
+                      daysSince.some
+                    )
                   )
                 result <- Ok(html.toString, `Content-Type`(MediaType.text.html))
               yield result
@@ -392,8 +395,19 @@ private object ScanningViews:
     )
 
   def renderProjectsVulnerabilitiesView(
-      projectsVulnerabilities: List[ProjectVulnerability]
+      projectsVulnerabilities: List[ProjectVulnerability],
+      daysSince: Option[Int]
   ) =
+    val coreInputModifiers = List(
+      cls    := "text-base mx-2 bg-gray-900 w-12",
+      name   := "days-since",
+      `type` := "number",
+      min    := 0
+    )
+    val inputElem = daysSince match
+      case Some(days) => input(coreInputModifiers, value := days)
+      case None       => input(coreInputModifiers, placeholder := 1)
+
     div(
       cls := "container mx-auto my-10",
       div(
@@ -401,13 +415,7 @@ private object ScanningViews:
           cls    := "text-xl",
           action := "/scan/vulnerability",
           p(cls := "inline-block", "Show vulnerabilities found within"),
-          input(
-            cls         := "text-base mx-2 bg-gray-900 w-12",
-            name        := "days-since",
-            placeholder := 1,
-            `type`      := "number",
-            min         := 0
-          ),
+          inputElem,
           label("days")
         )
       ),
