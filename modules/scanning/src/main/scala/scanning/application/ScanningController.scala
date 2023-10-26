@@ -89,6 +89,7 @@ object ScanningController:
         case GET -> Root / "project" / projectName / "latest"
             :? SortByPropertyQueryParamMatcher(maybeSortByProperty)
             +& SortDirectionPropertyQueryParamMatcher(maybeSortDirection) =>
+          val title = projectName.some
           Time[F].currentDateTime.flatMap: now =>
             (maybeSortByProperty, maybeSortDirection)
               .tupled
@@ -103,17 +104,20 @@ object ScanningController:
                     .getLatestScan(projectName)
                     .map:
                       case None =>
-                        views.layout(renderNoScanResult)
+                        views.layout(title, renderNoScanResult)
                       case Some(scanReport) =>
                         val compare =
                           makeComparator(now, sortByProperty, sortDirection)
                         val report = ScanReport.sortGroups(compare, scanReport)
-                        views.layout(renderScanResult(
-                          now,
-                          report,
-                          sortByProperty,
-                          sortDirection
-                        ))
+                        views.layout(
+                          title,
+                          renderScanResult(
+                            now,
+                            report,
+                            sortByProperty,
+                            sortDirection
+                          )
+                        )
                     .flatMap: html =>
                       Ok(html.toString, `Content-Type`(MediaType.text.html))
               )
@@ -150,10 +154,14 @@ object ScanningController:
 
         case GET -> Root / "vulnerability"
             :? DaysSinceQueryParamMatcher(daysSince) =>
+          val title = "Vulnerabilities".some
           daysSince match
             case None =>
               val html =
-                views.layout(renderProjectsVulnerabilitiesView(List.empty))
+                views.layout(
+                  title,
+                  renderProjectsVulnerabilitiesView(List.empty)
+                )
               Ok(html.toString, `Content-Type`(MediaType.text.html))
             case Some(Valid(daysSince)) =>
               for
@@ -162,6 +170,7 @@ object ScanningController:
                 vulnerabilities <- service.getVulnerabilitiesSince(time)
                 html =
                   views.layout(
+                    title,
                     renderProjectsVulnerabilitiesView(vulnerabilities)
                   )
                 result <- Ok(html.toString, `Content-Type`(MediaType.text.html))
