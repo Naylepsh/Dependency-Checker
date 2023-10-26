@@ -35,7 +35,7 @@ object ProjectController:
             .all
             .flatMap(summaryService.enrichWithScanSummary)
             .map: projects =>
-              views.layout(renderProjects(projects))
+              views.layout(None, renderProjects(projects))
             .flatMap: html =>
               Ok(html.toString, `Content-Type`(MediaType.text.html))
 
@@ -50,7 +50,10 @@ object ProjectController:
 
         case GET -> Root / "new" =>
           Ok(
-            views.layout(renderProjectForm(info = None)).toString,
+            views.layout(
+              "New project config".some,
+              renderProjectForm(info = None)
+            ).toString,
             `Content-Type`(MediaType.text.html)
           )
 
@@ -260,7 +263,7 @@ private object ProjectViews:
       div(
         cls := "flex justify-between",
         div(
-          cls                        := "grow text-2xl",
+          cls := "grow text-2xl",
           htmx.hyperscript.attribute := s"""on click 
               | toggle .h-0 on #$detailsId 
               | then toggle .opacity-0 on #$detailsId 

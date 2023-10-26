@@ -3,9 +3,18 @@ package scanning.application
 import scalatags.Text.all.*
 
 object views:
-  def layout(bodyContent: scalatags.Text.Modifier*) =
+  private val title = tag("title")
+
+  def layout(
+      subTitle: Option[String],
+      bodyContent: scalatags.Text.Modifier*
+  ) =
+    val titleContent = subTitle match
+      case Some(sub) => s"$sub | Ganyu"
+      case None      => "Ganyu"
     html(
       head(
+        title(titleContent),
         script(src    := "https://unpkg.com/htmx.org@1.9.4"),
         script(src    := "https://unpkg.com/htmx.org/dist/ext/json-enc.js"),
         script(src    := "https://unpkg.com/hyperscript.org@0.9.11"),
