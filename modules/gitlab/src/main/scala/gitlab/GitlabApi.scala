@@ -171,10 +171,12 @@ object GitlabApi:
         .send(backend)
         .map(_.body.leftMap(buildErrorMessage(projectFileEndpoint)))
 
-  def decodeContent(encodedContent: String): Either[Throwable, String] =
-    Either.catchNonFatal(
-      new String(java.util.Base64.getDecoder.decode(encodedContent))
-    )
+  def decodeContent(encodedContent: String): Either[String, String] =
+    Either
+      .catchNonFatal(
+        new String(java.util.Base64.getDecoder.decode(encodedContent))
+      )
+      .leftMap(_.toString)
 
   private def buildErrorMessage(url: sttp.model.Uri)(
       exception: ResponseException[

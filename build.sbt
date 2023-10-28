@@ -83,6 +83,11 @@ lazy val upkeep = project
   .settings(commonSettings: _*)
   .dependsOn(core, parsers, gitlab, persistence)
 
+lazy val update = project
+  .in(file("modules/update"))
+  .settings(commonSettings: _*)
+  .dependsOn(core, parsers, gitlab, persistence)
+
 enablePlugins(sbtdocker.DockerPlugin, JavaAppPackaging)
 
 def mapFiles(root: File): List[(File, String)] =

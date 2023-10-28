@@ -56,7 +56,8 @@ object ProjectScanConfigRepository:
     def setEnabled(name: String, enabled: Boolean): F[Unit] =
       SQL.findScanId(name).option.transact(xa).flatMap:
         case None => MonadCancelThrow[F].unit
-        case Some(scanId) => SQL.setEnabled(scanId, enabled).run.transact(xa).void
+        case Some(scanId) =>
+          SQL.setEnabled(scanId, enabled).run.transact(xa).void
 
 private object SQL:
   import persistence.sqlmappings.given
@@ -150,7 +151,7 @@ private object SQL:
     VALUES ($id, $configId, ${source.path}, ${source.group})
     """.update
 
-  def findScanId(projectName: String) = 
+  def findScanId(projectName: String) =
     sql"""
     SELECT project_scan_config.id
     FROM project_scan_config
