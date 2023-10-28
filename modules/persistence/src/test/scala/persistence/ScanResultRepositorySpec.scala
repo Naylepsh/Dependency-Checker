@@ -15,9 +15,11 @@ import core.domain.project.Project
 import core.domain.dependency.DependencySource
 import cats.effect.kernel.Resource
 import core.domain.project.ScanResult
+import core.domain.dependency.DependencyScanReport
 import core.domain.dependency.DependencyReport
 import core.domain.dependency.DependencyDetails
 import core.domain.dependency.Dependency
+import core.domain.dependency.DependencyVulnerability
 import core.domain.dependency.DependencyLatestRelease
 import core.domain.Grouped
 import persistence.{ DependencyRepository, ScanResultRepository }
@@ -119,15 +121,17 @@ object ScanResultRepositorySpec:
     dependenciesReports = List(
       Grouped(
         groupName = "requirements.txt",
-        items = List(DependencyReport(
+        items = List(DependencyScanReport(
           name = "Django",
           currentVersion = Some("1.2.3"),
           latestVersion = "4.5.6",
           currentVersionReleaseDate = Some(now),
           latestReleaseDate = Some(now),
           vulnerabilities =
-            List("first-vulnerability", "second-vulnerability"),
-          notes = Some("requires python>=4.20")
+            List(
+              DependencyVulnerability("first-vulnerability", None),
+              DependencyVulnerability("second-vulnerability", None)
+            ),
         ))
       )
     )
@@ -137,14 +141,13 @@ object ScanResultRepositorySpec:
     dependenciesReports = List(
       Grouped(
         groupName = "requirements.txt",
-        items = List(DependencyReport(
+        items = List(DependencyScanReport(
           name = "Flask",
           currentVersion = Some("2.3.4"),
           latestVersion = "2.3.5",
           currentVersionReleaseDate = Some(now),
           latestReleaseDate = Some(now),
           vulnerabilities = List.empty,
-          notes = None
         ))
       )
     )
@@ -164,7 +167,9 @@ object ScanResultRepositorySpec:
       dependencyVersion = Some("1.2.3"),
       dependencyReleaseDate = Some(now),
       dependencyNotes = Some("requires python>=4.20"),
-      dependencyVulnerability = Some("first-vulnerability")
+      vulnerabilityName = Some("first-vulnerability"),
+      vulnerabilitySeverity = None
+
     ),
     GetAllResult(
       projectName = "first-project",
@@ -174,7 +179,8 @@ object ScanResultRepositorySpec:
       dependencyVersion = Some("1.2.3"),
       dependencyReleaseDate = Some(now),
       dependencyNotes = Some("requires python>=4.20"),
-      dependencyVulnerability = Some("second-vulnerability")
+      vulnerabilityName = Some("second-vulnerability"),
+      vulnerabilitySeverity = None
     ),
     GetAllResult(
       projectName = "second-project",
@@ -184,6 +190,7 @@ object ScanResultRepositorySpec:
       dependencyVersion = Some("2.3.4"),
       dependencyReleaseDate = Some(now),
       dependencyNotes = None,
-      dependencyVulnerability = None
+      vulnerabilityName = None,
+      vulnerabilitySeverity = None
     )
   )
