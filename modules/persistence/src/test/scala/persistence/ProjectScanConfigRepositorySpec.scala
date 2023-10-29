@@ -50,7 +50,7 @@ object ProjectScanConfigRepositorySpec:
       freshStart.transact(xa)
 
   val txtScanConfig = ProjectScanConfig(
-    project = Project(id = "1", name = "foo"),
+    project = Project(repositoryId = "1", name = "foo"),
     sources = List(
       DependencySource.TxtSource("requirements.txt"),
       DependencySource.TxtSource("requirements.test.txt")
@@ -59,7 +59,7 @@ object ProjectScanConfigRepositorySpec:
     branch = "master"
   )
   val tomlScanConfig = ProjectScanConfig(
-    project = Project(id = "2", name = "bar"),
+    project = Project(repositoryId = "2", name = "bar"),
     sources = List(
       DependencySource.TomlSource("pyproject.toml", "dependencies".some),
       DependencySource.TomlSource("pyproject.toml", "dev-dependencies".some)
@@ -68,7 +68,7 @@ object ProjectScanConfigRepositorySpec:
     branch = "stage"
   )
   val mixedScanConfig = ProjectScanConfig(
-    project = Project(id = "3", name = "baz"),
+    project = Project(repositoryId = "3", name = "baz"),
     sources = List(
       DependencySource.TxtSource("requirements.txt"),
       DependencySource.TomlSource("pyproject.toml", "dependencies".some)

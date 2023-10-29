@@ -5,14 +5,16 @@ import java.util.UUID
 import cats.*
 import cats.data.NonEmptyList
 import cats.implicits.*
-import org.joda.time.{DateTime, Days}
+import org.joda.time.{ DateTime, Days }
 import com.github.nscala_time.time.Imports.*
 
 import dependency.*
 import vulnerability.*
 
 object project:
-  case class Project(id: String, name: String)
+  case class Project(repositoryId: String, name: String)
+  case class ExistingProject(id: UUID, repositoryId: String, name: String):
+    def toProject: Project = Project(repositoryId, name)
 
   case class ProjectDependencies(
       project: Project,
@@ -25,9 +27,20 @@ object project:
       enabled: Boolean,
       branch: String
   )
+  case class ExistingProjectScanConfig(
+      id: UUID,
+      project: ExistingProject,
+      sources: List[DependencySource],
+      enabled: Boolean,
+      branch: String
+  ):
+    def toProjectScanConfig: ProjectScanConfig =
+      ProjectScanConfig(project.toProject, sources, enabled, branch)
 
   trait ProjectScanConfigRepository[F[_]]:
-    def all: F[List[ProjectScanConfig]]
+    def all: F[List[ExistingProjectScanConfig]]
+    def findByProjectName(projectName: String)
+        : F[Option[ExistingProjectScanConfig]]
     def save(config: ProjectScanConfig): F[UUID]
     def setEnabled(projectName: String, enabled: Boolean): F[Unit]
 

@@ -33,6 +33,8 @@ object ProjectController:
         case GET -> Root =>
           configService
             .all
+            .map: configs =>
+              configs.map(_.toProjectScanConfig)
             .flatMap(summaryService.enrichWithScanSummary)
             .map: projects =>
               views.layout(None, renderProjects(projects))
@@ -62,7 +64,7 @@ object ProjectController:
             case None => NotFound(s"$projectName does not exist")
             case Some(config) =>
               summaryService
-                .enrichWithScanSummary(config)
+                .enrichWithScanSummary(config.toProjectScanConfig)
                 .flatMap: summary =>
                   Ok(
                     renderProjectDetails(summary).toString,
@@ -74,7 +76,7 @@ object ProjectController:
             case None => NotFound(s"$projectName does not exist")
             case Some(config) =>
               summaryService
-                .enrichWithScanSummary(config)
+                .enrichWithScanSummary(config.toProjectScanConfig)
                 .flatMap: summary =>
                   Ok(
                     renderProjectDetails(summary).toString,
@@ -298,7 +300,7 @@ private object ProjectViews:
         cls := "h-0 opacity-0 transition-all duration-200 ease-out -translate-y-12 pointer-events-none",
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
-          summary.config.project.id
+          summary.config.project.repositoryId
         ),
         p(
           span(cls := "font-semibold", "Target branch: "),

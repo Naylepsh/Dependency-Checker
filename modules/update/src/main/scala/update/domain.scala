@@ -6,12 +6,14 @@ object domain:
   enum FileType:
     case Txt, Toml
 
-  /**
-   * NOTE:
-   * This properties can all be extracted from UI.
-   * When making a POST action button, add these props to js-vals htmx property
-   * or something
-   */
+  case class UpdateDependency(
+      projectName: String,
+      dependencyName: String,
+      filePath: String,
+      fromVersion: String,
+      toVersion: String
+  )
+
   case class UpdateDependencyDetails(
       projectId: UUID,
       projectBranch: String,
@@ -22,6 +24,7 @@ object domain:
       toVersion: String
   )
 
+
   case class UpdateAttempt(
       projectId: UUID,
       dependencyName: String,
@@ -30,9 +33,6 @@ object domain:
   )
 
   trait UpdateRepository[F[_]]:
-    /* This should store the requests in DB,
-     * to prevent making duplicate MRs
-     */
     def exists(
         projectId: UUID,
         dependencyName: String,
