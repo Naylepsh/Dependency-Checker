@@ -4,19 +4,19 @@ import java.util.UUID
 
 import cats.Monad
 import cats.syntax.all.*
-import core.domain.project.{ ProjectScanConfig, ProjectScanConfigRepository }
+import core.domain.project.{ ProjectScanConfig, ExistingProjectScanConfig, ProjectScanConfigRepository }
 
 trait ProjectScanConfigService[F[_]]:
-  def all: F[List[ProjectScanConfig]]
-  def find(name: String): F[Option[ProjectScanConfig]]
+  def all: F[List[ExistingProjectScanConfig]]
+  def find(name: String): F[Option[ExistingProjectScanConfig]]
   def add(project: ProjectScanConfig): F[Unit]
-  def setEnabled(name: String, enabled: Boolean): F[Option[ProjectScanConfig]]
+  def setEnabled(name: String, enabled: Boolean): F[Option[ExistingProjectScanConfig]]
 
 object ProjectScanConfigService:
   def make[F[_]: Monad](repository: ProjectScanConfigRepository[F])
       : ProjectScanConfigService[F] = new:
-    def all: F[List[ProjectScanConfig]] = repository.all
-    def find(name: String): F[Option[ProjectScanConfig]] =
+    def all: F[List[ExistingProjectScanConfig]] = repository.all
+    def find(name: String): F[Option[ExistingProjectScanConfig]] =
       all.map: configs =>
         configs.find: config =>
           config.project.name == name
@@ -24,5 +24,5 @@ object ProjectScanConfigService:
     def setEnabled(
         name: String,
         enabled: Boolean
-    ): F[Option[ProjectScanConfig]] =
+    ): F[Option[ExistingProjectScanConfig]] =
       repository.setEnabled(name, enabled) *> find(name)

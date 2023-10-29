@@ -129,7 +129,7 @@ object ScanningController:
               configs
                 .filter(_.enabled)
                 .traverse: config =>
-                  taskProcessor.add(service.scan(config))
+                  taskProcessor.add(service.scan(config.toProjectScanConfig))
             .flatMap: _ =>
               taskProcessor.add(
                 service.obtainUnknownSeveritiesOfVulnerabilities
@@ -146,7 +146,7 @@ object ScanningController:
               .find: config =>
                 config.project.name == projectName
               .fold(NotFound(s"$projectName does not exist")): project =>
-                taskProcessor.add(service.scan(project))
+                taskProcessor.add(service.scan(project.toProjectScanConfig))
                   *> Ok(
                     renderScanScheduledButton.toString,
                     `Content-Type`(MediaType.text.html)

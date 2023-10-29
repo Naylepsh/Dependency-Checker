@@ -12,14 +12,19 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import core.domain.project.{ Project, ProjectScanConfig }
+import core.domain.project.{
+  ExistingProject,
+  ExistingProjectScanConfig,
+  Project,
+  ProjectScanConfig
+}
 import core.domain.dependency.DependencySource
 import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 
 object ProjectScanConfigRepository:
   def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
       : ProjectScanConfigRepository[F] = new:
-    def all: F[List[ProjectScanConfig]] =
+    def all: F[List[ExistingProjectScanConfig]] =
       for
         configs <- SQL.allConfigs.to[List].transact(xa)
         configIds = NonEmptyList.fromList(configs.map(_.configId))
@@ -30,6 +35,22 @@ object ProjectScanConfigRepository:
           .map(SQL.getTomlSources.andThen(_.to[List].transact(xa)))
           .getOrElse(List.empty.pure)
       yield SQL.RawConfig.toDomain(configs, txtSources, tomlSources)
+
+    def findByProjectName(projectName: String)
+        : F[Option[ExistingProjectScanConfig]] =
+      SQL.findByProjectName(projectName).option.transact(xa).flatMap:
+        case None => None.pure
+        case Some(config) =>
+          val ids = NonEmptyList.of(config.configId)
+          (SQL.getTomlSources(ids).to[List], SQL.getTxtSources(ids).to[List])
+            .tupled
+            .transact(xa)
+            .map: (tomlSources, txtSources) =>
+              SQL.RawConfig.toDomain(
+                config :: Nil,
+                txtSources,
+                tomlSources
+              ).headOption
 
     def save(config: ProjectScanConfig): F[UUID] =
       for
@@ -63,6 +84,7 @@ private object SQL:
   import persistence.sqlmappings.given
 
   private[persistence] case class RawConfig(
+      projectId: UUID,
       projectName: String,
       configId: UUID,
       gitlabId: Int,
@@ -74,7 +96,7 @@ private object SQL:
         configs: List[RawConfig],
         txtSources: List[RawTxtSource],
         tomlSources: List[RawTomlSource]
-    ): List[ProjectScanConfig] =
+    ): List[ExistingProjectScanConfig] =
       val txtMap = txtSources
         .groupBy(_.configId)
         .map: (projectId, sources) =>
@@ -90,8 +112,13 @@ private object SQL:
       configs.map: config =>
         val sources = txtMap.getOrElse(config.configId, List.empty)
           ++ tomlMap.getOrElse(config.configId, List.empty)
-        ProjectScanConfig(
-          Project(config.gitlabId.toString, config.projectName),
+        ExistingProjectScanConfig(
+          config.configId,
+          ExistingProject(
+            config.projectId,
+            config.gitlabId.toString,
+            config.projectName
+          ),
           sources,
           config.enabled,
           config.branch
@@ -106,7 +133,7 @@ private object SQL:
 
   def allConfigs =
     sql"""
-      SELECT project.name, config.id as configId, gitlab_id, enabled, branch
+      SELECT project.id, project.name, config.id as configId, gitlab_id, enabled, branch
       FROM project_scan_config config
       JOIN project ON project.id = config.project_id
       """.query[RawConfig]
@@ -136,7 +163,7 @@ private object SQL:
   def insertConfig(id: UUID, config: ProjectScanConfig, projectId: UUID) =
     sql"""
     INSERT INTO project_scan_config (id, gitlab_id, enabled, branch, project_id)
-    VALUES ($id, ${config.project.id}, ${config.enabled}, ${config.branch}, $projectId)
+    VALUES ($id, ${config.project.repositoryId}, ${config.enabled}, ${config.branch}, $projectId)
     """.update
 
   def insertTxtSource(id: UUID, configId: UUID, source: TxtSource) =
@@ -158,6 +185,14 @@ private object SQL:
     JOIN project on project.id = project_scan_config.project_id
     WHERE project.name = $projectName
     """.query[UUID]
+
+  def findByProjectName(projectName: String) =
+    sql"""
+      SELECT project.id, project.name, config.id gitlab_id, enabled, branch
+      FROM project_scan_config config
+      JOIN project ON project.id = config.project_id
+      WHERE project.name = $projectName
+    """.query[RawConfig]
 
   def setEnabled(id: UUID, enabled: Boolean) =
     sql"""

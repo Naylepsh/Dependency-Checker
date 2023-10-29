@@ -6,17 +6,38 @@ import cats.syntax.all.*
 import gitlab.{ Action, CommitAction, GitlabApi }
 import domain.{
   UpdateAttempt,
+  UpdateDependency,
   UpdateDependencyDetails,
   UpdateRepository,
   UpdateService
 }
+import core.domain.project.ProjectScanConfigRepository
 
 object services:
   object UpdateService:
     def make[F[_]: Monad](
         repository: UpdateRepository[F],
+        projectConfigRepository: ProjectScanConfigRepository[F],
         gitlabApi: GitlabApi[F]
     ): UpdateService[F] = new:
+
+      def update(request: UpdateDependency): F[Either[String, Unit]] =
+        projectConfigRepository
+          .findByProjectName(request.projectName)
+          .flatMap:
+            case None => "Config for project not found".asLeft.pure
+            case Some(config) =>
+              val req = UpdateDependencyDetails(
+                projectId = config.id,
+                projectBranch = config.branch,
+                projectGitlabId = config.project.repositoryId,
+                filePath = request.filePath,
+                dependencyName = request.dependencyName,
+                fromVersion = request.fromVersion,
+                toVersion = request.toVersion
+              )
+              update(req)
+
       def update(request: UpdateDependencyDetails): F[Either[String, Unit]] =
         FileType.fromPath(request.filePath) match
           case Left(reason) => reason.asLeft.pure

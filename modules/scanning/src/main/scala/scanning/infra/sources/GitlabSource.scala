@@ -33,7 +33,7 @@ object GitlabSource:
         contentExtractor: String => List[Dependency]
     ): F[List[Dependency]] =
       api
-        .getFile(config.project.id, config.branch, filePath)
+        .getFile(config.project.repositoryId, config.branch, filePath)
         .flatMap {
           case Left(reason) =>
             Logger[F].error(
