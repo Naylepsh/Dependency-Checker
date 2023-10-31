@@ -1,15 +1,15 @@
 package update
 
-import update.domain.UpdateRepository
+import java.util.UUID
+
+import cats.effect.MonadCancelThrow
+import cats.effect.std.UUIDGen
+import cats.syntax.all.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import java.util.UUID
-import cats.effect.MonadCancelThrow
-import cats.effect.std.UUIDGen
-import cats.syntax.all.*
-import update.domain.UpdateAttempt
+import update.domain.{UpdateAttempt, UpdateRepository}
 
 object repositories:
   object UpdateRepository:
