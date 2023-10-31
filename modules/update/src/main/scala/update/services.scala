@@ -3,7 +3,9 @@ package update
 import cats.Monad
 import cats.data.EitherT
 import cats.syntax.all.*
+import core.domain.project.ProjectScanConfigRepository
 import gitlab.{ Action, CommitAction, GitlabApi }
+
 import domain.{
   UpdateAttempt,
   UpdateDependency,
@@ -11,7 +13,6 @@ import domain.{
   UpdateRepository,
   UpdateService
 }
-import core.domain.project.ProjectScanConfigRepository
 
 object services:
   object UpdateService:
