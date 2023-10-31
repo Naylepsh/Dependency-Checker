@@ -1,29 +1,28 @@
+import advisory.{ Advisory, GithubAdvisory }
 import cats.effect.{ ExitCode, IO, IOApp }
-import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import cats.syntax.all.*
-import org.legogroup.woof.{ *, given }
-import persistence.ScanResultRepository
-import persistence.DependencyRepository
-import persistence.ProjectScanConfigRepository
-import scanning.application.ProjectScanConfigService
-import scanning.application.ProjectSummaryService
-import scanning.application.ProjectController
-import scanning.application.StaticFileController
-import scanning.application.RootController
-import processor.TaskProcessor
-import scanning.application.ScanningController
-import scanning.application.LoggingMiddleware
-import concurrent.duration.*
-import gitlab.GitlabApi
-import scanning.infra.sources.GitlabSource
-import scanning.application.DependencyScanner
-import scanning.infra.packageindexes.Pypi
-import scanning.application.services.ScanningService
 import com.comcast.ip4s.*
-import org.http4s.ember.server.EmberServerBuilder
 import config.AppConfig
-import advisory.GithubAdvisory
-import advisory.Advisory
+import controllers.{ LoggingMiddleware, RootController, StaticFileController }
+import gitlab.GitlabApi
+import org.http4s.ember.server.EmberServerBuilder
+import org.legogroup.woof.{ *, given }
+import persistence.{
+  DependencyRepository,
+  ProjectScanConfigRepository,
+  ScanResultRepository
+}
+import processor.TaskProcessor
+import scanning.application.*
+import scanning.application.services.ScanningService
+import scanning.infra.packageindexes.Pypi
+import scanning.infra.sources.GitlabSource
+import sttp.client3.httpclient.cats.HttpClientCatsBackend
+
+import concurrent.duration.*
+import update.controllers.UpdateController
+import update.services.UpdateService
+import update.repositories.UpdateRepository
 
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
@@ -64,6 +63,7 @@ object Main extends IOApp:
             DependencyRepository.make(xa)
           )
           val projectRepository = ProjectScanConfigRepository.make(xa)
+          val updateRepository  = UpdateRepository.make(xa)
 
           val scanResultService = ScanResultRepository.make(
             xa,
@@ -80,6 +80,8 @@ object Main extends IOApp:
               scanResultRepository,
               advisory
             )
+          val updateService =
+            UpdateService.make(updateRepository, projectRepository, gitlabApi)
 
           val projectController =
             ProjectController.make(projectService, summaryService)
@@ -91,13 +93,15 @@ object Main extends IOApp:
               projectRepository,
               processor
             )
+          val updateController = UpdateController.make(updateService)
 
           val routes =
             LoggingMiddleware.wrap:
               rootController.routes
+                <+> staticFileController.routes
                 <+> scanReportController.routes
                 <+> projectController.routes
-                <+> staticFileController.routes
+                <+> updateController.routes
 
           HttpServer[IO]
             .newEmber(config.server, routes.orNotFound)
