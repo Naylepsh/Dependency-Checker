@@ -11,13 +11,21 @@ import core.domain.dependency.*
 import core.domain.project.{ ProjectScanConfig, * }
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
-import scanning.domain.Source
+import scanning.domain.{ DependencySummary, ScanSummary, Source }
 import advisory.Advisory
+import core.domain.update.UpdateGateway
+import core.domain.update.DependencyToUpdate
+
+type CompareDependencyScanReports =
+  (DependencyScanReport, DependencyScanReport) => Int
 
 trait ScanningService[F[_]]:
   def scan(project: ProjectScanConfig): F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
-  def getLatestScan(projectName: String): F[Option[ScanReport]]
+  def getLatestScan(
+      projectName: String,
+      compare: CompareDependencyScanReports
+  ): F[Option[ScanSummary]]
   def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]]
   def obtainUnknownSeveritiesOfVulnerabilities: F[Unit]
   def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit]
@@ -29,7 +37,8 @@ object ScanningService:
       source: Source[F, ProjectScanConfig],
       scanner: DependencyScanner[F],
       repository: ScanResultRepository[F],
-      advisory: Advisory[F]
+      advisory: Advisory[F],
+      updateGateway: UpdateGateway[F]
   ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
       Logger[F].info(s"Deleting scans of ${timestamps.length} timestamps")
@@ -65,8 +74,32 @@ object ScanningService:
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       repository.getLatestScansTimestamps(limit)
 
-    def getLatestScan(projectName: String): F[Option[ScanReport]] =
-      repository.getLatestScanReport(projectName)
+    def getLatestScan(
+        projectName: String,
+        compare: CompareDependencyScanReports
+    ): F[Option[ScanSummary]] =
+      repository
+        .getLatestScanReport(projectName)
+        .flatMap(_.traverse: report =>
+          summarize(ScanReport.sortGroups(compare, report)))
+
+    private def summarize(report: ScanReport): F[ScanSummary] =
+      report
+        .dependenciesReports
+        .traverse: group =>
+          group
+            .items
+            .traverse: dependency =>
+              val toUpdate = DependencyToUpdate(
+                dependency.name,
+                dependency.currentVersion,
+                dependency.latestVersion
+              )
+              updateGateway
+                .canUpdate(toUpdate, group.groupName)
+                .map(DependencySummary(dependency, _))
+            .map(Grouped(group.groupName, _))
+        .map(ScanSummary(report.projectName, _))
 
     def obtainUnknownSeveritiesOfVulnerabilities: F[Unit] =
       repository.getVulnerabilitiesOfUnknownSeverity.flatMap: vulnerabilities =>

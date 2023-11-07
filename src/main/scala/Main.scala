@@ -23,6 +23,7 @@ import concurrent.duration.*
 import update.controllers.UpdateController
 import update.services.UpdateService
 import update.repositories.UpdateRepository
+import update.services.UpdateGateway
 
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
@@ -73,12 +74,14 @@ object Main extends IOApp:
             ProjectScanConfigService.make(projectRepository)
           val summaryService =
             ProjectSummaryService.make(scanResultRepository)
+
           val scanningService =
             ScanningService.make[IO](
               source,
               scanner,
               scanResultRepository,
-              advisory
+              advisory,
+              UpdateGateway.make[IO]
             )
           val updateService =
             UpdateService.make(updateRepository, projectRepository, gitlabApi)
