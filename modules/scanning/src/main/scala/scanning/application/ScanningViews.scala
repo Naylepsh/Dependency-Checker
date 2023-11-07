@@ -8,6 +8,11 @@ import core.domain.project.{ ProjectVulnerability, ScanReport }
 import core.domain.severity.{ Severity, determineSeverity }
 import org.joda.time.DateTime
 import scalatags.Text.all.*
+import core.domain.update.UpdateDependency
+import io.circe.syntax.*
+import io.circe.generic.auto.*
+import scanning.domain.ScanSummary
+import scalatags.Text.TypedTag
 
 object ScanningViews:
   private def renderSortByNameAction(
@@ -71,9 +76,9 @@ object ScanningViews:
       maybeIcon.getOrElse(i())
     )
 
-  def renderScanResult(
+  def renderScanSummary(
       now: DateTime,
-      scanResult: ScanReport,
+      scanResult: ScanSummary,
       sortedByProperty: SortByProperty,
       sortedInDirection: SortDirection
   ) =
@@ -102,42 +107,73 @@ object ScanningViews:
           )
         )
       ),
-      scanResult.dependenciesReports.map: group =>
+      scanResult.dependencySummaries.map: group =>
         div(
           cls := "my-5",
           h3(cls := "text-2xl", s"> ${group.groupName}"),
           div(
             cls := "ml-5",
-            group.items.map: dependencyReport =>
+            group.items.map: dependencySummary =>
+              var actions = List.empty[TypedTag[String]]
+              dependencySummary
+                .scanReport
+                .currentVersion
+                .foreach: currentVersion =>
+                  if dependencySummary.canBeUpdated then
+                    actions = button(
+                      cls            := "bg-blue-500 ml-3 p-1",
+                      htmx.ajax.post := "/api/update",
+                      htmx.extraValues.vals := htmx.extraValues.value.vals(
+                        UpdateDependency(
+                          scanResult.projectName,
+                          dependencySummary.scanReport.name,
+                          group.groupName,
+                          currentVersion,
+                          dependencySummary.scanReport.latestVersion
+                        )
+                      ),
+                      "Update"
+                    ) :: actions
+
               val items = List(
                 div(
                   cls := "flex justify-between",
                   div(
                     cls := "flex",
-                    div(cls    := "text-2xl", dependencyReport.name),
-                    button(cls := "bg-blue-500 ml-3 p-1", "Update")
+                    div(cls := "text-2xl", dependencySummary.scanReport.name),
+                    actions
                   ),
-                  renderSeverityBar(determineSeverity(now, dependencyReport))
+                  renderSeverityBar(determineSeverity(
+                    now,
+                    dependencySummary.scanReport
+                  ))
                 ),
                 div(
                   cls := "mt-3 pt-3 flex justify-between",
                   p(
-                    s"""Current version: ${dependencyReport.currentVersion.getOrElse(
+                    s"""Current version: ${dependencySummary.scanReport.currentVersion.getOrElse(
                         "-"
                       )}"""
                   ),
-                  p(s"Latest version: ${dependencyReport.latestVersion}"),
-                  renderReleaseDate(now, dependencyReport.latestReleaseDate)
+                  p(
+                    s"Latest version: ${dependencySummary.scanReport.latestVersion}"
+                  ),
+                  renderReleaseDate(
+                    now,
+                    dependencySummary.scanReport.latestReleaseDate
+                  )
                 )
               )
 
               div(
                 cls := "mt-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
-                if dependencyReport.vulnerabilities.isEmpty
+                if dependencySummary.scanReport.vulnerabilities.isEmpty
                 then items
                 else
                   items.appended(
-                    renderVulnerabilities(dependencyReport.vulnerabilities)
+                    renderVulnerabilities(
+                      dependencySummary.scanReport.vulnerabilities
+                    )
                   )
               )
           )

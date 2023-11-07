@@ -1,6 +1,8 @@
 package scanning.application
 
 import scalatags.Text.all.*
+import io.circe.Encoder
+import io.circe.syntax.*
 
 object htmx:
   // TODO: Move this to a dedicated module (/lib?)
@@ -30,3 +32,8 @@ object htmx:
 
   object hyperscript:
     val attribute = attr("_", raw = true)
+
+  object extraValues:
+    val vals = attr("hx-vals")
+    object value:
+      def vals[A: Encoder](x: A): String = x.asJson.toString

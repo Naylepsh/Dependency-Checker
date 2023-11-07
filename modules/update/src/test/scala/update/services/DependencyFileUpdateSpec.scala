@@ -8,7 +8,6 @@ import matchers.*
 
 class DependencyFileUpdateSpec extends AnyFlatSpec with should.Matchers:
   import domain.*
-  import services.FileType
   import services.DependencyFileUpdate.*
   import DependencyFileUpdateSpec.*
 

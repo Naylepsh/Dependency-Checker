@@ -100,18 +100,16 @@ object ScanningController:
                 errors => BadRequest(errors.toString),
                 // get project's latest scan
                 (sortByProperty, sortDirection) =>
+                  val compare = makeComparator(now, sortByProperty, sortDirection)
                   service
-                    .getLatestScan(projectName)
+                    .getLatestScan(projectName, compare)
                     .map:
                       case None =>
                         views.layout(title, renderNoScanResult)
-                      case Some(scanReport) =>
-                        val compare =
-                          makeComparator(now, sortByProperty, sortDirection)
-                        val report = ScanReport.sortGroups(compare, scanReport)
+                      case Some(report) =>
                         views.layout(
                           title,
-                          renderScanResult(
+                          renderScanSummary(
                             now,
                             report,
                             sortByProperty,
