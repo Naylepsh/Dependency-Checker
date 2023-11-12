@@ -29,7 +29,7 @@ object UpdateService:
           case None => "Config for project not found".asLeft.pure
           case Some(config) =>
             val req = UpdateDependencyDetails(
-              projectId = config.id,
+              projectId = config.project.id,
               projectBranch = config.branch,
               projectGitlabId = config.project.repositoryId,
               filePath = request.filePath,
@@ -136,4 +136,3 @@ object UpdateService:
         .map: fileResult =>
           fileResult.flatMap: file =>
             GitlabApi.decodeContent(file.content)
-
