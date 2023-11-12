@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(255) primary key);
+CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(128) primary key);
 CREATE TABLE project (
   id UUID PRIMARY KEY,
   name TEXT NOT NULL UNIQUE
@@ -61,7 +61,7 @@ CREATE TABLE project_dependency
     REFERENCES project (id)
     ON DELETE CASCADE
 );
-CREATE TABLE upkeep_request (
+CREATE TABLE IF NOT EXISTS "update_request" (
   id UUID PRIMARY KEY,
   project_id UUID NOT NULL,
   dependency_name TEXT NOT NULL,
@@ -89,4 +89,5 @@ CREATE TABLE IF NOT EXISTS "vulnerability"
 INSERT INTO "schema_migrations" (version) VALUES
   ('20230824143342'),
   ('20230831175728'),
-  ('20230914145025');
+  ('20230914145025'),
+  ('20231112201736');
