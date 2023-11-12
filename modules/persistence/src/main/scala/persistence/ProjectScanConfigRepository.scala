@@ -188,7 +188,7 @@ private object SQL:
 
   def findByProjectName(projectName: String) =
     sql"""
-      SELECT project.id, project.name, config.id gitlab_id, enabled, branch
+      SELECT project.id, project.name, config.id, gitlab_id, enabled, branch
       FROM project_scan_config config
       JOIN project ON project.id = config.project_id
       WHERE project.name = $projectName

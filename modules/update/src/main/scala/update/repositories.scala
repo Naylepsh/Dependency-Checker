@@ -9,7 +9,7 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import update.domain.{UpdateAttempt, UpdateRepository}
+import update.domain.{ UpdateAttempt, UpdateRepository }
 
 object repositories:
   object UpdateRepository:
@@ -40,7 +40,7 @@ object repositories:
     ): Query0[Boolean] =
       sql"""
       SELECT COUNT(*)
-      FROM upkeep_request
+      FROM update_request
       WHERE project_id = $projectId
       AND dependency_name = $dependencyName
       AND update_to_version = $toVersion
@@ -51,6 +51,6 @@ object repositories:
         attempt: UpdateAttempt
     ): Update0 =
       sql"""
-      INSERT INTO upkeep_request (id, project_id, dependency_name, update_to_version, url)
+      INSERT INTO update_request (id, project_id, dependency_name, update_to_version, url)
       VALUES ($id, ${attempt.projectId}, ${attempt.dependencyName}, ${attempt.toVersion}, ${attempt.mergeRequestUrl})
       """.update
