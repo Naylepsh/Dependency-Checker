@@ -132,6 +132,7 @@ object ScanningViews:
                           dependencySummary.scanReport.latestVersion
                         )
                       ),
+                      attr("hx-ext") := "json-enc",
                       "Update"
                     ) :: actions
 
