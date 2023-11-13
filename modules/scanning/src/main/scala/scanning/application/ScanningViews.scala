@@ -131,7 +131,7 @@ object ScanningViews:
             .foreach: currentVersion =>
               if dependencySummary.canBeUpdated then
                 actions = button(
-                  cls            := "bg-blue-500 ml-3 px-2 py-1",
+                  cls            := "bg-blue-500 ml-3 px-2 py-1 disabled:opacity-75 disabled:bg-gray-700",
                   htmx.ajax.post := "/api/update",
                   htmx.extraValues.vals := htmx.extraValues.value.vals(
                     UpdateDependency(
@@ -143,7 +143,7 @@ object ScanningViews:
                     )
                   ),
                   attr("hx-ext")             := "json-enc",
-                  htmx.hyperscript.attribute := "on click toggle @disabled until htmx:afterOnLoad",
+                  htmx.hyperscript.attribute := "on click toggle @disabled",
                   "Update"
                 ) :: actions
 
