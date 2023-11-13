@@ -24,7 +24,7 @@ object controllers:
           req.as[UpdatePayload].flatMap: updateRequest =>
             service.update(updateRequest.toDomain).flatMap:
               case Left(error) => InternalServerError(error)
-              case Right(_)    => Ok("Update request submitted")
+              case Right(_)    => Ok("Update submitted")
 
       val routes: HttpRoutes[F] = Router("api/update" -> httpRoutes)
 
