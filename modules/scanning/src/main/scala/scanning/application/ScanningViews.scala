@@ -13,6 +13,8 @@ import io.circe.syntax.*
 import io.circe.generic.auto.*
 import scanning.domain.ScanSummary
 import scalatags.Text.TypedTag
+import scanning.domain.DependencySummary
+import core.domain.Grouped
 
 object ScanningViews:
   private def renderSortByNameAction(
@@ -108,80 +110,88 @@ object ScanningViews:
         )
       ),
       scanResult.dependencySummaries.map: group =>
-        div(
-          cls := "my-5",
-          h3(cls := "text-2xl", s"> ${group.groupName}"),
-          div(
-            cls := "ml-5",
-            group.items.map: dependencySummary =>
-              var actions = List.empty[TypedTag[String]]
-              dependencySummary
-                .scanReport
-                .currentVersion
-                .foreach: currentVersion =>
-                  if dependencySummary.canBeUpdated then
-                    actions = button(
-                      cls            := "bg-blue-500 ml-3 px-2 py-1",
-                      htmx.ajax.post := "/api/update",
-                      htmx.extraValues.vals := htmx.extraValues.value.vals(
-                        UpdateDependency(
-                          scanResult.projectName,
-                          dependencySummary.scanReport.name,
-                          group.groupName,
-                          currentVersion,
-                          dependencySummary.scanReport.latestVersion
-                        )
-                      ),
-                      attr("hx-ext") := "json-enc",
-                      "Update"
-                    ) :: actions
+        renderScanSummaryGroup(now, group, scanResult.projectName)
+    )
 
-              val items = List(
-                div(
-                  cls := "flex justify-between",
-                  div(cls := "text-2xl", dependencySummary.scanReport.name),
-                  div(
-                    cls := "flex",
-                    actions,
-                    div(
-                      cls := "ml-3",
-                      renderSeverityBar(determineSeverity(
-                        now,
-                        dependencySummary.scanReport
-                      ))
+  private def renderScanSummaryGroup(
+      now: DateTime,
+      group: Grouped[DependencySummary],
+      projectName: String
+  ) =
+    div(
+      cls := "my-5",
+      h3(cls := "text-2xl", s"> ${group.groupName}"),
+      div(
+        cls := "ml-5",
+        group.items.map: dependencySummary =>
+          var actions = List.empty[TypedTag[String]]
+          dependencySummary
+            .scanReport
+            .currentVersion
+            .foreach: currentVersion =>
+              if dependencySummary.canBeUpdated then
+                actions = button(
+                  cls            := "bg-blue-500 ml-3 px-2 py-1",
+                  htmx.ajax.post := "/api/update",
+                  htmx.extraValues.vals := htmx.extraValues.value.vals(
+                    UpdateDependency(
+                      projectName,
+                      dependencySummary.scanReport.name,
+                      group.groupName,
+                      currentVersion,
+                      dependencySummary.scanReport.latestVersion
                     )
-                  )
-                ),
+                  ),
+                  attr("hx-ext")             := "json-enc",
+                  htmx.hyperscript.attribute := "on click toggle @disabled until htmx:afterOnLoad",
+                  "Update"
+                ) :: actions
+
+          var summaryItems = List(
+            div(
+              cls := "flex justify-between",
+              div(cls := "text-2xl", dependencySummary.scanReport.name),
+              div(
+                cls := "flex",
+                actions,
                 div(
-                  cls := "mt-3 pt-3 flex justify-between",
-                  p(
-                    s"""Current version: ${dependencySummary.scanReport.currentVersion.getOrElse(
-                        "-"
-                      )}"""
-                  ),
-                  p(
-                    s"Latest version: ${dependencySummary.scanReport.latestVersion}"
-                  ),
-                  renderReleaseDate(
+                  cls := "ml-3",
+                  renderSeverityBar(determineSeverity(
                     now,
-                    dependencySummary.scanReport.latestReleaseDate
-                  )
+                    dependencySummary.scanReport
+                  ))
                 )
               )
-
-              div(
-                cls := "mt-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
-                if dependencySummary.scanReport.vulnerabilities.isEmpty
-                then items
-                else
-                  items.appended(
-                    renderVulnerabilities(
-                      dependencySummary.scanReport.vulnerabilities
-                    )
-                  )
+            ),
+            div(
+              cls := "mt-3 pt-3 flex justify-between",
+              p(
+                s"""Current version: ${dependencySummary.scanReport.currentVersion.getOrElse(
+                    "-"
+                  )}"""
+              ),
+              p(
+                s"Latest version: ${dependencySummary.scanReport.latestVersion}"
+              ),
+              renderReleaseDate(
+                now,
+                dependencySummary.scanReport.latestReleaseDate
               )
+            )
           )
-        )
+
+          if !dependencySummary.scanReport.vulnerabilities.isEmpty then
+            summaryItems = summaryItems.appended(
+              renderVulnerabilities(
+                dependencySummary.scanReport.vulnerabilities
+              )
+            )
+
+          div(
+            cls := "mt-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 grid grid-colrs-1 divide-y divide-gray-700",
+            summaryItems
+          )
+      )
     )
 
   private def inferLink(vulnerability: String) =
