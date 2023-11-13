@@ -32,6 +32,8 @@ object domain:
       toVersion: String
   )
 
+  case class UpdateRequest(projectId: UUID, dependencyName: String, toVersion: String)
+
   case class UpdateAttempt(
       projectId: UUID,
       dependencyName: String,
@@ -45,6 +47,7 @@ object domain:
         dependencyName: String,
         toVersion: String
     ): F[Boolean]
+    def exist(requests: List[UpdateRequest]): F[List[UpdateRequest]]
     def save(attempt: UpdateAttempt): F[UUID]
 
   trait UpdateService[F[_]]:
