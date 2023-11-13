@@ -121,7 +121,7 @@ object ScanningViews:
                 .foreach: currentVersion =>
                   if dependencySummary.canBeUpdated then
                     actions = button(
-                      cls            := "bg-blue-500 ml-3 p-1",
+                      cls            := "bg-blue-500 ml-3 px-2 py-1",
                       htmx.ajax.post := "/api/update",
                       htmx.extraValues.vals := htmx.extraValues.value.vals(
                         UpdateDependency(
@@ -139,15 +139,18 @@ object ScanningViews:
               val items = List(
                 div(
                   cls := "flex justify-between",
+                  div(cls := "text-2xl", dependencySummary.scanReport.name),
                   div(
                     cls := "flex",
-                    div(cls := "text-2xl", dependencySummary.scanReport.name),
-                    actions
-                  ),
-                  renderSeverityBar(determineSeverity(
-                    now,
-                    dependencySummary.scanReport
-                  ))
+                    actions,
+                    div(
+                      cls := "ml-3",
+                      renderSeverityBar(determineSeverity(
+                        now,
+                        dependencySummary.scanReport
+                      ))
+                    )
+                  )
                 ),
                 div(
                   cls := "mt-3 pt-3 flex justify-between",
