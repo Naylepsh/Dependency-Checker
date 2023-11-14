@@ -18,12 +18,11 @@ import scanning.application.services.ScanningService
 import scanning.infra.packageindexes.Pypi
 import scanning.infra.sources.GitlabSource
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
+import update.controllers.UpdateController
+import update.repositories.UpdateRepository
+import update.services.{UpdateGateway, UpdateService}
 
 import concurrent.duration.*
-import update.controllers.UpdateController
-import update.services.UpdateService
-import update.repositories.UpdateRepository
-import update.services.UpdateGateway
 
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
@@ -81,7 +80,7 @@ object Main extends IOApp:
               scanner,
               scanResultRepository,
               advisory,
-              UpdateGateway.make[IO]
+              UpdateGateway.make[IO](updateRepository)
             )
           val updateService =
             UpdateService.make(updateRepository, projectRepository, gitlabApi)

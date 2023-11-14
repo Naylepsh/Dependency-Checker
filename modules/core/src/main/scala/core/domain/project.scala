@@ -5,8 +5,8 @@ import java.util.UUID
 import cats.*
 import cats.data.NonEmptyList
 import cats.implicits.*
-import org.joda.time.{ DateTime, Days }
 import com.github.nscala_time.time.Imports.*
+import org.joda.time.{ DateTime, Days }
 
 import dependency.*
 import vulnerability.*
@@ -82,6 +82,7 @@ object project:
     def deleteOld(projectName: String): F[Unit]
 
   case class ScanReport(
+      projectId: UUID,
       projectName: String,
       dependenciesReports: List[Grouped[DependencyScanReport]]
   )

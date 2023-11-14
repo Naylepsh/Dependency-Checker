@@ -1,35 +1,25 @@
 package scanning.application
 
-import cats.syntax.all.*
 import cats.Monad
-import cats.data.{ Validated, ValidatedNel }
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.syntax.all.*
 import core.controller.Controller
-import core.domain.severity
-import core.domain.Time
 import core.domain.Time.DeltaUnit
-import core.domain.project.{
-  ProjectScanConfigRepository,
-  ScanReport,
-  ScanResult
-}
-import core.domain.dependency.{ DependencyScanReport, DependencyVulnerability }
+import core.domain.dependency.{DependencyReport, DependencyScanReport, DependencyVulnerability}
+import core.domain.project._
 import core.domain.severity.{ Severity, determineSeverity }
 import core.domain.task.TaskProcessor
+import core.domain.{Time, severity}
 import org.http4s.*
 import org.http4s.dsl.Http4sDsl
+import org.http4s.dsl.impl.{OptionalValidatingQueryParamDecoderMatcher, ValidatingQueryParamDecoderMatcher}
 import org.http4s.headers.*
 import org.http4s.server.Router
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import scalatags.Text.all.*
 import scanning.application.services.ScanningService
-import org.http4s.dsl.impl.OptionalValidatingQueryParamDecoderMatcher
-import org.http4s.dsl.impl.ValidatingQueryParamDecoderMatcher
-import core.domain.dependency.DependencyReport
-import cats.data.NonEmptyList
-import cats.data.Validated.Valid
-import core.domain.project.ProjectVulnerability
-import cats.data.Validated.Invalid
 
 enum SortDirection:
   case Asc, Desc
