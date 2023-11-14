@@ -42,8 +42,8 @@ lazy val root = project
     fork    := true,
     commonSettings
   )
-  .aggregate(core, advisory, gitlab, parsers, scanning, update)
-  .dependsOn(core, advisory, gitlab, parsers, scanning, update)
+  .aggregate(core, advisory, jira, gitlab, parsers, scanning, update)
+  .dependsOn(core, advisory, jira, gitlab, parsers, scanning, update)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -57,6 +57,11 @@ lazy val advisory = project
 lazy val gitlab = project
   .in(file("modules/gitlab"))
   .settings(commonSettings: _*)
+
+lazy val jira = project
+  .in(file("modules/jira"))
+  .settings(commonSettings: _*)
+  .dependsOn(core)
 
 lazy val parsers = project
   .in(file("modules/parsers"))
