@@ -21,10 +21,6 @@ object update:
 
   trait UpdateGateway[F[_]]:
     def canUpdate(
-        dependency: DependencyToUpdate,
-        sourceFile: String
-    ): F[Boolean]
-    def canUpdate(
         dependencies: List[DependencyToUpdate],
         projectId: UUID,
         sourceFile: String

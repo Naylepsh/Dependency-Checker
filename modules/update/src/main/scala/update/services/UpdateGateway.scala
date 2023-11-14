@@ -12,18 +12,6 @@ object UpdateGateway:
   def make[F[_]: Applicative](repository: UpdateRepository[F])
       : core.domain.update.UpdateGateway[F] = new:
     def canUpdate(
-        dependency: DependencyToUpdate,
-        sourceFile: String
-    ): F[Boolean] =
-      dependency
-        .currentVersion
-        .map: currentVersion =>
-          currentVersion != dependency.latestVersion
-            && FileType.fromPath(sourceFile).isRight
-        .getOrElse(false)
-        .pure
-
-    def canUpdate(
         dependencies: List[DependencyToUpdate],
         projectId: UUID,
         sourceFile: String
