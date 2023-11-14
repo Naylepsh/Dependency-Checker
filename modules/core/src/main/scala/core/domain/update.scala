@@ -1,5 +1,7 @@
 package core.domain
 
+import java.util.UUID
+
 import dependency.DependencyReport
 
 object update:
@@ -22,3 +24,8 @@ object update:
         dependency: DependencyToUpdate,
         sourceFile: String
     ): F[Boolean]
+    def canUpdate(
+        dependencies: List[DependencyToUpdate],
+        projectId: UUID,
+        sourceFile: String
+    ): F[List[(DependencyToUpdate, Boolean)]]

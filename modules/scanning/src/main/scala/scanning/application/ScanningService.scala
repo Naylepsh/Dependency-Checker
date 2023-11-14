@@ -15,6 +15,7 @@ import scanning.domain.{ DependencySummary, ScanSummary, Source }
 import advisory.Advisory
 import core.domain.update.UpdateGateway
 import core.domain.update.DependencyToUpdate
+import java.util.UUID
 
 type CompareDependencyScanReports =
   (DependencyScanReport, DependencyScanReport) => Int
@@ -87,17 +88,23 @@ object ScanningService:
       report
         .dependenciesReports
         .traverse: group =>
-          group
-            .items
-            .traverse: dependency =>
-              val toUpdate = DependencyToUpdate(
-                dependency.name,
-                dependency.currentVersion,
-                dependency.latestVersion
-              )
-              updateGateway
-                .canUpdate(toUpdate, group.groupName)
-                .map(DependencySummary(dependency, _))
+          val toUpdate = group.items.map: report =>
+            DependencyToUpdate(
+              report.name,
+              report.currentVersion,
+              report.latestVersion
+            )
+          updateGateway
+            .canUpdate(toUpdate, report.projectId, group.groupName)
+            .map: results =>
+              group.items.map: dependency =>
+                val canUpdate = results
+                  .find: (dep, _) =>
+                    dep.name == dependency.name
+                  .map: (_, result) =>
+                    result
+                  .getOrElse(true)
+                DependencySummary(dependency, canUpdate)
             .map(Grouped(group.groupName, _))
         .map(ScanSummary(report.projectName, _))
 

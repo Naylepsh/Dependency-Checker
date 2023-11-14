@@ -10,8 +10,8 @@ import core.domain.Grouped
 import core.domain.dependency.{
   DependencyLatestRelease,
   DependencyReport,
-  DependencyScanReport,
   DependencyRepository,
+  DependencyScanReport,
   DependencyVulnerability
 }
 import core.domain.project.*
@@ -201,6 +201,7 @@ object ScanResultRepository:
       Update[ProjectDependency](sql).updateMany(projectDependencies)
 
     case class GetAllResult(
+        projectId: UUID,
         projectName: String,
         groupName: String,
         dependencyId: String,
@@ -219,6 +220,7 @@ object ScanResultRepository:
         results
           .groupBy(_.projectName)
           .map: (projectName, projectResults) =>
+            val projectId = projectResults.head.projectId
             val reports = projectResults
               .groupBy(_.groupName)
               .map: (groupName, groupResults) =>
@@ -254,7 +256,7 @@ object ScanResultRepository:
                   .collect:
                     case Some(result) => result
                 Grouped(groupName, dependencies)
-            ScanReport(projectName, reports.toList)
+            ScanReport(projectId, projectName, reports.toList)
           .toList
 
     def getDependenciesOfProject(
@@ -287,6 +289,7 @@ object ScanResultRepository:
     ): Query0[GetAllResult] =
       (sql"""
         SELECT
+          project.id,
           project.name,
           project_dependency.group_name,
           dependency.id,

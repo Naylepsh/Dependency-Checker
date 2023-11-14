@@ -1,6 +1,7 @@
 package update
 
 import java.util.UUID
+
 import cats.syntax.all.*
 
 object domain:

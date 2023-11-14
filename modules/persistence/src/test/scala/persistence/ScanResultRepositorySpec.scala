@@ -1,35 +1,27 @@
 package persistence
 
-import org.scalatest.freespec.AsyncFreeSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.Tag
+import java.util.UUID
+
 import cats.effect.IO
+import cats.effect.kernel.Resource
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.*
+import core.domain.dependency._
+import core.domain.project._
+import core.domain.{Grouped, Time}
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import core.domain.project.ProjectScanConfig
-import core.domain.project.Project
-import core.domain.dependency.DependencySource
-import cats.effect.kernel.Resource
-import core.domain.project.ScanResult
-import core.domain.dependency.DependencyScanReport
-import core.domain.dependency.DependencyReport
-import core.domain.dependency.DependencyDetails
-import core.domain.dependency.Dependency
-import core.domain.dependency.DependencyVulnerability
-import core.domain.dependency.DependencyLatestRelease
-import core.domain.Grouped
-import persistence.{ DependencyRepository, ScanResultRepository }
-import ScanResultRepository.ScanResultRepositorySQL.GetAllResult
-import org.legogroup.woof.{ *, given }
-import core.domain.Time
-import org.scalatest.Checkpoints.Checkpoint
-import org.scalatest.Succeeded
 import org.joda.time.DateTime
-import core.domain.project.ScanReport
+import org.legogroup.woof.{ *, given }
+import org.scalatest.Checkpoints.Checkpoint
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Succeeded, Tag}
+import persistence.{ DependencyRepository, ScanResultRepository }
+
+import ScanResultRepository.ScanResultRepositorySQL.GetAllResult
 import database.*
 
 class ScanResultRepositorySpec extends AsyncFreeSpec with AsyncIOSpec
@@ -117,6 +109,7 @@ object ScanResultRepositorySpec:
     override def outputError(str: String): IO[Unit] = IO.unit
 
   val expectedFirstProjectReport = ScanReport(
+    projectId = UUID.randomUUID(),
     projectName = "first-project",
     dependenciesReports = List(
       Grouped(
@@ -137,6 +130,7 @@ object ScanResultRepositorySpec:
     )
   )
   val expectedSecondProjectReport = ScanReport(
+    projectId = UUID.randomUUID(),
     projectName = "second-project",
     dependenciesReports = List(
       Grouped(
@@ -147,7 +141,7 @@ object ScanResultRepositorySpec:
           latestVersion = "2.3.5",
           currentVersionReleaseDate = Some(now),
           latestReleaseDate = Some(now),
-          vulnerabilities = List.empty,
+          vulnerabilities = List.empty
         ))
       )
     )
@@ -160,6 +154,7 @@ object ScanResultRepositorySpec:
 
   val testGetAllResults = List(
     GetAllResult(
+      projectId = UUID.randomUUID(),
       projectName = "first-project",
       groupName = "requirements.txt",
       dependencyId = "1",
@@ -169,9 +164,9 @@ object ScanResultRepositorySpec:
       dependencyNotes = Some("requires python>=4.20"),
       vulnerabilityName = Some("first-vulnerability"),
       vulnerabilitySeverity = None
-
     ),
     GetAllResult(
+      projectId = UUID.randomUUID(),
       projectName = "first-project",
       groupName = "requirements.txt",
       dependencyId = "1",
@@ -183,6 +178,7 @@ object ScanResultRepositorySpec:
       vulnerabilitySeverity = None
     ),
     GetAllResult(
+      projectId = UUID.randomUUID(),
       projectName = "second-project",
       groupName = "requirements.txt",
       dependencyId = "1",
