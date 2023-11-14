@@ -17,5 +17,5 @@ Checks the state of project's dependencies (how up-to/out-of-date they are and t
 ## Usage
 
 1. Fill out your env vars (see [.env.example](/.env.exampple))
-2. Run `sbt "run web"`
+2. Run `sbt run`
 
