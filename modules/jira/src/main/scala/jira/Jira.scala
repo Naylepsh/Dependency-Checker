@@ -54,9 +54,9 @@ object Jira:
     ): F[Either[String, Unit]] =
       val body: Json = Map[String, Json](
         "fields" -> Map[String, Json](
-          "project"   -> Map("key" -> projectKey.value),
+          "project"   -> Map("key" -> projectKey),
           "issuetype" -> Map("name" -> issueType),
-          "summary"   -> summary.value,
+          "summary"   -> summary,
           "description" -> Map[String, Json](
             "type"    -> "doc",
             "version" -> 1,
