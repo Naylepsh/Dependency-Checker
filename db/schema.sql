@@ -1,19 +1,7 @@
-CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(128) primary key);
+CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(255) primary key);
 CREATE TABLE project (
   id UUID PRIMARY KEY,
   name TEXT NOT NULL UNIQUE
-);
-CREATE TABLE project_scan_config (
-  id UUID PRIMARY KEY,
-  gitlab_id INTEGER NOT NULL UNIQUE,
-  enabled INTEGER NOT NULL,
-  branch TEXT NOT NULL,
-  project_id UUID NOT NULL,
-
-  CONSTRAINT fk_project_id
-    FOREIGN KEY (project_id)
-    REFERENCES project (id)
-    ON DELETE CASCADE
 );
 CREATE TABLE txt_source (
   id UUID PRIMARY KEY,
@@ -85,9 +73,22 @@ CREATE TABLE IF NOT EXISTS "vulnerability"
     ON DELETE CASCADE,
   UNIQUE (name, dependency_id)
 );
+CREATE TABLE IF NOT EXISTS "project_scan_config" (
+  id UUID PRIMARY KEY,
+  gitlab_id INTEGER NOT NULL,
+  enabled INTEGER NOT NULL,
+  branch TEXT NOT NULL,
+  project_id UUID NOT NULL,
+
+  CONSTRAINT fk_project_id
+    FOREIGN KEY (project_id)
+    REFERENCES project (id)
+    ON DELETE CASCADE
+);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20230824143342'),
   ('20230831175728'),
   ('20230914145025'),
-  ('20231112201736');
+  ('20231112201736'),
+  ('20231117110718');
