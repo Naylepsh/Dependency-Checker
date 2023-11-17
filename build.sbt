@@ -38,7 +38,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name    := "ganyu",
-    version := "0.11.0",
+    version := "0.11.1",
     fork    := true,
     commonSettings
   )
