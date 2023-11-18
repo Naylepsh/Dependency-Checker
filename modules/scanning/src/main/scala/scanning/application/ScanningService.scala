@@ -1,7 +1,10 @@
 package scanning.application.services
 
+import java.util.UUID
+
 import scala.annotation.tailrec
 
+import advisory.Advisory
 import cats.*
 import cats.data.NonEmptyList
 import cats.effect.std.*
@@ -9,19 +12,23 @@ import cats.implicits.*
 import core.domain.*
 import core.domain.dependency.*
 import core.domain.project.{ ProjectScanConfig, * }
+import core.domain.task.TaskProcessor
+import core.domain.update.{
+  DependencyToUpdate,
+  UpdateDependency,
+  UpdateGateway
+}
 import org.joda.time.DateTime
 import org.legogroup.woof.{ *, given }
 import scanning.domain.{ DependencySummary, ScanSummary, Source }
-import advisory.Advisory
-import core.domain.update.UpdateGateway
-import core.domain.update.DependencyToUpdate
-import java.util.UUID
 
 type CompareDependencyScanReports =
   (DependencyScanReport, DependencyScanReport) => Int
 
 trait ScanningService[F[_]]:
   def scan(project: ProjectScanConfig): F[Unit]
+  def scanSingle(projectName: String): F[Option[Unit]]
+  def scanAll: F[Unit]
   def getLatestScansTimestamps(limit: Int): F[List[DateTime]]
   def getLatestScan(
       projectName: String,
@@ -38,7 +45,9 @@ object ScanningService:
       source: Source[F, ProjectScanConfig],
       scanner: DependencyScanner[F],
       repository: ScanResultRepository[F],
+      configsRepository: ProjectScanConfigRepository[F],
       advisory: Advisory[F],
+      processor: TaskProcessor[F],
       updateGateway: UpdateGateway[F]
   ): ScanningService[F] = new:
     def deleteScans(timestamps: NonEmptyList[DateTime]): F[Unit] =
@@ -71,6 +80,52 @@ object ScanningService:
           _   <- Logger[F].info("Done with the scan")
         yield ()
       program.withLogContext("project", config.project.name)
+
+    def scanSingle(projectName: String): F[Option[Unit]] =
+      configsRepository.all.flatMap: configs =>
+        configs
+          .find: config =>
+            config.project.name == projectName
+          .traverse: config =>
+            processor.add(scan(config.toProjectScanConfig))
+
+    def scanAll: F[Unit] =
+      configsRepository
+        .all
+        .flatMap: configs =>
+          val enabledConfigs = configs.filter(_.enabled)
+
+          val doScan = enabledConfigs.traverse: config =>
+            processor.add(scan(config.toProjectScanConfig))
+          val checkVulnerabilities =
+            processor.add(obtainUnknownSeveritiesOfVulnerabilities)
+          val updateDependencies = enabledConfigs
+            .traverse: config =>
+              // TODO: Check whether automatic updates are enabled
+              getLatestScan(
+                config.project.name,
+                DependencyScanReport.compareByNameAsc
+              )
+            .map: scans =>
+              scans.collect:
+                case Some(scan) => scan
+            .flatMap: scans =>
+              var depsToUpdate = List.empty[UpdateDependency]
+              scans.foreach: scan =>
+                scan.dependencySummaries.foreach: summary =>
+                  summary.items.foreach: dependencySummary =>
+                    dependencySummary.scanReport.currentVersion.foreach:
+                      currentVersion =>
+                        depsToUpdate = UpdateDependency(
+                          scan.projectName,
+                          dependencySummary.scanReport.name,
+                          summary.groupName,
+                          currentVersion,
+                          dependencySummary.scanReport.latestVersion
+                        ) :: depsToUpdate
+              processor.add(updateGateway.update(depsToUpdate).void)
+
+          doScan *> checkVulnerabilities *> updateDependencies
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       repository.getLatestScansTimestamps(limit)
