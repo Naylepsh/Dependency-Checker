@@ -76,8 +76,7 @@ object ScanningController:
 
   def make[F[_]: Monad: Time](
       service: ScanningService[F],
-      repository: ProjectScanConfigRepository[F],
-      processor: ScanningProcessor[F]
+      repository: ProjectScanConfigRepository[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
@@ -117,14 +116,14 @@ object ScanningController:
               )
 
         case POST -> Root / "project" / "all" =>
-          processor.scanAll.flatMap: _ =>
+          service.scanAll.flatMap: _ =>
             Ok(
               renderAllScansScheduledButton.toString,
               `Content-Type`(MediaType.text.html)
             )
 
         case POST -> Root / "project" / projectName =>
-          processor.scanSingle(projectName).flatMap:
+          service.scanSingle(projectName).flatMap:
             case None => NotFound(s"$projectName does not exist")
             case Some(_) => Ok(
                 renderScanScheduledButton.toString,

@@ -83,26 +83,18 @@ object Main extends IOApp:
               source,
               scanner,
               scanResultRepository,
+              projectRepository,
               advisory,
+              processor,
               updateGateway
             )
-          val scanningProcessor = ScanningProcessor.make[IO](
-            scanningService,
-            projectRepository,
-            processor,
-            updateGateway
-          )
 
           val projectController =
             ProjectController.make(projectService, summaryService)
           val staticFileController = StaticFileController.make[IO]
           val rootController       = RootController.make[IO]
           val scanReportController =
-            ScanningController.make(
-              scanningService,
-              projectRepository,
-              scanningProcessor
-            )
+            ScanningController.make(scanningService, projectRepository)
           val updateController = UpdateController.make(updateService)
 
           val routes =
