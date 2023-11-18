@@ -257,7 +257,8 @@ private object ProjectViews:
         s"${summary.vulnerabilityCount} vulnerabilities"
       ) :: icons
 
-    val detailsId = s"${summary.config.project.name}-details"
+    val detailsId =
+      s"""${summary.config.project.name.replaceAll("[ ()]", "")}-details"""
 
     div(
       id  := summary.config.project.name,
@@ -267,7 +268,7 @@ private object ProjectViews:
         div(
           cls := "grow text-2xl",
           htmx.hyperscript.attribute := s"""on click 
-              | toggle .h-0 on #$detailsId 
+              | toggle .h-0 on #$detailsId
               | then toggle .opacity-0 on #$detailsId 
               | then toggle .opacity-100 on #$detailsId
               | then toggle .-translate-y-12 on #$detailsId
