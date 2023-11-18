@@ -2,6 +2,7 @@ package core
 
 import cats.kernel.Order
 import io.circe.{ Decoder, Encoder }
+import monocle.Iso
 
 abstract class Newtype[A](
     using ord: Order[A],
@@ -19,6 +20,10 @@ abstract class Newtype[A](
   protected inline final def derive[F[_]](using ev: F[A]): F[Type] = ev
 
   extension (t: Type) inline def value: A = t
+
+  given Wrapper[A, Type] with
+    def iso: Iso[A, Type] =
+      Iso[A, Type](apply(_))(_.value)
 
   given Order[Type]   = ord
   given Encoder[Type] = enc

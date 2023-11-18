@@ -7,6 +7,7 @@ object Dependencies {
     val catsCore     = "2.10.0"
     val catsEffect   = "3.5.2"
     val kittens      = "3.1.0"
+    val monocle      = "3.2.0"
     val circe        = "0.14.6"
     val scalaTime    = "2.32.0"
     val ciris        = "3.4.0"
@@ -36,6 +37,7 @@ object Dependencies {
     val catsCore     = "org.typelevel"                 %% "cats-core"           % V.catsCore
     val catsEffect   = "org.typelevel"                 %% "cats-effect"         % V.catsEffect
     val kittens      = "org.typelevel"                 %% "kittens"             % V.kittens
+    val monocle      = "dev.optics"                    %% "monocle-core"        % V.monocle
     val scalaTime    = "com.github.nscala-time"        %% "nscala-time"         % V.scalaTime
     val ciris        = "is.cir"                        %% "ciris"               % V.ciris
     val http4sServer = "org.http4s"                    %% "http4s-ember-server" % V.http4s
