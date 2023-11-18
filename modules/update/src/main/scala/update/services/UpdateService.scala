@@ -4,16 +4,9 @@ import cats.Monad
 import cats.data.EitherT
 import cats.syntax.all.*
 import core.domain.project.ProjectScanConfigRepository
+import core.domain.update.UpdateDependency
 import gitlab.{ Action, CommitAction, GitlabApi }
-
-import update.domain.{
-  FileType,
-  UpdateAttempt,
-  UpdateDependency,
-  UpdateDependencyDetails,
-  UpdateRepository,
-  UpdateService
-}
+import update.domain.*
 
 object UpdateService:
   def make[F[_]: Monad](

@@ -25,3 +25,4 @@ object update:
         projectId: UUID,
         sourceFile: String
     ): F[List[(DependencyToUpdate, Boolean)]]
+    def update(dependencies: List[UpdateDependency]): F[Unit]

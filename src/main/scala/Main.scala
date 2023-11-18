@@ -20,7 +20,7 @@ import scanning.infra.sources.GitlabSource
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import update.controllers.UpdateController
 import update.repositories.UpdateRepository
-import update.services.{UpdateGateway, UpdateService}
+import update.services.{ UpdateGateway, UpdateService }
 
 import concurrent.duration.*
 
@@ -74,16 +74,24 @@ object Main extends IOApp:
           val summaryService =
             ProjectSummaryService.make(scanResultRepository)
 
+          val updateService =
+            UpdateService.make(updateRepository, projectRepository, gitlabApi)
+          val updateGateway =
+            UpdateGateway.make[IO](updateRepository, updateService, processor)
           val scanningService =
             ScanningService.make[IO](
               source,
               scanner,
               scanResultRepository,
               advisory,
-              UpdateGateway.make[IO](updateRepository)
+              updateGateway
             )
-          val updateService =
-            UpdateService.make(updateRepository, projectRepository, gitlabApi)
+          val scanningProcessor = ScanningProcessor.make[IO](
+            scanningService,
+            projectRepository,
+            processor,
+            updateGateway
+          )
 
           val projectController =
             ProjectController.make(projectService, summaryService)
@@ -93,7 +101,7 @@ object Main extends IOApp:
             ScanningController.make(
               scanningService,
               projectRepository,
-              processor
+              scanningProcessor
             )
           val updateController = UpdateController.make(updateService)
 
