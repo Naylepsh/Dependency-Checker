@@ -2,15 +2,28 @@ package update.services
 
 import java.util.UUID
 
-import cats.Applicative
+import cats.Monad
 import cats.syntax.all.*
-import core.domain.update.DependencyToUpdate
-import update.domain.{ FileType, UpdateRepository }
-import update.domain.UpdateRequest
+import core.domain.task.TaskProcessor
+import core.domain.update.{DependencyToUpdate, UpdateDependency}
+import org.legogroup.woof.{ *, given }
+import update.domain._
 
 object UpdateGateway:
-  def make[F[_]: Applicative](repository: UpdateRepository[F])
-      : core.domain.update.UpdateGateway[F] = new:
+  def make[F[_]: Monad: Logger](
+      repository: UpdateRepository[F],
+      service: UpdateService[F],
+      processor: TaskProcessor[F]
+  ): core.domain.update.UpdateGateway[F] = new:
+
+    def update(dependencies: List[UpdateDependency]): F[Unit] =
+      dependencies
+        .traverse: dependency =>
+          service.update(dependency).flatMap:
+            case Left(reason) => Logger[F].error(reason)
+            case Right(_)     => Monad[F].unit
+        .void
+
     def canUpdate(
         dependencies: List[DependencyToUpdate],
         projectId: UUID,
