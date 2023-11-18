@@ -41,7 +41,7 @@ object config:
     port"8080"
   )
 
-  // A bit of boilerplate for being able to use ciris with opaque types seemlessly
+  // A bit of boilerplate for being able to use ciris with opaque types seamlessly
   extension [F[_], A](cv: ConfigValue[F, A])
     def fallback[Raw](value: Raw)(using
     ev: Wrapper[Raw, A]): ConfigValue[F, A] =
