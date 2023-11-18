@@ -52,7 +52,7 @@ object Jira:
         description: Description,
         issueType: String
     ): F[Either[String, Unit]] =
-      val body: Json = Map[String, Json](
+      val body: Json = Map(
         "fields" -> Map[String, Json](
           "project"   -> Map("key" -> projectKey),
           "issuetype" -> Map("name" -> issueType),
@@ -74,11 +74,10 @@ object Jira:
           )
         )
       )
-      // TODO: Handle errors
       basicRequest
         .post(uri"${config.address}/rest/api/3/issue")
         .auth
         .basic(config.username.value, config.password.value)
         .body(body)
         .send(backend)
-        .map(_.body.leftMap(_ => "Something went wrong").void)
+        .map(_.body.leftMap(_.toString).void)
