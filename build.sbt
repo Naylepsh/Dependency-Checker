@@ -17,6 +17,7 @@ val commonSettings = List(
     Libraries.catsCore,
     Libraries.catsEffect,
     Libraries.kittens,
+    Libraries.monocle,
     Libraries.scalaTime,
     Libraries.ciris,
     Libraries.http4sDsl,
