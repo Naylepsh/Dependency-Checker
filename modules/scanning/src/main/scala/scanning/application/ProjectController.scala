@@ -83,6 +83,9 @@ object ProjectController:
                     `Content-Type`(MediaType.text.html)
                   )
 
+        case DELETE -> Root / projectName =>
+          configService.delete(projectName) *> Ok()
+
       val routes: HttpRoutes[F] = Router("project" -> httpRoutes)
 
 private object ProjectPayloads:
@@ -257,12 +260,13 @@ private object ProjectViews:
         s"${summary.vulnerabilityCount} vulnerabilities"
       ) :: icons
 
-    val detailsId =
-      s"""${summary.config.project.name.replaceAll("[ ()]", "")}-details"""
+    val identifier =
+      s"""${summary.config.project.name.replaceAll("[ ()]", "")}"""
+    val detailsId = s"$identifier-details"
 
     div(
-      id  := summary.config.project.name,
-      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700 transition-all",
+      id  := identifier,
+      cls := "project my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700 transition-all",
       div(
         cls := "flex justify-between",
         div(
@@ -293,6 +297,14 @@ private object ProjectViews:
             cls  := "bg-blue-500 m-1 py-2 px-3 text-gray-100",
             href := s"/scan/project/${summary.config.project.name}/latest",
             "Scan report"
+          ),
+          a(
+            cls                    := "bg-red-800 m-1 py-2 px-3 text-gray-100",
+            htmx.ajax.delete       := s"/project/${summary.config.project.name}",
+            htmx.trigger.attribute := htmx.trigger.value.click,
+            htmx.target.attribute  := htmx.target.value.closest(".project"),
+            htmx.swap.attribute    := s"${htmx.swap.value.outerHTML} swap:1s",
+            "Delete"
           )
         )
       ),

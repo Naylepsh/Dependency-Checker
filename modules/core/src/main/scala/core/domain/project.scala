@@ -43,6 +43,7 @@ object project:
         : F[Option[ExistingProjectScanConfig]]
     def save(config: ProjectScanConfig): F[UUID]
     def setEnabled(projectName: String, enabled: Boolean): F[Unit]
+    def delete(projectId: UUID): F[Unit]
 
   case class ScanResult(
       project: Project,
