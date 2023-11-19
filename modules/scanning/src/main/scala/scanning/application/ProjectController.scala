@@ -74,6 +74,9 @@ object ProjectController:
         case PATCH -> Root / projectName / "disable-auto-updates" =>
           setAutoUpdate(projectName, false)
 
+        case DELETE -> Root / projectName =>
+          configService.delete(projectName) *> Ok()
+
       private def setScan(projectName: String, value: Boolean) =
         configService.setEnabled(projectName, value).flatMap:
           case None => NotFound(s"$projectName does not exist")
@@ -103,9 +106,6 @@ object ProjectController:
                   ).toString,
                   `Content-Type`(MediaType.text.html)
                 )
-
-        case DELETE -> Root / projectName =>
-          configService.delete(projectName) *> Ok()
 
       val routes: HttpRoutes[F] = Router("project" -> httpRoutes)
 
