@@ -18,6 +18,9 @@ import scalatags.Text.TypedTag
 import scalatags.Text.all.*
 import scanning.domain.ProjectSummary
 
+enum ProjectMenuState:
+  case Opened, Closed
+
 object ProjectController:
   // TODO: Move this to a dedicated module
   // And mode ScanningViews' layout to a shared module (/lib?)
@@ -60,28 +63,46 @@ object ProjectController:
           )
 
         case PATCH -> Root / projectName / "enable" =>
-          configService.setEnabled(projectName, true).flatMap:
-            case None => NotFound(s"$projectName does not exist")
-            case Some(config) =>
-              summaryService
-                .enrichWithScanSummary(config.toProjectScanConfig)
-                .flatMap: summary =>
-                  Ok(
-                    renderProjectDetails(summary).toString,
-                    `Content-Type`(MediaType.text.html)
-                  )
+          setScan(projectName, true)
 
         case PATCH -> Root / projectName / "disable" =>
-          configService.setEnabled(projectName, false).flatMap:
-            case None => NotFound(s"$projectName does not exist")
-            case Some(config) =>
-              summaryService
-                .enrichWithScanSummary(config.toProjectScanConfig)
-                .flatMap: summary =>
-                  Ok(
-                    renderProjectDetails(summary).toString,
-                    `Content-Type`(MediaType.text.html)
-                  )
+          setScan(projectName, false)
+
+        case PATCH -> Root / projectName / "enable-auto-updates" =>
+          setAutoUpdate(projectName, true)
+
+        case PATCH -> Root / projectName / "disable-auto-updates" =>
+          setAutoUpdate(projectName, false)
+
+      private def setScan(projectName: String, value: Boolean) =
+        configService.setEnabled(projectName, value).flatMap:
+          case None => NotFound(s"$projectName does not exist")
+          case Some(config) =>
+            summaryService
+              .enrichWithScanSummary(config.toProjectScanConfig)
+              .flatMap: summary =>
+                Ok(
+                  renderProjectDetails(
+                    summary,
+                    ProjectMenuState.Opened
+                  ).toString,
+                  `Content-Type`(MediaType.text.html)
+                )
+
+      private def setAutoUpdate(projectName: String, value: Boolean) =
+        configService.setAutoUpdate(projectName, value).flatMap:
+          case None => NotFound(s"$projectName does not exist")
+          case Some(config) =>
+            summaryService
+              .enrichWithScanSummary(config.toProjectScanConfig)
+              .flatMap: summary =>
+                Ok(
+                  renderProjectDetails(
+                    summary,
+                    ProjectMenuState.Opened
+                  ).toString,
+                  `Content-Type`(MediaType.text.html)
+                )
 
         case DELETE -> Root / projectName =>
           configService.delete(projectName) *> Ok()
@@ -124,12 +145,15 @@ private object ProjectPayloads:
               TomlSource(path, group.some)
           case _ => List.empty // TODO: This should be a validation failure
         .getOrElse(List.empty)
-      val enabled = true
+      // TODO: Should these be in the form?
+      val enabled    = true
+      val autoUpdate = false
       ProjectScanConfig(
         Project(gitlabId.toString, name),
         txtSources ++ tomlSources,
         enabled,
-        branch
+        branch,
+        autoUpdate
       )
   object ProjectPayload:
     implicit def decoder[F[_]: Concurrent]: EntityDecoder[F, ProjectPayload] =
@@ -157,7 +181,7 @@ private object ProjectViews:
       ),
       div(
         cls := "my-5",
-        projects.map(renderProjectDetails)
+        projects.map(renderProjectDetails(_, ProjectMenuState.Closed))
       )
     )
 
@@ -233,17 +257,19 @@ private object ProjectViews:
     "checked:focus:before:transition-[box-shadow_0.2s,transform_0.2s]"
   ).mkString(" ")
 
-  def renderProjectDetails(summary: ProjectSummary) =
-    val toggleUrl =
+  def renderProjectDetails(
+      summary: ProjectSummary,
+      menuState: ProjectMenuState
+  ) =
+    val enableScanningToggleUrl =
       if summary.config.enabled
       then s"/project/${summary.config.project.name}/disable"
       else s"/project/${summary.config.project.name}/enable"
-
-    var enabledCheckboxAttrs = List(
+    var enabledScanningCheckboxAttrs = List(
       cls                    := checkboxClass,
       `type`                 := "checkbox",
       role                   := "switch",
-      htmx.ajax.patch        := toggleUrl,
+      htmx.ajax.patch        := enableScanningToggleUrl,
       htmx.trigger.attribute := htmx.trigger.value.change,
       htmx.swap.attribute    := htmx.swap.value.outerHTML,
       htmx.target.attribute := htmx.target.value.closest(
@@ -251,7 +277,29 @@ private object ProjectViews:
       )
     )
     if summary.config.enabled
-    then enabledCheckboxAttrs = (checked := "1") :: enabledCheckboxAttrs
+    then
+      enabledScanningCheckboxAttrs =
+        (checked := "1") :: enabledScanningCheckboxAttrs
+
+    val enabledAutoUpdatesToggleUrl =
+      if summary.config.autoUpdate
+      then s"/project/${summary.config.project.name}/disable-auto-updates"
+      else s"/project/${summary.config.project.name}/enable-auto-updates"
+    var enabledAutoUpdatesCheckboxAttrs = List(
+      cls                    := checkboxClass,
+      `type`                 := "checkbox",
+      role                   := "switch",
+      htmx.ajax.patch        := enabledAutoUpdatesToggleUrl,
+      htmx.trigger.attribute := htmx.trigger.value.change,
+      htmx.swap.attribute    := htmx.swap.value.outerHTML,
+      htmx.target.attribute := htmx.target.value.closest(
+        s"#${summary.config.project.name}"
+      )
+    )
+    if summary.config.autoUpdate
+    then
+      enabledAutoUpdatesCheckboxAttrs =
+        (checked := "1") :: enabledAutoUpdatesCheckboxAttrs
 
     var icons = List.empty[TypedTag[String]]
     if summary.vulnerabilityCount > 0 then
@@ -260,23 +308,34 @@ private object ProjectViews:
         s"${summary.vulnerabilityCount} vulnerabilities"
       ) :: icons
 
-    val identifier =
-      s"""${summary.config.project.name.replaceAll("[ ()]", "")}"""
-    val detailsId = s"$identifier-details"
+    val detailsId =
+      s"""${summary.config.project.name.replaceAll("[ ()]", "")}-details"""
+    val (detailsClasses, wrapperClasses) = menuState match
+      case ProjectMenuState.Opened =>
+        (
+          "transition-all duration-200 ease-out opacity-100 pt-3",
+          "flex justify-between pb-3"
+        )
+      case ProjectMenuState.Closed =>
+        (
+          "transition-all duration-200 ease-out h-0 opacity-0 -translate-y-12 pointer-events-none",
+          "flex justify-between"
+        )
 
     div(
-      id  := identifier,
-      cls := "project my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 cursor-pointer divide-y divide-gray-700 transition-all",
+      id  := summary.config.project.name,
+      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 divide-y divide-gray-700 transition-all",
       div(
-        cls := "flex justify-between",
+        cls := wrapperClasses,
         div(
-          cls := "grow text-2xl",
+          cls := "grow text-2xl cursor-pointer",
           htmx.hyperscript.attribute := s"""on click 
               | toggle .h-0 on #$detailsId
               | then toggle .opacity-0 on #$detailsId 
               | then toggle .opacity-100 on #$detailsId
               | then toggle .-translate-y-12 on #$detailsId
               | then toggle .pt-3 on #$detailsId
+              | then toggle .pointer-events-none on #$detailsId
               | then toggle .pb-3 on the closest parent <div/>""".stripMargin,
           summary.config.project.name
         ),
@@ -310,7 +369,7 @@ private object ProjectViews:
       ),
       div(
         id  := detailsId,
-        cls := "h-0 opacity-0 transition-all duration-200 ease-out -translate-y-12 pointer-events-none",
+        cls := detailsClasses,
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
           summary.config.project.repositoryId
@@ -320,8 +379,12 @@ private object ProjectViews:
           summary.config.branch
         ),
         p(
-          span(cls := "font-semibold", "Enabled: "),
-          input(enabledCheckboxAttrs)
+          span(cls := "font-semibold", "Scanning enabled: "),
+          input(enabledScanningCheckboxAttrs)
+        ),
+        p(
+          span(cls := "font-semibold", "Auto-updates enabled: "),
+          input(enabledAutoUpdatesCheckboxAttrs)
         ),
         div(
           cls := "grid grid-cols-1 divide-y divide-gray-700 divide-dashed",

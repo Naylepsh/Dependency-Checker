@@ -1,25 +1,23 @@
 package update.services
 
-import cats.Monad
+import java.net.URI
+
 import cats.data.EitherT
 import cats.syntax.all.*
+import cats.{ Applicative, Monad }
 import core.domain.project.ProjectScanConfigRepository
+import core.domain.update.UpdateDependency
 import gitlab.{ Action, CommitAction, GitlabApi }
-
-import update.domain.{
-  FileType,
-  UpdateAttempt,
-  UpdateDependency,
-  UpdateDependencyDetails,
-  UpdateRepository,
-  UpdateService
-}
+import jira.*
+import update.domain.*
+import org.legogroup.woof.{ *, given }
 
 object UpdateService:
-  def make[F[_]: Monad](
+  def make[F[_]: Monad: Logger](
       repository: UpdateRepository[F],
       projectConfigRepository: ProjectScanConfigRepository[F],
-      gitlabApi: GitlabApi[F]
+      gitlabApi: GitlabApi[F],
+      jiraNotificationService: JiraNotificationService[F]
   ): UpdateService[F] = new:
 
     def update(request: UpdateDependency): F[Either[String, Unit]] =
@@ -40,24 +38,36 @@ object UpdateService:
             update(req)
 
     def update(request: UpdateDependencyDetails): F[Either[String, Unit]] =
-      FileType.fromPath(request.filePath) match
-        case Left(reason) => reason.asLeft.pure
-        case Right(fileType) =>
-          EitherT(ensureAttemptWasNotMadeBefore(request))
-            .flatMap: _ =>
-              EitherT(updateDependencyFile(request, fileType))
-            .flatMap: updatedContent =>
-              EitherT(publishToGit(request, updatedContent))
-            .flatTap: mergeRequest =>
-              val attempt = UpdateAttempt(
-                request.projectId,
-                request.dependencyName,
-                request.toVersion,
-                mergeRequest.webUrl
-              )
-              EitherT(repository.save(attempt).map(_.asRight))
-            .void
-            .value
+      Logger[F].info("Requested update") *> (
+        FileType.fromPath(request.filePath) match
+          case Left(reason) => reason.asLeft.pure
+          case Right(fileType) =>
+            EitherT(ensureAttemptWasNotMadeBefore(request))
+              .flatMap: _ =>
+                EitherT(updateDependencyFile(request, fileType))
+              .flatMap: updatedContent =>
+                EitherT(publishToGit(request, updatedContent))
+              .flatTap: mergeRequest =>
+                val attempt = UpdateAttempt(
+                  request.projectId,
+                  request.dependencyName,
+                  request.toVersion,
+                  mergeRequest.webUrl
+                )
+                EitherT(repository.save(attempt).map(_.asRight))
+              .flatTap: mergeRequest =>
+                EitherT(
+                  jiraNotificationService.notify(
+                    request,
+                    // TODO: Move URI return type to GitlabApi
+                    URI(mergeRequest.webUrl)
+                  )
+                )
+              .flatTap: _ =>
+                EitherT(Logger[F].info("Done with update").map(_.asRight))
+              .void
+              .value
+      )
 
     private def updateDependencyFile(
         request: UpdateDependencyDetails,

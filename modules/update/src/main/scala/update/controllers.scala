@@ -4,6 +4,7 @@ import cats.Monad
 import cats.effect.kernel.Concurrent
 import cats.syntax.all.*
 import core.controller.Controller
+import core.domain.update.UpdateDependency
 import io.circe.*
 import io.circe.syntax.*
 import org.http4s.*
@@ -12,7 +13,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.*
 import org.http4s.server.Router
 
-import domain.{ UpdateDependency, UpdateService }
+import domain.{ UpdateService }
 
 object controllers:
   object UpdateController:

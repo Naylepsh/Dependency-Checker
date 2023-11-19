@@ -3,6 +3,7 @@ package update
 import java.util.UUID
 
 import cats.syntax.all.*
+import core.domain.update.UpdateDependency
 
 object domain:
   enum FileType:
@@ -14,14 +15,6 @@ object domain:
         // "temporarily" disable toml support -- requires additional poetry.lock handling
         // case Some("toml") => FileType.Toml.asRight
         case other => s"$other is not a supported format".asLeft
-
-  case class UpdateDependency(
-      projectName: String,
-      dependencyName: String,
-      filePath: String,
-      fromVersion: String,
-      toVersion: String
-  )
 
   case class UpdateDependencyDetails(
       projectId: UUID,

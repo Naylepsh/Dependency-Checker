@@ -80,6 +80,12 @@ object ProjectScanConfigRepository:
         case Some(scanId) =>
           SQL.setEnabled(scanId, enabled).run.transact(xa).void
 
+    def setAutoUpdate(name: String, autoUpdate: Boolean): F[Unit] =
+      SQL.findScanId(name).option.transact(xa).flatMap:
+        case None => MonadCancelThrow[F].unit
+        case Some(scanId) =>
+          SQL.setAutoUpdate(scanId, autoUpdate).run.transact(xa).void
+
     def delete(projectId: UUID): F[Unit] =
       SQL.deleteProject(projectId).run.transact(xa).void
 
@@ -92,7 +98,8 @@ private object SQL:
       configId: UUID,
       gitlabId: Int,
       enabled: Boolean,
-      branch: String
+      branch: String,
+      autoUpdate: Boolean
   )
   private[persistence] object RawConfig:
     def toDomain(
@@ -124,7 +131,8 @@ private object SQL:
           ),
           sources,
           config.enabled,
-          config.branch
+          config.branch,
+          config.autoUpdate
         )
 
   private[persistence] case class RawTxtSource(configId: UUID, path: String)
@@ -136,7 +144,7 @@ private object SQL:
 
   def allConfigs =
     sql"""
-      SELECT project.id, project.name, config.id as configId, gitlab_id, enabled, branch
+      SELECT project.id, project.name, config.id as configId, gitlab_id, enabled, branch, auto_update
       FROM project_scan_config config
       JOIN project ON project.id = config.project_id
       """.query[RawConfig]
@@ -171,8 +179,8 @@ private object SQL:
 
   def insertConfig(id: UUID, config: ProjectScanConfig, projectId: UUID) =
     sql"""
-    INSERT INTO project_scan_config (id, gitlab_id, enabled, branch, project_id)
-    VALUES ($id, ${config.project.repositoryId}, ${config.enabled}, ${config.branch}, $projectId)
+    INSERT INTO project_scan_config (id, gitlab_id, enabled, branch, project_id, auto_update)
+    VALUES ($id, ${config.project.repositoryId}, ${config.enabled}, ${config.branch}, $projectId, ${config.autoUpdate})
     """.update
 
   def insertTxtSource(id: UUID, configId: UUID, source: TxtSource) =
@@ -197,7 +205,7 @@ private object SQL:
 
   def findByProjectName(projectName: String) =
     sql"""
-      SELECT project.id, project.name, config.id, gitlab_id, enabled, branch
+      SELECT project.id, project.name, config.id, gitlab_id, enabled, branch, auto_update
       FROM project_scan_config config
       JOIN project ON project.id = config.project_id
       WHERE project.name = $projectName
@@ -207,5 +215,12 @@ private object SQL:
     sql"""
     UPDATE project_scan_config
     SET enabled = $enabled
+    WHERE id = $id
+    """.update
+
+  def setAutoUpdate(id: UUID, autoUpdate: Boolean) =
+    sql"""
+    UPDATE project_scan_config
+    SET auto_update = $autoUpdate
     WHERE id = $id
     """.update

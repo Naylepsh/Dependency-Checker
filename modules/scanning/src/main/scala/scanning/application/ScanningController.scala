@@ -1,23 +1,28 @@
 package scanning.application
 
 import cats.Monad
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{ Invalid, Valid }
+import cats.data.{ NonEmptyList, Validated, ValidatedNel }
 import cats.syntax.all.*
 import core.controller.Controller
 import core.domain.Time.DeltaUnit
-import core.domain.dependency.{DependencyReport, DependencyScanReport, DependencyVulnerability}
-import core.domain.project._
+import core.domain.dependency.{
+  DependencyReport,
+  DependencyScanReport,
+  DependencyVulnerability
+}
+import core.domain.project.*
 import core.domain.severity.{ Severity, determineSeverity }
-import core.domain.task.TaskProcessor
-import core.domain.{Time, severity}
+import core.domain.{ Time, severity }
 import org.http4s.*
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{OptionalValidatingQueryParamDecoderMatcher, ValidatingQueryParamDecoderMatcher}
+import org.http4s.dsl.impl.{
+  OptionalValidatingQueryParamDecoderMatcher,
+  ValidatingQueryParamDecoderMatcher
+}
 import org.http4s.headers.*
 import org.http4s.server.Router
 import org.joda.time.DateTime
-import org.legogroup.woof.{ *, given }
 import scalatags.Text.all.*
 import scanning.application.services.ScanningService
 
@@ -69,10 +74,9 @@ object ScanningController:
       case (SortByProperty.Severity, SortDirection.Desc) =>
         DependencyScanReport.compareBySeverityDesc(now)
 
-  def make[F[_]: Monad: Time: Logger](
+  def make[F[_]: Monad: Time](
       service: ScanningService[F],
-      repository: ProjectScanConfigRepository[F],
-      taskProcessor: TaskProcessor[F]
+      repository: ProjectScanConfigRepository[F]
   ): Controller[F] =
     new Controller[F] with Http4sDsl[F]:
       private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
@@ -90,7 +94,8 @@ object ScanningController:
                 errors => BadRequest(errors.toString),
                 // get project's latest scan
                 (sortByProperty, sortDirection) =>
-                  val compare = makeComparator(now, sortByProperty, sortDirection)
+                  val compare =
+                    makeComparator(now, sortByProperty, sortDirection)
                   service
                     .getLatestScan(projectName, compare)
                     .map:
@@ -111,34 +116,19 @@ object ScanningController:
               )
 
         case POST -> Root / "project" / "all" =>
-          repository
-            .all
-            .flatMap: configs =>
-              configs
-                .filter(_.enabled)
-                .traverse: config =>
-                  taskProcessor.add(service.scan(config.toProjectScanConfig))
-            .flatMap: _ =>
-              taskProcessor.add(
-                service.obtainUnknownSeveritiesOfVulnerabilities
-              )
-            .flatMap: _ =>
-              Ok(
-                renderAllScansScheduledButton.toString,
-                `Content-Type`(MediaType.text.html)
-              )
+          service.scanAll.flatMap: _ =>
+            Ok(
+              renderAllScansScheduledButton.toString,
+              `Content-Type`(MediaType.text.html)
+            )
 
         case POST -> Root / "project" / projectName =>
-          repository.all.flatMap: configs =>
-            configs
-              .find: config =>
-                config.project.name == projectName
-              .fold(NotFound(s"$projectName does not exist")): project =>
-                taskProcessor.add(service.scan(project.toProjectScanConfig))
-                  *> Ok(
-                    renderScanScheduledButton.toString,
-                    `Content-Type`(MediaType.text.html)
-                  )
+          service.scanSingle(projectName).flatMap:
+            case None => NotFound(s"$projectName does not exist")
+            case Some(_) => Ok(
+                renderScanScheduledButton.toString,
+                `Content-Type`(MediaType.text.html)
+              )
 
         case GET -> Root / "vulnerability"
             :? DaysSinceQueryParamMatcher(daysSince) =>
@@ -170,4 +160,3 @@ object ScanningController:
               BadRequest(errors.toString)
 
       val routes: HttpRoutes[F] = Router("scan" -> httpRoutes)
-

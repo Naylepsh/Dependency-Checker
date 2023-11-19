@@ -15,7 +15,7 @@ object Main extends IOApp:
       val jira        = Jira.make[IO](config, backend)
       val key         = ProjectKey("OPDDEV")
       val summary     = Summary("Summary test")
-      val description = Description("Description test")
+      val description = Description(List.empty)
       val issueType   = "Task"
       jira
         .createTicket(key, summary, description, issueType)

@@ -5,6 +5,7 @@ import com.comcast.ip4s.*
 import config.AppConfig
 import controllers.{ LoggingMiddleware, RootController, StaticFileController }
 import gitlab.GitlabApi
+import jira.Jira
 import org.http4s.ember.server.EmberServerBuilder
 import org.legogroup.woof.{ *, given }
 import persistence.{
@@ -20,7 +21,7 @@ import scanning.infra.sources.GitlabSource
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import update.controllers.UpdateController
 import update.repositories.UpdateRepository
-import update.services.{UpdateGateway, UpdateService}
+import update.services.*
 
 import concurrent.duration.*
 
@@ -49,6 +50,7 @@ object Main extends IOApp:
       given Logger[IO] = logger
       AppConfig.load[IO].flatMap: config =>
         resources(config).use: (xa, backend, processor) =>
+          // Setup core layer
           val gitlabApi = GitlabApi.make[IO](
             backend,
             config.gitlab.host,
@@ -58,6 +60,7 @@ object Main extends IOApp:
           val scanner  = DependencyScanner.make(Pypi(backend))
           val advisory = Advisory.make(GithubAdvisory.make[IO])
 
+          // Setup data access layer
           val scanResultRepository = ScanResultRepository.make(
             xa,
             DependencyRepository.make(xa)
@@ -65,6 +68,7 @@ object Main extends IOApp:
           val projectRepository = ProjectScanConfigRepository.make(xa)
           val updateRepository  = UpdateRepository.make(xa)
 
+          // Setup logic layer
           val scanResultService = ScanResultRepository.make(
             xa,
             DependencyRepository.make(xa)
@@ -73,28 +77,43 @@ object Main extends IOApp:
             ProjectScanConfigService.make(projectRepository)
           val summaryService =
             ProjectSummaryService.make(scanResultRepository)
-
+          val jiraNotificationService = (config.jira, config.autoUpdateJira)
+            .tupled
+            .map: (jiraConfig, autoUpdateConfig) =>
+              val jira = Jira.make[IO](jiraConfig, backend)
+              val getTicketData = GetTicketData.default[IO](
+                autoUpdateConfig.projectKey,
+                autoUpdateConfig.issueType
+              )
+              JiraNotificationService.make(jira, getTicketData)
+            .getOrElse(JiraNotificationService.noop[IO])
+          val updateService =
+            UpdateService.make(
+              updateRepository,
+              projectRepository,
+              gitlabApi,
+              jiraNotificationService
+            )
+          val updateGateway =
+            UpdateGateway.make[IO](updateRepository, updateService, processor)
           val scanningService =
             ScanningService.make[IO](
               source,
               scanner,
               scanResultRepository,
+              projectRepository,
               advisory,
-              UpdateGateway.make[IO](updateRepository)
+              processor,
+              updateGateway
             )
-          val updateService =
-            UpdateService.make(updateRepository, projectRepository, gitlabApi)
 
+          // Setup presentation layer
           val projectController =
             ProjectController.make(projectService, summaryService)
           val staticFileController = StaticFileController.make[IO]
           val rootController       = RootController.make[IO]
           val scanReportController =
-            ScanningController.make(
-              scanningService,
-              projectRepository,
-              processor
-            )
+            ScanningController.make(scanningService, projectRepository)
           val updateController = UpdateController.make(updateService)
 
           val routes =

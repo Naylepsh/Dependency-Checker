@@ -3,7 +3,7 @@ import cats.implicits.*
 import ciris.*
 import com.comcast.ip4s.*
 import core.{ Newtype, Wrapper }
-import jira.{Config => JiraConfig, _}
+import jira.{ Config as JiraConfig, * }
 import persistence.database.Config as DatabaseConfig
 
 object config:
@@ -14,18 +14,30 @@ object config:
 
   case class ServerConfig(host: Host, port: Port)
 
+  case class AutoUpdateJiraConfig(
+      projectKey: ProjectKey,
+      issueType: String
+  )
+
   case class AppConfig(
       database: DatabaseConfig,
       gitlab: GitlabConfig,
       server: ServerConfig,
       workerCount: Int,
-      jira: Option[JiraConfig]
+      jira: Option[JiraConfig],
+      autoUpdateJira: Option[AutoUpdateJiraConfig]
   )
   object AppConfig:
     def load[F[_]: Async] =
-      (persistence.database.config, gitlabConfig, tasksConfig, jiraConfig)
+      (
+        persistence.database.config,
+        gitlabConfig,
+        tasksConfig,
+        jiraConfig,
+        autoUpdateJiraConfig
+      )
         .parTupled
-        .map(AppConfig.apply(_, _, serverConfig, _, _))
+        .map(AppConfig.apply(_, _, serverConfig, _, _, _))
         .load[F]
 
   private val gitlabConfig = (
@@ -57,3 +69,8 @@ object config:
     env("JIRA_PASSWORD").as[Password].option,
     env("JIRA_ADDRESS").as[Address].option
   ).parMapN((_, _, _).tupled.map(JiraConfig.apply))
+
+  private val autoUpdateJiraConfig = (
+    env("AUTO_UPDATE_JIRA_PROJECT").as[ProjectKey].option,
+    env("AUTO_UPDATE_JIRA_ISSUE_TYPE").as[String].option
+  ).parMapN((_, _).tupled.map(AutoUpdateJiraConfig.apply))
