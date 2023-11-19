@@ -25,17 +25,19 @@ object project:
       project: Project,
       sources: List[DependencySource],
       enabled: Boolean,
-      branch: String
+      branch: String,
+      autoUpdate: Boolean
   )
   case class ExistingProjectScanConfig(
       id: UUID,
       project: ExistingProject,
       sources: List[DependencySource],
       enabled: Boolean,
-      branch: String
+      branch: String,
+      autoUpdate: Boolean
   ):
     def toProjectScanConfig: ProjectScanConfig =
-      ProjectScanConfig(project.toProject, sources, enabled, branch)
+      ProjectScanConfig(project.toProject, sources, enabled, branch, autoUpdate)
 
   trait ProjectScanConfigRepository[F[_]]:
     def all: F[List[ExistingProjectScanConfig]]
@@ -43,6 +45,7 @@ object project:
         : F[Option[ExistingProjectScanConfig]]
     def save(config: ProjectScanConfig): F[UUID]
     def setEnabled(projectName: String, enabled: Boolean): F[Unit]
+    def setAutoUpdate(projectName: String, autoUpdate: Boolean): F[Unit]
 
   case class ScanResult(
       project: Project,
