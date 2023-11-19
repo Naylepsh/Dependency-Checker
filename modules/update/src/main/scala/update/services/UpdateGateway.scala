@@ -5,9 +5,9 @@ import java.util.UUID
 import cats.Monad
 import cats.syntax.all.*
 import core.domain.task.TaskProcessor
-import core.domain.update.{DependencyToUpdate, UpdateDependency}
+import core.domain.update.{ DependencyToUpdate, UpdateDependency }
 import org.legogroup.woof.{ *, given }
-import update.domain._
+import update.domain.*
 
 object UpdateGateway:
   def make[F[_]: Monad: Logger](
@@ -15,13 +15,20 @@ object UpdateGateway:
       service: UpdateService[F],
       processor: TaskProcessor[F]
   ): core.domain.update.UpdateGateway[F] = new:
+    import Logger.*
 
     def update(dependencies: List[UpdateDependency]): F[Unit] =
       dependencies
         .traverse: dependency =>
-          service.update(dependency).flatMap:
-            case Left(reason) => Logger[F].error(reason)
-            case Right(_)     => Monad[F].unit
+          service
+            .update(dependency)
+            .flatMap:
+              case Left(reason) => Logger[F].error(reason)
+              case Right(_)     => Monad[F].unit
+            .withLogContext("project", dependency.projectName)
+            .withLogContext("dependency", dependency.dependencyName)
+            .withLogContext("fromVersion", dependency.fromVersion)
+            .withLogContext("toVersion", dependency.toVersion)
         .void
 
     def canUpdate(
