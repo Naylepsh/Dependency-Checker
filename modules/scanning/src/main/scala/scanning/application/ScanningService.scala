@@ -100,8 +100,8 @@ object ScanningService:
           val checkVulnerabilities =
             processor.add(obtainUnknownSeveritiesOfVulnerabilities)
           val updateDependencies = enabledConfigs
+            .filter(_.autoUpdate)
             .traverse: config =>
-              // TODO: Check whether automatic updates are enabled
               getLatestScan(
                 config.project.name,
                 DependencyScanReport.compareByNameAsc
