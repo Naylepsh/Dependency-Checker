@@ -170,8 +170,8 @@ private object SQL:
 
   def insertConfig(id: UUID, config: ProjectScanConfig, projectId: UUID) =
     sql"""
-    INSERT INTO project_scan_config (id, gitlab_id, enabled, branch, project_id)
-    VALUES ($id, ${config.project.repositoryId}, ${config.enabled}, ${config.branch}, $projectId)
+    INSERT INTO project_scan_config (id, gitlab_id, enabled, branch, project_id, auto_update)
+    VALUES ($id, ${config.project.repositoryId}, ${config.enabled}, ${config.branch}, $projectId, ${config.autoUpdate})
     """.update
 
   def insertTxtSource(id: UUID, configId: UUID, source: TxtSource) =
@@ -196,7 +196,7 @@ private object SQL:
 
   def findByProjectName(projectName: String) =
     sql"""
-      SELECT project.id, project.name, config.id, gitlab_id, enabled, branch
+      SELECT project.id, project.name, config.id, gitlab_id, enabled, branch, auto_update
       FROM project_scan_config config
       JOIN project ON project.id = config.project_id
       WHERE project.name = $projectName

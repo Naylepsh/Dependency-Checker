@@ -9,6 +9,7 @@ import io.circe.syntax.*
 import sttp.capabilities.WebSockets
 import sttp.client3.*
 import sttp.client3.circe.*
+import java.net.URI
 
 type ProjectKey = ProjectKey.Type
 object ProjectKey extends Newtype[String]
@@ -16,8 +17,7 @@ object ProjectKey extends Newtype[String]
 type Summary = Summary.Type
 object Summary extends Newtype[String]
 
-type Description = Description.Type
-object Description extends Newtype[String]
+case class Description(paragraphContent: List[Content])
 
 type Username = Username.Type
 object Username extends Newtype[String]
@@ -29,6 +29,17 @@ type Address = Address.Type
 object Address extends Newtype[String]
 
 case class Config(username: Username, password: Password, address: Address)
+
+sealed trait Content:
+  def toMessage: Map[String, Json]
+object Content:
+  case class Text(value: String) extends Content:
+    def toMessage: Map[String, Json] =
+      Map("text" -> value.asJson, "type" -> "text".asJson)
+
+  case class Link(url: URI) extends Content:
+    def toMessage: Map[String, Json] =
+      Map("type" -> "inlineCard".asJson, "attrs" -> Map("url" -> url).asJson)
 
 trait Jira[F[_]]:
   def createTicket(
@@ -63,12 +74,10 @@ object Jira:
             "content" -> List(
               Map[String, Json](
                 "type" -> "paragraph",
-                "content" -> List(
-                  Map(
-                    "text" -> description.value,
-                    "type" -> "text"
-                  )
-                ).asJson
+                "content" -> description
+                  .paragraphContent
+                  .map(_.toMessage)
+                  .asJson
               )
             ).asJson
           )
