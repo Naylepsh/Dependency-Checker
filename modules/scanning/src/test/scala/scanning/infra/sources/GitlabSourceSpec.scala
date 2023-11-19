@@ -46,7 +46,8 @@ object GitlabSourceSpec:
     ),
     sources = List(DependencySource.TxtSource(path = "requirements.txt")),
     enabled = true,
-    branch = "master"
+    branch = "master",
+    autoUpdate = false
   )
   val testDependencies =
     List(Dependency("baz", None), Dependency("quux", "1.2.3".some))
