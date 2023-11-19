@@ -18,6 +18,9 @@ import scalatags.Text.TypedTag
 import scalatags.Text.all.*
 import scanning.domain.ProjectSummary
 
+enum ProjectMenuState:
+  case Opened, Closed
+
 object ProjectController:
   // TODO: Move this to a dedicated module
   // And mode ScanningViews' layout to a shared module (/lib?)
@@ -79,7 +82,10 @@ object ProjectController:
               .enrichWithScanSummary(config.toProjectScanConfig)
               .flatMap: summary =>
                 Ok(
-                  renderProjectDetails(summary).toString,
+                  renderProjectDetails(
+                    summary,
+                    ProjectMenuState.Opened
+                  ).toString,
                   `Content-Type`(MediaType.text.html)
                 )
 
@@ -91,7 +97,10 @@ object ProjectController:
               .enrichWithScanSummary(config.toProjectScanConfig)
               .flatMap: summary =>
                 Ok(
-                  renderProjectDetails(summary).toString,
+                  renderProjectDetails(
+                    summary,
+                    ProjectMenuState.Opened
+                  ).toString,
                   `Content-Type`(MediaType.text.html)
                 )
 
@@ -134,7 +143,7 @@ private object ProjectPayloads:
           case _ => List.empty // TODO: This should be a validation failure
         .getOrElse(List.empty)
       // TODO: Should these be in the form?
-      val enabled = true
+      val enabled    = true
       val autoUpdate = false
       ProjectScanConfig(
         Project(gitlabId.toString, name),
@@ -169,7 +178,7 @@ private object ProjectViews:
       ),
       div(
         cls := "my-5",
-        projects.map(renderProjectDetails)
+        projects.map(renderProjectDetails(_, ProjectMenuState.Closed))
       )
     )
 
@@ -245,7 +254,10 @@ private object ProjectViews:
     "checked:focus:before:transition-[box-shadow_0.2s,transform_0.2s]"
   ).mkString(" ")
 
-  def renderProjectDetails(summary: ProjectSummary) =
+  def renderProjectDetails(
+      summary: ProjectSummary,
+      menuState: ProjectMenuState
+  ) =
     val enableScanningToggleUrl =
       if summary.config.enabled
       then s"/project/${summary.config.project.name}/disable"
@@ -295,12 +307,23 @@ private object ProjectViews:
 
     val detailsId =
       s"""${summary.config.project.name.replaceAll("[ ()]", "")}-details"""
+    val (detailsClasses, wrapperClasses) = menuState match
+      case ProjectMenuState.Opened =>
+        (
+          "transition-all duration-200 ease-out opacity-100 pt-3",
+          "flex justify-between pb-3"
+        )
+      case ProjectMenuState.Closed =>
+        (
+          "transition-all duration-200 ease-out h-0 opacity-0 -translate-y-12 pointer-events-none",
+          "flex justify-between"
+        )
 
     div(
       id  := summary.config.project.name,
       cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 divide-y divide-gray-700 transition-all",
       div(
-        cls := "flex justify-between",
+        cls := wrapperClasses,
         div(
           cls := "grow text-2xl cursor-pointer",
           htmx.hyperscript.attribute := s"""on click 
@@ -335,7 +358,7 @@ private object ProjectViews:
       ),
       div(
         id  := detailsId,
-        cls := "h-0 opacity-0 transition-all duration-200 ease-out -translate-y-12 pointer-events-none",
+        cls := detailsClasses,
         p(
           span(cls := "font-semibold", "Gitlab ID: "),
           summary.config.project.repositoryId
