@@ -25,6 +25,10 @@ object views:
           rel  := "stylesheet"
         ),
         link(
+          href := "/static/styles.css",
+          rel  := "stylesheet"
+        ),
+        link(
           rel    := "icon",
           `type` := "image/x-icon",
           href   := "/static/favicon.ico"

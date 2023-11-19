@@ -74,6 +74,9 @@ object ProjectController:
         case PATCH -> Root / projectName / "disable-auto-updates" =>
           setAutoUpdate(projectName, false)
 
+        case DELETE -> Root / projectName =>
+          configService.delete(projectName) *> Ok()
+
       private def setScan(projectName: String, value: Boolean) =
         configService.setEnabled(projectName, value).flatMap:
           case None => NotFound(s"$projectName does not exist")
@@ -353,6 +356,14 @@ private object ProjectViews:
             cls  := "bg-blue-500 m-1 py-2 px-3 text-gray-100",
             href := s"/scan/project/${summary.config.project.name}/latest",
             "Scan report"
+          ),
+          a(
+            cls                    := "bg-red-800 m-1 py-2 px-3 text-gray-100",
+            htmx.ajax.delete       := s"/project/${summary.config.project.name}",
+            htmx.trigger.attribute := htmx.trigger.value.click,
+            htmx.target.attribute  := htmx.target.value.closest(".project"),
+            htmx.swap.attribute    := s"${htmx.swap.value.outerHTML} swap:1s",
+            "Delete"
           )
         )
       ),

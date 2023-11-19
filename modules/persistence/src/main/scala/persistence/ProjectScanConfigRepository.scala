@@ -86,6 +86,9 @@ object ProjectScanConfigRepository:
         case Some(scanId) =>
           SQL.setAutoUpdate(scanId, autoUpdate).run.transact(xa).void
 
+    def delete(projectId: UUID): F[Unit] =
+      SQL.deleteProject(projectId).run.transact(xa).void
+
 private object SQL:
   import persistence.sqlmappings.given
 
@@ -166,6 +169,12 @@ private object SQL:
     sql"""
     INSERT INTO project (id, name)
     VALUES ($id, ${project.name})
+    """.update
+
+  def deleteProject(id: UUID) =
+    sql"""
+    DELETE FROM project
+    WHERE id = $id
     """.update
 
   def insertConfig(id: UUID, config: ProjectScanConfig, projectId: UUID) =

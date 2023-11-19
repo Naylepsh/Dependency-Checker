@@ -18,6 +18,7 @@ trait ProjectScanConfigService[F[_]]:
       name: String,
       enabled: Boolean
   ): F[Option[ExistingProjectScanConfig]]
+  def delete(name: String): F[Unit]
   def setAutoUpdate(
       name: String,
       autoUpdate: Boolean
@@ -46,3 +47,8 @@ object ProjectScanConfigService:
         autoUpdate: Boolean
     ): F[Option[ExistingProjectScanConfig]] =
       repository.setAutoUpdate(name, autoUpdate) *> find(name)
+
+    def delete(name: String): F[Unit] =
+      find(name).flatMap:
+        case None         => Monad[F].unit
+        case Some(config) => repository.delete(config.project.id)
