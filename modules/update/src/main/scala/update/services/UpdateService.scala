@@ -1,18 +1,22 @@
 package update.services
 
-import cats.Monad
+import java.net.URI
+
 import cats.data.EitherT
 import cats.syntax.all.*
+import cats.{ Applicative, Monad }
 import core.domain.project.ProjectScanConfigRepository
 import core.domain.update.UpdateDependency
 import gitlab.{ Action, CommitAction, GitlabApi }
+import jira.*
 import update.domain.*
 
 object UpdateService:
   def make[F[_]: Monad](
       repository: UpdateRepository[F],
       projectConfigRepository: ProjectScanConfigRepository[F],
-      gitlabApi: GitlabApi[F]
+      gitlabApi: GitlabApi[F],
+      jiraNotificationService: JiraNotificationService[F]
   ): UpdateService[F] = new:
 
     def update(request: UpdateDependency): F[Either[String, Unit]] =
@@ -49,6 +53,14 @@ object UpdateService:
                 mergeRequest.webUrl
               )
               EitherT(repository.save(attempt).map(_.asRight))
+            .flatTap: mergeRequest =>
+              EitherT(
+                jiraNotificationService.notify(
+                  request,
+                  // TODO: Move URI return type to GitlabApi
+                  URI(mergeRequest.webUrl)
+                )
+              )
             .void
             .value
 

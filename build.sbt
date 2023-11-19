@@ -87,7 +87,7 @@ lazy val scanning = project
 lazy val update = project
   .in(file("modules/update"))
   .settings(commonSettings: _*)
-  .dependsOn(core, parsers, gitlab, persistence)
+  .dependsOn(core, parsers, jira, gitlab, persistence)
 
 enablePlugins(sbtdocker.DockerPlugin, JavaAppPackaging)
 
