@@ -28,6 +28,7 @@ object UpdateService:
           case Some(config) =>
             val req = UpdateDependencyDetails(
               projectId = config.project.id,
+              projectName = config.project.name,
               projectBranch = config.branch,
               projectGitlabId = config.project.repositoryId,
               filePath = request.filePath,

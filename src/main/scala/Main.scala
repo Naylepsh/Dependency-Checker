@@ -79,14 +79,17 @@ object Main extends IOApp:
             ProjectSummaryService.make(scanResultRepository)
           val jiraNotificationService = (config.jira, config.autoUpdateJira)
             .tupled
-            .map: (jiraConfig, autoUpdateConfig) =>
-              val template = TicketTemplate(Template(" "), Template(" "))
-              val jira     = Jira.make[IO](jiraConfig, backend, template)
-              val getTicketData = GetTicketData.default[IO](
-                autoUpdateConfig.projectKey,
-                autoUpdateConfig.issueType
-              )
-              JiraNotificationService.make(jira, getTicketData)
+            .flatMap: (jiraConfig, autoUpdateConfig) =>
+              TicketTemplate.fromFiles(
+                "./templates/jira/summary.txt",
+                "./templates/jira/description.json"
+              ).toOption.map: template =>
+                val jira = Jira.make[IO](jiraConfig, backend, template)
+                JiraNotificationService.make(
+                  jira,
+                  autoUpdateConfig.projectKey,
+                  autoUpdateConfig.issueType
+                )
             .getOrElse(JiraNotificationService.noop[IO])
           val updateService =
             UpdateService.make(
