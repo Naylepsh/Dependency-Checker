@@ -56,7 +56,8 @@ object ProjectScanConfigRepositorySpec:
       DependencySource.TxtSource("requirements.test.txt")
     ),
     enabled = false,
-    branch = "master"
+    branch = "master",
+    autoUpdate = false
   )
   val tomlScanConfig = ProjectScanConfig(
     project = Project(repositoryId = "2", name = "bar"),
@@ -65,7 +66,8 @@ object ProjectScanConfigRepositorySpec:
       DependencySource.TomlSource("pyproject.toml", "dev-dependencies".some)
     ),
     enabled = true,
-    branch = "stage"
+    branch = "stage",
+    autoUpdate = false
   )
   val mixedScanConfig = ProjectScanConfig(
     project = Project(repositoryId = "3", name = "baz"),
@@ -74,5 +76,6 @@ object ProjectScanConfigRepositorySpec:
       DependencySource.TomlSource("pyproject.toml", "dependencies".some)
     ),
     enabled = true,
-    branch = "dev"
+    branch = "dev",
+    autoUpdate = false
   )
