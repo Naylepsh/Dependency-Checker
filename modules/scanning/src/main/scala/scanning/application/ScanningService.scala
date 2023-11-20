@@ -110,22 +110,38 @@ object ScanningService:
               scans.collect:
                 case Some(scan) => scan
             .flatMap: scans =>
-              var depsToUpdate = List.empty[UpdateDependency]
-              scans.foreach: scan =>
-                scan.dependencySummaries.foreach: summary =>
-                  summary.items.foreach: dependencySummary =>
-                    dependencySummary.scanReport.currentVersion.foreach:
-                      currentVersion =>
-                        depsToUpdate = UpdateDependency(
-                          scan.projectName,
-                          dependencySummary.scanReport.name,
-                          summary.groupName,
-                          currentVersion,
-                          dependencySummary.scanReport.latestVersion
-                        ) :: depsToUpdate
+              val depsToUpdate = extractDependenciesToUpdate(scans)
               processor.add(updateGateway.update(depsToUpdate).void)
 
           doScan *> checkVulnerabilities *> updateDependencies
+
+    private def extractDependenciesToUpdate(scans: List[ScanSummary]) =
+      var depsToUpdate = List.empty[UpdateDependency]
+      scans.foreach: scan =>
+        scan.dependencySummaries.foreach: summary =>
+          summary.items.foreach: dependencySummary =>
+            dependencySummary.scanReport.currentVersion.foreach:
+              currentVersion =>
+                val isHoled = semver.isHoled(currentVersion)
+                val versionDifference =
+                  semver
+                    .unhole(currentVersion)
+                    .flatMap(semver.calculateVersionDifference(
+                      _,
+                      dependencySummary.scanReport.latestVersion
+                    ))
+
+                (isHoled, versionDifference) match
+                  case (true, Some(semver.VersionDifference.Patch)) =>
+                  case _ =>
+                    depsToUpdate = UpdateDependency(
+                      scan.projectName,
+                      dependencySummary.scanReport.name,
+                      summary.groupName,
+                      currentVersion,
+                      dependencySummary.scanReport.latestVersion
+                    ) :: depsToUpdate
+      depsToUpdate
 
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       repository.getLatestScansTimestamps(limit)

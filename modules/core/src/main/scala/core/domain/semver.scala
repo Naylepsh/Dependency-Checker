@@ -1,5 +1,6 @@
 package core.domain
 
+import cats.syntax.all.*
 import scala.util.*
 
 object semver:
@@ -30,6 +31,14 @@ object semver:
           else
             None
       res.flatten
+
+  def isHoled(version: String): Boolean = version.contains("*")
+
+  def unhole(version: String): Option[String] =
+    extractVersion(version.replaceAll("[*]", "0"))
+      .flatMap: (symbol, major, minor, patch) =>
+        (major, minor, patch).tupled.map: (major, minor, patch) =>
+          s"""${symbol.getOrElse("")}$major.$minor.$patch"""
 
   private def extractVersion(
       text: String
