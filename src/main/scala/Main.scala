@@ -5,7 +5,7 @@ import com.comcast.ip4s.*
 import config.AppConfig
 import controllers.{ LoggingMiddleware, RootController, StaticFileController }
 import gitlab.GitlabApi
-import jira.Jira
+import jira.{ Jira, Template, TicketTemplate }
 import org.http4s.ember.server.EmberServerBuilder
 import org.legogroup.woof.{ *, given }
 import persistence.{
@@ -80,7 +80,8 @@ object Main extends IOApp:
           val jiraNotificationService = (config.jira, config.autoUpdateJira)
             .tupled
             .map: (jiraConfig, autoUpdateConfig) =>
-              val jira = Jira.make[IO](jiraConfig, backend)
+              val template = TicketTemplate(Template(" "), Template(" "))
+              val jira     = Jira.make[IO](jiraConfig, backend, template)
               val getTicketData = GetTicketData.default[IO](
                 autoUpdateConfig.projectKey,
                 autoUpdateConfig.issueType
