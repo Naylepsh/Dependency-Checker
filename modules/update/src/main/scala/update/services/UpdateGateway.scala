@@ -23,7 +23,7 @@ object UpdateGateway:
           service
             .update(dependency)
             .flatMap:
-              case Left(reason) => Logger[F].error(reason)
+              case Left(reason) => Logger[F].info(reason)
               case Right(_)     => Monad[F].unit
             .withLogContext("project", dependency.projectName)
             .withLogContext("dependency", dependency.dependencyName)
