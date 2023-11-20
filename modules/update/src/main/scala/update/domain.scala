@@ -18,6 +18,7 @@ object domain:
 
   case class UpdateDependencyDetails(
       projectId: UUID,
+      projectName: String,
       projectBranch: String,
       projectGitlabId: String,
       filePath: String,
