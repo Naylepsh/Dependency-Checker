@@ -103,6 +103,7 @@ def mapFiles(root: File): List[(File, String)] =
 
 Universal / mappings ++= mapFiles(file("static")).toSeq
 Universal / mappings ++= mapFiles(file("db")).toSeq
+Universal / mappings ++= mapFiles(file("templates/jira")).toSeq
 
 docker / dockerfile := {
   val appDir: File = stage.value

@@ -1,0 +1,1 @@
+"Bumps {{dependencyName}} from {{fromVersion}} to {{toVersion}}"
