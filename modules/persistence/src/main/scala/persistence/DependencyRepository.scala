@@ -241,6 +241,7 @@ object DependencyRepository:
           ) 
           AND release_date IS NOT NULL
           AND version IS NOT NULL
+          AND version NOT LIKE "%*%"
           GROUP BY name
           """
       select.query[DependencyLatestRelease]
