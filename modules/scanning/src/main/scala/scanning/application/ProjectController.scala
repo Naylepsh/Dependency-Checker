@@ -324,7 +324,7 @@ private object ProjectViews:
 
     div(
       id  := summary.config.project.name,
-      cls := "my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 divide-y divide-gray-700 transition-all",
+      cls := "project my-3 p-3 bg-gray-800 text-gray-300 border-2 border-gray-700 divide-y divide-gray-700 transition-all",
       div(
         cls := wrapperClasses,
         div(
@@ -358,7 +358,7 @@ private object ProjectViews:
             "Scan report"
           ),
           a(
-            cls                    := "bg-red-800 m-1 py-2 px-3 text-gray-100",
+            cls                    := "bg-red-800 m-1 py-2 px-3 text-gray-100 cursor-pointer",
             htmx.ajax.delete       := s"/project/${summary.config.project.name}",
             htmx.trigger.attribute := htmx.trigger.value.click,
             htmx.target.attribute  := htmx.target.value.closest(".project"),
