@@ -1,8 +1,6 @@
 {
   "project": {
-    "key": {
-      "name": "{{projectKey}}"
-    }
+    "key": "{{projectKey}}"
   },
   "issuetype": {
     "name": "{{issueType}}"
@@ -17,11 +15,11 @@
         "content": [
           {
             "type": "text",
-            "text": "Merge request for {{dependencyName}}:"
+            "text": "Merge request for {{dependencyName}}: "
           },
           {
             "type": "inlineCard",
-            "attr": {
+            "attrs": {
               "url": "{{mergeRequestUrl}}"
             }
           }
