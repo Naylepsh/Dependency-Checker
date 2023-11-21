@@ -29,7 +29,7 @@ object JiraNotificationService:
         "dependencyName"  -> request.dependencyName,
         "fromVersion"     -> request.fromVersion,
         "toVersion"       -> request.toVersion,
-        "mergeRequestUrl" -> mergeRequestUrl.toString
+        "mergeRequestUrl" -> mergeRequestUrl.toString,
       )
       jira.createTicket(projectKey, issueType, variables)
 

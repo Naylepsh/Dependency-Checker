@@ -16,7 +16,8 @@ object config:
 
   case class AutoUpdateJiraConfig(
       projectKey: ProjectKey,
-      issueType: String
+      issueType: String,
+      pathToTemplate: String
   )
 
   case class AppConfig(
@@ -72,5 +73,6 @@ object config:
 
   private val autoUpdateJiraConfig = (
     env("AUTO_UPDATE_JIRA_PROJECT").as[ProjectKey].option,
-    env("AUTO_UPDATE_JIRA_ISSUE_TYPE").as[String].option
-  ).parMapN((_, _).tupled.map(AutoUpdateJiraConfig.apply))
+    env("AUTO_UPDATE_JIRA_ISSUE_TYPE").as[String].option,
+    env("AUTO_UPDATE_JIRA_TEMPLATE_PATH").as[String].option
+  ).parMapN((_, _, _).tupled.map(AutoUpdateJiraConfig.apply))

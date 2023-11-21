@@ -12,17 +12,11 @@ object Main extends IOApp:
       address = Address("???")
     )
     HttpClientCatsBackend.resource[IO]().use: backend =>
-      val jira = Jira.make[IO](
-        config,
-        backend,
-        TicketTemplate(Template(""), Template(""))
-      )
-      val key         = ProjectKey("OPDDEV")
-      val summary     = Summary("Summary test")
-      val description = Description(List.empty)
-      val issueType   = "Task"
+      val jira      = Jira.make[IO](config, backend, Template(""))
+      val key       = ProjectKey("OPDDEV")
+      val issueType = "Task"
       jira
-        .createTicket(key, summary, description, issueType)
+        .createTicket(key, issueType, Map())
         .map: result =>
           println(s"result: $result")
         .as(ExitCode.Success)
