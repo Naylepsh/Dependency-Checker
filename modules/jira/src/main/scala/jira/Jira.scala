@@ -18,11 +18,6 @@ import sttp.client3.circe.*
 type ProjectKey = ProjectKey.Type
 object ProjectKey extends Newtype[String]
 
-type Summary = Summary.Type
-object Summary extends Newtype[String]
-
-case class Description(paragraphContent: List[Content])
-
 type Username = Username.Type
 object Username extends Newtype[String]
 
@@ -53,31 +48,13 @@ object Template extends Newtype[String]:
       filled = filled.replace(s"{{$key}}", value)
     Template(filled)
 
-case class TicketTemplate(
-    summary: Template,
-    description: Template
-)
-object TicketTemplate:
-  def fromFiles(
-      summaryFile: String,
-      descriptionFile: String
-  ): Either[String, TicketTemplate] =
-    // Technically it should be wrapped in IO effect, practically idc
-    (
-      Either.catchNonFatal(scala.io.Source.fromFile(summaryFile).mkString),
-      Either.catchNonFatal(scala.io.Source.fromFile(descriptionFile).mkString),
-    ).tupled
-      .map: (summary, description) =>
-        TicketTemplate(Template(summary), Template(description))
+  def fromFile(path: String): Either[String, Template] =
+    Either
+      .catchNonFatal(scala.io.Source.fromFile(path).mkString)
+      .map(Template(_))
       .leftMap(_.toString)
 
 trait Jira[F[_]]:
-  def createTicket(
-      projectKey: ProjectKey,
-      summary: Summary,
-      description: Description,
-      issueType: String
-  ): F[Either[String, Unit]]
   def createTicket(
       projectKey: ProjectKey,
       issueType: String,
@@ -88,10 +65,8 @@ object Jira:
   def make[F[_]: Monad](
       config: Config,
       backend: SttpBackend[F, WebSockets],
-      template: TicketTemplate
+      template: Template
   ): Jira[F] = new:
-    given conv[T: Encoder]: Conversion[T, Json] with
-      def apply(x: T): Json = x.asJson
 
     def createTicket(
         projectKey: ProjectKey,
@@ -99,17 +74,12 @@ object Jira:
         templateVariables: Map[String, String]
     ): F[Either[String, Unit]] =
       val body = Template
-        .fill(template.description, templateVariables)
+        .fill(
+          template,
+          templateVariables + ("projectKey" -> projectKey.value) + ("issueType" -> issueType)
+        )
         .value
         .pipe(parse)
-        .map: description =>
-          val summary = Template.fill(template.summary, templateVariables).value
-          Map[String, Json](
-            "project"     -> Map("key" -> projectKey),
-            "issuetype"   -> Map("name" -> issueType),
-            "summary"     -> summary,
-            "description" -> description
-          ).asJson
 
       body match
         case Left(error) => error.toString.asLeft.pure
@@ -122,36 +92,3 @@ object Jira:
             .send(backend)
             .map(_.body.leftMap(_.toString).void)
 
-    def createTicket(
-        projectKey: ProjectKey,
-        summary: Summary,
-        description: Description,
-        issueType: String
-    ): F[Either[String, Unit]] =
-      val body: Json = Map(
-        "fields" -> Map[String, Json](
-          "project"   -> Map("key" -> projectKey),
-          "issuetype" -> Map("name" -> issueType),
-          "summary"   -> summary,
-          "description" -> Map[String, Json](
-            "type"    -> "doc",
-            "version" -> 1,
-            "content" -> List(
-              Map[String, Json](
-                "type" -> "paragraph",
-                "content" -> description
-                  .paragraphContent
-                  .map(_.toMessage)
-                  .asJson
-              )
-            ).asJson
-          )
-        )
-      )
-      basicRequest
-        .post(uri"${config.address}/rest/api/3/issue")
-        .auth
-        .basic(config.username.value, config.password.value)
-        .body(body)
-        .send(backend)
-        .map(_.body.leftMap(_.toString).void)
