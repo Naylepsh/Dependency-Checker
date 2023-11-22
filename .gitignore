@@ -13,3 +13,4 @@ registry*.json
 .env
 .env.test
 *.sqlite
+db/schema.sql
