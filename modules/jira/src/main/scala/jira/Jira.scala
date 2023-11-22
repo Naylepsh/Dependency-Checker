@@ -85,7 +85,6 @@ object Jira:
       body match
         case Left(error) => error.toString.asLeft.pure
         case Right(body) =>
-          println(body)
           basicRequest
             .post(uri"${config.address}/rest/api/3/issue")
             .auth
