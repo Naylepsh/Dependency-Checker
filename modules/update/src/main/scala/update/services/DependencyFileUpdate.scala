@@ -23,18 +23,17 @@ object DependencyFileUpdate:
       from: String,
       to: String
   ): String =
+    val simplePattern    = (s"^(" + name + ")([<>=!~^]+)(.*)$").r
+    val withExtraPattern = (s"^(" + name + ")\\[(.*)\\]([<>=!~^]+)(.*)$").r
+
     fileContent
       .split("\n")
-      .map: line =>
-        val index                = line.indexOf(name)
-        val indexOfCharAfterName = index + name.length
-        val isLineNameAndVersion = index == 0
-          && line.length > indexOfCharAfterName
-          && versionComparisonSymbols.contains(line(indexOfCharAfterName))
-        if isLineNameAndVersion then
-          line.replace(from, to)
-        else
-          line
+      .map:
+        case simplePattern(name, operator, version)
+            if version == from => s"$name$operator$to"
+        case withExtraPattern(name, extra, operator, version)
+            if version == from => s"$name[$extra]$operator$to"
+        case line => line
       .mkString("\n") + "\n"
 
   private def replaceDependencyInToml(
