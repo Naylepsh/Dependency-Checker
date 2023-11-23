@@ -11,7 +11,7 @@ class DependencyFileUpdateSpec extends AnyFlatSpec with should.Matchers:
   import services.DependencyFileUpdate.*
   import DependencyFileUpdateSpec.*
 
-  "Replacing existing dependency" should "replace version" in {
+  "Replacing existing dependency" should "replace version" in:
     val initialTxtContent   = requirementsTxtTemplate("foo", "==", "1.2.3")
     val expectedTxtContent  = requirementsTxtTemplate("foo", "==", "2.0.0")
     val initialTomlContent  = pyProjectTomlTemplate("foo", "^", "1.2.3")
@@ -50,9 +50,22 @@ class DependencyFileUpdateSpec extends AnyFlatSpec with should.Matchers:
     actualTxtContent2 shouldBe expectedTxtContent
     actualTxtContent3 shouldBe expectedTxtContent
     actualTomlContent shouldBe expectedTomlContent
-  }
 
-  "Replacing non-existing dependency" should "keep the file content the same" in {
+  "Replacing existing dependency with extras" should "replace version" in:
+    val initialTxtContent  = requirementsTxtTemplate("foo[bar]", "==", "1.2.3")
+    val expectedTxtContent = requirementsTxtTemplate("foo[bar]", "==", "2.0.0")
+
+    val actualTxtContent = replaceDependency(
+      FileType.Txt,
+      initialTxtContent,
+      "foo",
+      "1.2.3",
+      "2.0.0"
+    )
+
+    actualTxtContent shouldBe expectedTxtContent
+
+  "Replacing non-existing dependency" should "keep the file content the same" in:
     val initialTxtContent  = requirementsTxtTemplate("foo", "==", "1.2.3")
     val initialTomlContent = pyProjectTomlTemplate("foo", "^", "1.2.3")
 
@@ -73,9 +86,8 @@ class DependencyFileUpdateSpec extends AnyFlatSpec with should.Matchers:
 
     actualTxtContent shouldBe initialTxtContent
     actualTomlContent shouldBe initialTomlContent
-  }
 
-  "Replacing dependency with a different current version" should "keep the file content the same" in {
+  "Replacing dependency with a different current version" should "keep the file content the same" in:
     val initialTxtContent  = requirementsTxtTemplate("foo", "==", "1.2.3")
     val initialTomlContent = pyProjectTomlTemplate("foo", "^", "1.2.3")
 
@@ -96,9 +108,8 @@ class DependencyFileUpdateSpec extends AnyFlatSpec with should.Matchers:
 
     actualTxtContent shouldBe initialTxtContent
     actualTomlContent shouldBe initialTomlContent
-  }
 
-  "Replacing dependency with similar-but-not-exact-matching name" should "keep the file content the same" in {
+  "Replacing dependency with similar-but-not-exact-matching name" should "keep the file content the same" in:
     val initialTxtContent  = requirementsTxtTemplate("foo", "==", "1.2.3")
     val initialTomlContent = pyProjectTomlTemplate("foo", "^", "1.2.3")
 
@@ -135,7 +146,6 @@ class DependencyFileUpdateSpec extends AnyFlatSpec with should.Matchers:
     actualTxtContent2 shouldBe initialTxtContent
     actualTomlContent1 shouldBe initialTomlContent
     actualTomlContent2 shouldBe initialTomlContent
-  }
 
   "File type of UpdateDependency request for registered types" should "be extracted" in:
     FileType.fromPath("requirements.txt") shouldBe Right(FileType.Txt)
