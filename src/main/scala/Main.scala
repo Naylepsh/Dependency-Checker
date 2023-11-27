@@ -24,6 +24,7 @@ import update.repositories.UpdateRepository
 import update.services.*
 
 import concurrent.duration.*
+import controllers.HealthcheckController
 
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
@@ -116,11 +117,13 @@ object Main extends IOApp:
           val rootController       = RootController.make[IO]
           val scanReportController =
             ScanningController.make(scanningService, projectRepository)
-          val updateController = UpdateController.make(updateService)
+          val updateController      = UpdateController.make(updateService)
+          val healthcheckController = HealthcheckController.make[IO]
 
           val routes =
             LoggingMiddleware.wrap:
               rootController.routes
+                <+> healthcheckController.routes
                 <+> staticFileController.routes
                 <+> scanReportController.routes
                 <+> projectController.routes
