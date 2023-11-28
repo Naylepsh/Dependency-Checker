@@ -39,11 +39,14 @@ object project:
     def toProjectScanConfig: ProjectScanConfig =
       ProjectScanConfig(project.toProject, sources, enabled, branch, autoUpdate)
 
+  enum ProjectSaveError:
+    case ProjectAlreadyExists(projectName: String)
+
   trait ProjectScanConfigRepository[F[_]]:
     def all: F[List[ExistingProjectScanConfig]]
     def findByProjectName(projectName: String)
         : F[Option[ExistingProjectScanConfig]]
-    def save(config: ProjectScanConfig): F[UUID]
+    def save(config: ProjectScanConfig): F[Either[ProjectSaveError, UUID]]
     def setEnabled(projectName: String, enabled: Boolean): F[Unit]
     def delete(projectId: UUID): F[Unit]
     def setAutoUpdate(projectName: String, autoUpdate: Boolean): F[Unit]

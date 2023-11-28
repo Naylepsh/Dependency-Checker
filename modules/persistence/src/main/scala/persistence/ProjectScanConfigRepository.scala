@@ -2,24 +2,18 @@ package persistence
 
 import java.util.UUID
 
-import core.domain.project.ProjectScanConfigRepository
-import cats.implicits.*
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.effect.std.UUIDGen
 import cats.effect.std.UUIDGen.randomUUID
+import cats.implicits.*
+import core.domain.dependency.DependencySource
+import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
+import core.domain.project.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.query.*
 import doobie.util.transactor.Transactor
-import core.domain.project.{
-  ExistingProject,
-  ExistingProjectScanConfig,
-  Project,
-  ProjectScanConfig
-}
-import core.domain.dependency.DependencySource
-import core.domain.dependency.DependencySource.{ TomlSource, TxtSource }
 
 object ProjectScanConfigRepository:
   def make[F[_]: MonadCancelThrow: UUIDGen](xa: Transactor[F])
@@ -52,27 +46,31 @@ object ProjectScanConfigRepository:
                 tomlSources
               ).headOption
 
-    def save(config: ProjectScanConfig): F[UUID] =
-      for
-        projectId <- randomUUID
-        configId  <- randomUUID
-        sources <- config.sources.traverse: source =>
-          randomUUID.map(id => id -> source)
-        _ <-
-          val inserts =
-            for
-              _ <- SQL.insertProject(projectId, config.project).run
-              _ <- SQL.insertConfig(configId, config, projectId).run
-              // terrible performance, but it doesn't get called that much, so low priority
-              // TODO: Improve perf. by updating in batch
-              _ <- sources.traverse:
-                case (id, txt @ TxtSource(_)) =>
-                  SQL.insertTxtSource(id, configId, txt).run
-                case (id, toml @ TomlSource(_, _)) =>
-                  SQL.insertTomlSource(id, configId, toml).run
-            yield ()
-          inserts.transact(xa)
-      yield configId
+    def save(config: ProjectScanConfig): F[Either[ProjectSaveError, UUID]] =
+      findByProjectName(config.project.name).flatMap:
+        case Some(cfg) =>
+          ProjectSaveError.ProjectAlreadyExists(cfg.project.name).asLeft.pure
+        case None =>
+          for
+            projectId <- randomUUID
+            configId  <- randomUUID
+            sources <- config.sources.traverse: source =>
+              randomUUID.map(id => id -> source)
+            _ <-
+              val inserts =
+                for
+                  _ <- SQL.insertProject(projectId, config.project).run
+                  _ <- SQL.insertConfig(configId, config, projectId).run
+                  // terrible performance, but it doesn't get called that much, so low priority
+                  // TODO: Improve perf. by updating in batch
+                  _ <- sources.traverse:
+                    case (id, txt @ TxtSource(_)) =>
+                      SQL.insertTxtSource(id, configId, txt).run
+                    case (id, toml @ TomlSource(_, _)) =>
+                      SQL.insertTomlSource(id, configId, toml).run
+                yield ()
+              inserts.transact(xa)
+          yield configId.asRight
 
     def setEnabled(name: String, enabled: Boolean): F[Unit] =
       SQL.findScanId(name).option.transact(xa).flatMap:
