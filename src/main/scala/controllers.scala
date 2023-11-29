@@ -52,4 +52,4 @@ object controllers:
         val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F]:
           case GET -> Root => Ok()
 
-        val routes: HttpRoutes[F] = Router("api/v1/healtcheck" -> httpRoutes)
+        val routes: HttpRoutes[F] = Router("api/v1/healthcheck" -> httpRoutes)
