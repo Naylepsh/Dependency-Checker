@@ -17,6 +17,7 @@ import org.legogroup.woof.{ *, given }
 import scalatags.Text.TypedTag
 import scalatags.Text.all.*
 import scanning.domain.ProjectSummary
+import core.domain.project.ProjectSaveError
 
 enum ProjectMenuState:
   case Opened, Closed
@@ -48,10 +49,13 @@ object ProjectController:
           req
             .as[ProjectPayload]
             .flatMap: payload =>
-              configService.add(payload.toDomain)
-                *> Ok(renderProjectForm(info =
-                  s"Project ${payload.name} added successfully".some
-                ).toString)
+              configService.add(payload.toDomain).flatMap:
+                case Left(ProjectSaveError.ProjectAlreadyExists(projectName)) =>
+                  BadRequest(s"Project ${projectName} already exists")
+                case Right(_) =>
+                  Ok(renderProjectForm(info =
+                    s"Project ${payload.name} added successfully".some
+                  ).toString)
 
         case GET -> Root / "new" =>
           Ok(
