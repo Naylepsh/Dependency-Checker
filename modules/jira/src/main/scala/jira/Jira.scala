@@ -29,17 +29,6 @@ object Address extends Newtype[String]
 
 case class Config(username: Username, password: Password, address: Address)
 
-sealed trait Content:
-  def toMessage: Map[String, Json]
-object Content:
-  case class Text(value: String) extends Content:
-    def toMessage: Map[String, Json] =
-      Map("text" -> value.asJson, "type" -> "text".asJson)
-
-  case class Link(url: URI) extends Content:
-    def toMessage: Map[String, Json] =
-      Map("type" -> "inlineCard".asJson, "attrs" -> Map("url" -> url).asJson)
-
 type Template = Template.Type
 object Template extends Newtype[String]:
   def fill(template: Template, variables: Map[String, String]): Template =
