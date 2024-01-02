@@ -39,17 +39,8 @@ object dependency:
       vulnerabilities: List[String] = List(),
       notes: Option[String] = None
   ):
-    /**
-     * Naively assume that any package that had at least one release
-     * within the last 3 years is still maintained
-     */
-    def isMaintained(now: DateTime): Option[Boolean] = latestReleaseDate.map(
-      date =>
-        Days.daysBetween(
-          date.toLocalDate(),
-          now.toLocalDate()
-        ).getDays() < 3 * 365
-    )
+    def isMaintained(now: DateTime): Option[Boolean] =
+      dependency.isMaintained(now, latestReleaseDate)
   object DependencyReport:
     def apply(
         dependency: Dependency,
@@ -78,16 +69,21 @@ object dependency:
       latestReleaseDate: Option[DateTime],
       vulnerabilities: List[DependencyVulnerability] = List()
   ):
-    /**
-     * Naively assume that any package that had at least one release
-     * within the last 3 years is still maintained
-     */
-    def isMaintained(now: DateTime): Option[Boolean] = latestReleaseDate.map:
-      date =>
-        Days.daysBetween(
-          date.toLocalDate(),
-          now.toLocalDate()
-        ).getDays() < 3 * 365
+    def isMaintained(now: DateTime): Option[Boolean] =
+      dependency.isMaintained(now, latestReleaseDate)
+
+  /**
+   * Naively assume that any package that had at least one release
+   * within the last 3 years is still maintained
+   */
+  private def isMaintained(
+      now: DateTime,
+      latestReleaseDate: Option[DateTime]
+  ): Option[Boolean] = latestReleaseDate.map: date =>
+    Days.daysBetween(
+      date.toLocalDate(),
+      now.toLocalDate()
+    ).getDays() < 3 * 365
 
   object DependencyScanReport:
     def compareByNameAsc(
