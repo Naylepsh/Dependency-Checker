@@ -32,10 +32,11 @@ case class Config(username: Username, password: Password, address: Address)
 type Template = Template.Type
 object Template extends Newtype[String]:
   def fill(template: Template, variables: Map[String, String]): Template =
-    var filled = template.value
-    variables.foreach: (key, value) =>
-      filled = filled.replace(s"{{$key}}", value)
-    Template(filled)
+    variables
+      .foldLeft(template.value):
+        case (templ, (key, value)) =>
+          templ.replace(s"{{$key}}", value)
+      .pipe(Template(_))
 
   def fromFile(path: String): Either[String, Template] =
     Either
@@ -81,4 +82,3 @@ object Jira:
             .body(body)
             .send(backend)
             .map(_.body.leftMap(_.toString).void)
-
