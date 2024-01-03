@@ -99,19 +99,27 @@ object ScanningService:
             processor.add(scan(config.toProjectScanConfig))
           val checkVulnerabilities =
             processor.add(obtainUnknownSeveritiesOfVulnerabilities)
-          val updateDependencies = enabledConfigs
-            .filter(_.autoUpdate)
-            .traverse: config =>
-              getLatestScan(
-                config.project.name,
-                DependencyScanReport.compareByNameAsc
-              )
-            .map: scans =>
-              scans.collect:
-                case Some(scan) => scan
-            .flatMap: scans =>
-              val depsToUpdate = extractDependenciesToUpdate(scans)
-              processor.add(updateGateway.update(depsToUpdate).void)
+          val updateDependencies = processor.add:
+            /**
+             * Because the latest scans (and thus latest versions) can/will change after doScan, 
+             * which is now a background task, we need to ensure that updates happen AFTER the tasks are finished.
+             * Fortunatelly, task processor handles 1 task at the time for now, 
+             * so turning this handler into a task solves the issue,
+             * but we're in for trouble when task processor starts running multiple workers
+             */
+            enabledConfigs
+              .filter(_.autoUpdate)
+              .traverse: config =>
+                getLatestScan(
+                  config.project.name,
+                  DependencyScanReport.compareByNameAsc
+                )
+              .map: scans =>
+                scans.collect:
+                  case Some(scan) => scan
+              .flatMap: scans =>
+                val depsToUpdate = extractDependenciesToUpdate(scans)
+                processor.add(updateGateway.update(depsToUpdate).void)
 
           doScan *> checkVulnerabilities *> updateDependencies
 
