@@ -140,7 +140,7 @@ object ScanningService:
                     ))
 
                 (isHoled, versionDifference) match
-                  case (true, Some(semver.VersionDifference.Patch)) =>
+                  case (true, Some(semver.VersionDifference.Patch) | None) =>
                   case _ =>
                     depsToUpdate = UpdateDependency(
                       scan.projectName,
