@@ -1,5 +1,7 @@
 package gitlab
 
+import java.net.URI
+
 import scala.concurrent.duration.*
 
 import cats.*
@@ -22,7 +24,7 @@ type RepositoryTree = List[RepositoryTreeFile]
 case class RepositoryFile(content: String) derives Decoder
 
 case class CreateMergeRequestResponse(
-    webUrl: String
+    webUrl: URI
 )
 
 enum Action:
@@ -57,6 +59,11 @@ trait GitlabApi[F[_]]:
       targetBranch: String,
       title: String
   ): F[Either[String, CreateMergeRequestResponse]]
+  def getFileContent(
+      projectId: String,
+      branch: String,
+      pathToFile: String
+  ): F[Either[String, String]]
 
 object GitlabApi:
   type RequestResult[F[_]] = ApplicativeError[F, Throwable]
@@ -170,6 +177,16 @@ object GitlabApi:
         .response(asJson[RepositoryFile])
         .send(backend)
         .map(_.body.leftMap(buildErrorMessage(projectFileEndpoint)))
+
+    def getFileContent(
+        projectId: String,
+        branch: String,
+        pathToFile: String
+    ): F[Either[String, String]] =
+      getFile(projectId, branch, pathToFile)
+        .map: fileResult =>
+          fileResult.flatMap: file =>
+            GitlabApi.decodeContent(file.content)
 
   def decodeContent(encodedContent: String): Either[String, String] =
     Either

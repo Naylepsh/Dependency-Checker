@@ -64,6 +64,8 @@ object GitlabSourceSpec:
       fileResult: Either[String, RepositoryFile]
   ) = new GitlabApi[Id]:
 
+    override def getFileContent(projectId: String, branch: String, pathToFile: String): Id[Either[String, String]] = ???
+
     override def createBranch(
         projectId: String,
         baseBranch: String,
