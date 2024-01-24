@@ -1,7 +1,5 @@
 package update.services
 
-import java.net.URI
-
 import cats.data.EitherT
 import cats.syntax.all.*
 import cats.{ Applicative, Monad }
@@ -53,16 +51,12 @@ object UpdateService:
                   request.projectId,
                   request.dependencyName,
                   request.toVersion,
-                  mergeRequest.webUrl
+                  mergeRequest.webUrl.toString
                 )
                 EitherT(repository.save(attempt).map(_.asRight))
               .flatTap: mergeRequest =>
                 EitherT(
-                  jiraNotificationService.notify(
-                    request,
-                    // TODO: Move URI return type to GitlabApi
-                    URI(mergeRequest.webUrl)
-                  )
+                  jiraNotificationService.notify(request, mergeRequest.webUrl)
                 )
               .flatTap: _ =>
                 EitherT(Logger[F].info("Done with update").map(_.asRight))
@@ -74,7 +68,7 @@ object UpdateService:
         request: UpdateDependencyDetails,
         fileType: FileType
     ): F[Either[String, String]] =
-      getFileContent(
+      gitlabApi.getFileContent(
         request.projectGitlabId,
         request.projectBranch,
         request.filePath
@@ -135,15 +129,3 @@ object UpdateService:
           request.projectBranch,
           mergeRequestTitle
         )
-
-    private def getFileContent(
-        projectGitlabId: String,
-        branch: String,
-        pathToFile: String
-    ) =
-      // TODO: Move it to GitlabApi?
-      gitlabApi
-        .getFile(projectGitlabId, branch, pathToFile)
-        .map: fileResult =>
-          fileResult.flatMap: file =>
-            GitlabApi.decodeContent(file.content)
