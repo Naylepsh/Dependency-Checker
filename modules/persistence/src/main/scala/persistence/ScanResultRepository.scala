@@ -61,21 +61,6 @@ object ScanResultRepository:
     private def getProjectId(projectName: String): F[Option[UUID]] =
       ScanResultRepositorySQL.getProjectId(projectName).option.transact(xa)
 
-    def getScanReports(
-        projectNames: List[String],
-        timestamp: DateTime
-    ): F[List[ScanReport]] =
-      // TODO: Fix it I guess? Although it's only being used by delta service which isn't really hooked up to anything right now
-      List.empty.pure
-      // NonEmptyList.fromList(projectNames).fold(List.empty.pure): names =>
-      //   dependencyRepository.findLatestReleases(projectNames).flatMap:
-      //     releases =>
-      //       getAll(names, timestamp)
-      //         .to[List]
-      //         .map: results =>
-      //           GetAllResult.toDomain(results, releases)
-      //         .transact(xa)
-
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       if limit > 0 then
         ScanResultRepositorySQL.getLatestScansTimestamps(limit)
@@ -104,18 +89,6 @@ object ScanResultRepository:
                 .map(_.headOption)
                 .transact(xa)
             yield report
-
-    def getLatestScanReports(projectNames: List[String]): F[List[ScanReport]] =
-      for
-        _         <- Logger[F].info("Starting...")
-        timestamp <- getLatestScanTimestamp()
-        _         <- Logger[F].info(s"Last scan happened at $timestamp")
-        reports <-
-          timestamp.fold(Applicative[F].pure(List.empty))(timestamp =>
-            getScanReports(projectNames, timestamp)
-          )
-        _ <- Logger[F].info(s"Reports count: ${reports.length}")
-      yield reports
 
     def getVulnerabilitySummary(projectNames: NonEmptyList[String])
         : F[List[VulnerabilitySummary]] =
