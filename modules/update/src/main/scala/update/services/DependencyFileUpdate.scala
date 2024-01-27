@@ -3,6 +3,7 @@ package update.services
 import update.domain.FileType
 
 object DependencyFileUpdate:
+  // TODO: Remove this entire file and move the tests to appropriate parsers
   def replaceDependency(
       fileType: FileType,
       fileContent: String,
