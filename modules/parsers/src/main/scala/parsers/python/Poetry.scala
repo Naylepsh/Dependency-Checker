@@ -10,7 +10,7 @@ import cats.syntax.all.*
 
 trait Poetry[F[_]]:
   def update(
-      packageName: String,
+      name: String,
       from: String,
       to: String,
       files: PackageManagementFiles.PoetryFiles
@@ -19,13 +19,13 @@ trait Poetry[F[_]]:
 object Poetry:
   def make[F[_]: Sync]: Poetry[F] = new:
     def update(
-        packageName: String,
+        name: String,
         from: String,
         to: String,
         files: PackageManagementFiles.PoetryFiles
     ): F[Either[Throwable, PackageManagementFiles.PoetryFiles]] =
       val newPyProjectContent =
-        updatePackage(packageName, from, to, files.pyProjectContent)
+        updateDependency(name, from, to, files.pyProjectContent)
       val newFiles: PackageManagementFiles.PoetryFiles =
         files.copy(pyProjectContent = newPyProjectContent)
       updateLock(newFiles).map: result =>
@@ -61,8 +61,8 @@ object Poetry:
             Files.deleteIfExists(pyProjectPath)
             Files.deleteIfExists(lockPath)
 
-  def updatePackage(
-      packageName: String,
+  def updateDependency(
+      name: String,
       from: String,
       to: String,
       pyProjectContent: String
@@ -70,8 +70,8 @@ object Poetry:
     pyProjectContent
       .split("\n")
       .map: line =>
-        val index                = line.indexOf(packageName)
-        val indexOfCharAfterName = index + packageName.length
+        val index                = line.indexOf(name)
+        val indexOfCharAfterName = index + name.length
         val isLineNameAndVersion = index == 0
           && line.length > indexOfCharAfterName
           && line(indexOfCharAfterName) == ' '
