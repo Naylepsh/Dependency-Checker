@@ -8,15 +8,13 @@ import scala.sys.process.*
 import cats.effect.kernel.Sync
 import cats.syntax.all.*
 
-case class PoetryFiles(pyProjectContent: String, lockContent: String)
-
 trait Poetry[F[_]]:
   def update(
       packageName: String,
       from: String,
       to: String,
-      files: PoetryFiles
-  ): F[Either[Throwable, PoetryFiles]]
+      files: PackageManagementFiles.PoetryFiles
+  ): F[Either[Throwable, PackageManagementFiles.PoetryFiles]]
 
 object Poetry:
   def make[F[_]: Sync]: Poetry[F] = new:
@@ -24,16 +22,18 @@ object Poetry:
         packageName: String,
         from: String,
         to: String,
-        files: PoetryFiles
-    ): F[Either[Throwable, PoetryFiles]] =
+        files: PackageManagementFiles.PoetryFiles
+    ): F[Either[Throwable, PackageManagementFiles.PoetryFiles]] =
       val newPyProjectContent =
         updatePackage(packageName, from, to, files.pyProjectContent)
-      val newFiles = files.copy(pyProjectContent = newPyProjectContent)
+      val newFiles: PackageManagementFiles.PoetryFiles =
+        files.copy(pyProjectContent = newPyProjectContent)
       updateLock(newFiles).map: result =>
         result.map: newLockContent =>
           newFiles.copy(lockContent = newLockContent)
 
-    private def updateLock(files: PoetryFiles): F[Either[Throwable, String]] =
+    private def updateLock(files: PackageManagementFiles.PoetryFiles)
+        : F[Either[Throwable, String]] =
       val dir           = Paths.get(s"./data/poetry/${UUID.randomUUID()}")
       val pyProjectPath = dir.resolve(Paths.get("pyproject.toml"))
       val lockPath      = dir.resolve(Paths.get("poetry.lock"))
