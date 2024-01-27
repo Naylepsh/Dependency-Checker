@@ -5,8 +5,8 @@ import java.util.UUID
 
 import scala.sys.process.*
 
-import cats.syntax.all.*
 import cats.effect.kernel.Sync
+import cats.syntax.all.*
 
 case class PoetryFiles(pyProjectContent: String, lockContent: String)
 
@@ -32,26 +32,6 @@ object Poetry:
       updateLock(newFiles).map: result =>
         result.map: newLockContent =>
           newFiles.copy(lockContent = newLockContent)
-
-    private def updatePackage(
-        packageName: String,
-        from: String,
-        to: String,
-        pyProjectContent: String
-    ): String =
-      pyProjectContent
-        .split("\n")
-        .map: line =>
-          val index                = line.indexOf(packageName)
-          val indexOfCharAfterName = index + packageName.length
-          val isLineNameAndVersion = index == 0
-            && line.length > indexOfCharAfterName
-            && line(indexOfCharAfterName) == ' '
-          if isLineNameAndVersion then
-            line.replace(from, to)
-          else
-            line
-        .mkString("\n") + "\n"
 
     private def updateLock(files: PoetryFiles): F[Either[Throwable, String]] =
       val dir           = Paths.get(s"./data/poetry/${UUID.randomUUID()}")
@@ -80,3 +60,23 @@ object Poetry:
           Sync[F].delay:
             Files.deleteIfExists(pyProjectPath)
             Files.deleteIfExists(lockPath)
+
+  def updatePackage(
+      packageName: String,
+      from: String,
+      to: String,
+      pyProjectContent: String
+  ): String =
+    pyProjectContent
+      .split("\n")
+      .map: line =>
+        val index                = line.indexOf(packageName)
+        val indexOfCharAfterName = index + packageName.length
+        val isLineNameAndVersion = index == 0
+          && line.length > indexOfCharAfterName
+          && line(indexOfCharAfterName) == ' '
+        if isLineNameAndVersion then
+          line.replace(from, to)
+        else
+          line
+      .mkString("\n") + "\n"

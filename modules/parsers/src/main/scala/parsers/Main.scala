@@ -1,10 +1,9 @@
 package parsers
 
-import python.{ Poetry, PoetryFiles }
-
 import cats.Id
-import cats.effect.IOApp
-import cats.effect.IO
+import cats.effect.{IO, IOApp}
+
+import python.{ Poetry, PoetryFiles }
 
 object ParsersMain extends IOApp.Simple:
   def run: IO[Unit] =
@@ -55,7 +54,7 @@ object ParsersMain extends IOApp.Simple:
         |lock-version = "2.0"
         |python-versions = "^3.11"
         |content-hash = "0b5b280fce119e317e2d4d66e08fe5f5bfa0041ec7cde34dbf25349a0a5d0cfa"""".stripMargin
-    val files  = PoetryFiles(pyProject, lock)
+    val files = PoetryFiles(pyProject, lock)
 
     poetry
       .update("returns", "0.20.0", "0.21.0", files)
