@@ -25,6 +25,8 @@ import update.services.*
 
 import concurrent.duration.*
 import controllers.HealthcheckController
+import parsers.python.Poetry
+import parsers.python.Requirements
 
 object Main extends IOApp:
   def run(args: List[String]): IO[ExitCode] = runServer
@@ -90,12 +92,16 @@ object Main extends IOApp:
                     autoUpdateConfig.issueType
                   )
             .getOrElse(JiraNotificationService.noop[IO])
+          val poetry       = Poetry.make[IO]
+          val requirements = Requirements.make
           val updateService =
             UpdateService.make(
               updateRepository,
               projectRepository,
               gitlabApi,
-              jiraNotificationService
+              jiraNotificationService,
+              poetry,
+              requirements
             )
           val updateGateway =
             UpdateGateway.make[IO](updateRepository, updateService, processor)
