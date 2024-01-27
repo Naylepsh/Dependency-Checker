@@ -14,6 +14,10 @@ trait Requirements:
   ): Either[RequirementsUpdateError, PackageManagementFiles.RequirementFile]
 
 object Requirements:
+  private val versionComparisonSymbols = List('=', '>', '^', '~')
+  private val removeSymbolsRegex =
+    versionComparisonSymbols.mkString("[", "", "]")
+
   def make: Requirements = new:
     def update(
         packageName: String,
@@ -21,7 +25,8 @@ object Requirements:
         to: String,
         file: PackageManagementFiles.RequirementFile
     ): Either[RequirementsUpdateError, PackageManagementFiles.RequirementFile] =
-      val simplePattern = (s"^(" + packageName + ")([<>=!~^]+)(.*)$").r
+      val symbollessFrom = from.replaceAll(removeSymbolsRegex, "")
+      val simplePattern  = (s"^(" + packageName + ")([<>=!~^]+)(.*)$").r
       val withExtraPattern =
         (s"^(" + packageName + ")\\[(.*)\\]([<>=!~^]+)(.*)$").r
 
@@ -29,9 +34,9 @@ object Requirements:
         .split("\n")
         .map:
           case simplePattern(name, operator, version)
-              if version == from => s"$name$operator$to"
+              if version == symbollessFrom => s"$name$operator$to"
           case withExtraPattern(name, extra, operator, version)
-              if version == from => s"$name[$extra]$operator$to"
+              if version == symbollessFrom => s"$name[$extra]$operator$to"
           case line => line
         .mkString("\n") + "\n"
 

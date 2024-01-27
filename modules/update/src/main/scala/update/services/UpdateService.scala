@@ -50,7 +50,7 @@ object UpdateService:
           case Right(fileType) =>
             EitherT(ensureAttemptWasNotMadeBefore(request))
               .flatMap: _ =>
-                updatePackage(request, fileType)
+                updateDependencyInDependencyManager(request, fileType)
               .flatMap: updatedContent =>
                 EitherT(publishToGit(request, updatedContent))
               .flatTap: mergeRequest =>
@@ -114,15 +114,17 @@ object UpdateService:
           mergeRequestTitle
         )
 
-    private def updatePackage(
+    private def updateDependencyInDependencyManager(
         request: UpdateDependencyDetails,
         fileType: FileType
     ) =
       fileType match
-        case FileType.Txt  => updatePackageInRequirements(request)
-        case FileType.Toml => updatePackageInPoetry(request)
+        case FileType.Txt  => updateDependencyInRequirements(request)
+        case FileType.Toml => updateDependencyInPoetry(request)
 
-    private def updatePackageInRequirements(request: UpdateDependencyDetails) =
+    private def updateDependencyInRequirements(
+        request: UpdateDependencyDetails
+    ) =
       EitherT:
         getRequirementsTxtFromGit(
           request.projectGitlabId,
@@ -153,7 +155,7 @@ object UpdateService:
           result.map: content =>
             PackageManagementFiles.RequirementFile(content)
 
-    private def updatePackageInPoetry(request: UpdateDependencyDetails) =
+    private def updateDependencyInPoetry(request: UpdateDependencyDetails) =
       val parent    = Paths.get(request.filePath).getParent
       val pyProject = parent.resolve("pyproject.toml").toString
       val lock      = parent.resolve("poetry.lock").toString
