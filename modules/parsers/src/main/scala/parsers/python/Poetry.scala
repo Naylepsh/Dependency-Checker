@@ -16,7 +16,7 @@ trait Poetry[F[_]]:
       from: String,
       to: String,
       files: PoetryFiles
-  ): F[PoetryFiles]
+  ): F[Either[Throwable, PoetryFiles]]
 
 object Poetry:
   def make[F[_]: Sync]: Poetry[F] = new:
@@ -25,12 +25,13 @@ object Poetry:
         from: String,
         to: String,
         files: PoetryFiles
-    ): F[PoetryFiles] =
+    ): F[Either[Throwable, PoetryFiles]] =
       val newPyProjectContent =
         updatePackage(packageName, from, to, files.pyProjectContent)
       val newFiles = files.copy(pyProjectContent = newPyProjectContent)
-      updateLock(newFiles).map: newLockContent =>
-        newFiles.copy(lockContent = newLockContent)
+      updateLock(newFiles).map: result =>
+        result.map: newLockContent =>
+          newFiles.copy(lockContent = newLockContent)
 
     private def updatePackage(
         packageName: String,
@@ -52,29 +53,30 @@ object Poetry:
             line
         .mkString("\n") + "\n"
 
-    private def updateLock(files: PoetryFiles): F[String] =
-      // TODO: Handle errors in case poetry doesn't exists, etc.
-      Sync[F].delay:
-        val dir           = Paths.get(s"./data/poetry/${UUID.randomUUID()}")
-        val pyProjectPath = dir.resolve(Paths.get("pyproject.toml"))
-        val lockPath      = dir.resolve(Paths.get("poetry.lock"))
+    private def updateLock(files: PoetryFiles): F[Either[Throwable, String]] =
+      val dir           = Paths.get(s"./data/poetry/${UUID.randomUUID()}")
+      val pyProjectPath = dir.resolve(Paths.get("pyproject.toml"))
+      val lockPath      = dir.resolve(Paths.get("poetry.lock"))
 
-        Files.createDirectories(dir)
-        Files.write(
-          pyProjectPath,
-          files.pyProjectContent.getBytes,
-          StandardOpenOption.CREATE
-        )
-        Files.write(
-          lockPath,
-          files.lockContent.getBytes,
-          StandardOpenOption.CREATE
-        )
+      Sync[F]
+        .delay:
+          Files.createDirectories(dir)
+          Files.write(
+            pyProjectPath,
+            files.pyProjectContent.getBytes,
+            StandardOpenOption.CREATE
+          )
+          Files.write(
+            lockPath,
+            files.lockContent.getBytes,
+            StandardOpenOption.CREATE
+          )
 
-        s"poetry lock --directory=$dir".!!
-        val newLockContent = Files.readString(lockPath)
+          s"poetry lock --directory=$dir".!!
 
-        Files.deleteIfExists(pyProjectPath)
-        Files.deleteIfExists(lockPath)
-
-        newLockContent
+          Files.readString(lockPath)
+        .attempt
+        .flatTap: _ =>
+          Sync[F].delay:
+            Files.deleteIfExists(pyProjectPath)
+            Files.deleteIfExists(lockPath)
