@@ -164,16 +164,14 @@ object GitlabApi:
         branch: String,
         filePath: String
     ): F[Either[String, RepositoryFile]] =
-      val queryParams = Map(
-        "ref"           -> branch,
-        "private_token" -> token.getOrElse("")
-      )
+      val queryParams = Map("ref" -> branch)
       val projectFileEndpoint =
         uri"https://$host/api/v4/projects/$id/repository/files/$filePath?$queryParams"
 
       basicRequest
         .get(projectFileEndpoint)
         .readTimeout(10.seconds)
+        .header("PRIVATE-TOKEN", token)
         .response(asJson[RepositoryFile])
         .send(backend)
         .map(_.body.leftMap(buildErrorMessage(projectFileEndpoint)))

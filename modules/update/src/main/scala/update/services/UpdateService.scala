@@ -44,7 +44,7 @@ object UpdateService:
             update(req)
 
     def update(request: UpdateDependencyDetails): F[Either[String, Unit]] =
-      Logger[F].info("Requested update") *> (
+      Logger[F].info(s"Requested update for ${request}") *> (
         FileType.fromPath(request.filePath) match
           case Left(reason) => reason.asLeft.pure
           case Right(fileType) =>
@@ -156,9 +156,13 @@ object UpdateService:
             PackageManagementFiles.RequirementFile(content)
 
     private def updateDependencyInPoetry(request: UpdateDependencyDetails) =
-      val parent    = Paths.get(request.filePath).getParent
-      val pyProject = parent.resolve("pyproject.toml").toString
-      val lock      = parent.resolve("poetry.lock").toString
+      val parent = Option(Paths.get(request.filePath).getParent)
+      val pyProject = parent
+        .map(_.resolve("pyproject.toml").toString)
+        .getOrElse("pyproject.toml")
+      val lock = parent
+        .map(_.resolve("poetry.lock").toString)
+        .getOrElse("poetry.lock")
 
       for
         originalFiles <- EitherT(getPoetryFilesFromGit(
