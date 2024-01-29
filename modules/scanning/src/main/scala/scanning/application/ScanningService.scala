@@ -101,9 +101,9 @@ object ScanningService:
             processor.add(obtainUnknownSeveritiesOfVulnerabilities)
           val updateDependencies = processor.add:
             /**
-             * Because the latest scans (and thus latest versions) can/will change after doScan, 
+             * Because the latest scans (and thus latest versions) can/will change after doScan,
              * which is now a background task, we need to ensure that updates happen AFTER the tasks are finished.
-             * Fortunatelly, task processor handles 1 task at the time for now, 
+             * Fortunatelly, task processor handles 1 task at the time for now,
              * so turning this handler into a task solves the issue,
              * but we're in for trouble when task processor starts running multiple workers
              */
@@ -140,7 +140,8 @@ object ScanningService:
                     ))
 
                 (isHoled, versionDifference) match
-                  case (true, Some(semver.VersionDifference.Patch) | None) =>
+                  case (_, None)                                    =>
+                  case (true, Some(semver.VersionDifference.Patch)) =>
                   case _ =>
                     depsToUpdate = UpdateDependency(
                       scan.projectName,
