@@ -146,7 +146,7 @@ object ScanningService:
                       scan.projectName,
                       dependencySummary.scanReport.name,
                       summary.groupName,
-                      currentVersion,
+                      semver.removeSymbol(currentVersion),
                       dependencySummary.scanReport.latestVersion
                     ) :: depsToUpdate
       depsToUpdate

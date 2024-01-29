@@ -1,20 +1,18 @@
 package scanning.application
 
 import cats.syntax.all.*
-import core.domain.Time
 import core.domain.Time.DeltaUnit
 import core.domain.dependency.{ DependencyScanReport, DependencyVulnerability }
 import core.domain.project.{ ProjectVulnerability, ScanReport }
 import core.domain.severity.{ Severity, determineSeverity }
-import org.joda.time.DateTime
-import scalatags.Text.all.*
 import core.domain.update.UpdateDependency
-import io.circe.syntax.*
+import core.domain.{Grouped, Time, semver}
 import io.circe.generic.auto.*
-import scanning.domain.ScanSummary
+import io.circe.syntax.*
+import org.joda.time.DateTime
 import scalatags.Text.TypedTag
-import scanning.domain.DependencySummary
-import core.domain.Grouped
+import scalatags.Text.all.*
+import scanning.domain.{DependencySummary, ScanSummary}
 
 object ScanningViews:
   private def renderSortByNameAction(
@@ -138,7 +136,7 @@ object ScanningViews:
                       projectName,
                       dependencySummary.scanReport.name,
                       group.groupName,
-                      currentVersion,
+                      semver.removeSymbol(currentVersion),
                       dependencySummary.scanReport.latestVersion
                     )
                   ),

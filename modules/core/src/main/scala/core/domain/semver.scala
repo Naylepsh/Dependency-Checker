@@ -40,6 +40,8 @@ object semver:
         (major, minor, patch).tupled.map: (major, minor, patch) =>
           s"""${symbol.getOrElse("")}$major.$minor.$patch"""
 
+  def removeSymbol(version: String): String = version.replaceAll("[~^]", "")
+
   private def extractVersion(
       text: String
   ): Option[

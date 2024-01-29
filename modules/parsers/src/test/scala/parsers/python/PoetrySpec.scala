@@ -73,6 +73,6 @@ object PoetrySpec:
       version: String
   ): String = s"""
   |a = "1.2.3"
-  |$name = "$version"
+  |$name = "$symbol$version"
   |b = "1.2.3"
   |""".stripMargin
