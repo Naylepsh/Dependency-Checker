@@ -120,6 +120,16 @@ docker / dockerfile := {
       "https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64"
     )
     run("chmod", "+x", "/usr/local/bin/dbmate")
+    run("microdnf", "install", "python3.11")
+    runShell(
+      "curl",
+      "-sSL",
+      "https://install.python-poetry.org",
+      "|",
+      "python3",
+      "-"
+    )
+    env("PATH", "/root/.local/bin:$PATH")
     entryPoint(s"./bin/${executableScriptName.value}")
     copy(appDir, targetDir, chown = "daemon:daemon")
   }
