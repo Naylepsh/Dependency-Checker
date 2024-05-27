@@ -1,17 +1,18 @@
 package update.services
 
 import java.nio.file.Paths
+import java.util.UUID
 
 import cats.data.EitherT
 import cats.syntax.all.*
 import cats.{ Applicative, Monad }
 import core.domain.project.ProjectScanConfigRepository
-import core.domain.update.UpdateDependency
+import core.domain.update.{ DependencyToUpdate, UpdateDependency }
 import gitlab.{ Action, CommitAction, GitlabApi }
 import jira.*
-import update.domain.*
 import org.legogroup.woof.{ *, given }
 import parsers.python.{ PackageManagementFiles, Poetry, Requirements }
+import update.domain.*
 
 private case class FileContent(filePath: String, content: String)
 
@@ -24,6 +25,16 @@ object UpdateService:
       poetry: Poetry[F],
       requirements: Requirements
   ): UpdateService[F] = new:
+
+    def canUpdate(
+        dependencies: List[DependencyToUpdate],
+        projectId: UUID,
+        sourceFile: String
+    ): F[List[(DependencyToUpdate, Boolean)]] =
+      val requests = dependencies.map: dependency =>
+        UpdateRequest(projectId, dependency.name, dependency.latestVersion)
+      repository.exist(requests).map: existingRequests =>
+        canUpdate(dependencies, existingRequests, sourceFile)
 
     def update(request: UpdateDependency): F[Either[String, Unit]] =
       projectConfigRepository
@@ -204,3 +215,20 @@ object UpdateService:
       (getPyProject, getLock).tupled.map: (pyProjectRes, lockRes) =>
         (pyProjectRes, lockRes).tupled.map: (pyProject, lock) =>
           PackageManagementFiles.PoetryFiles(pyProject, lock)
+
+    private def canUpdate(
+        dependencies: List[DependencyToUpdate],
+        existingRequests: List[UpdateRequest],
+        sourceFile: String
+    ): List[(DependencyToUpdate, Boolean)] =
+      dependencies.map: dependency =>
+        val requestExists = existingRequests
+          .find(_.dependencyName == dependency.name)
+          .isDefined
+        val canBeUpdated = dependency
+          .currentVersion
+          .map: currentVersion =>
+            currentVersion != dependency.latestVersion
+              && FileType.fromPath(sourceFile).isRight
+          .getOrElse(false)
+        (dependency, !requestExists && canBeUpdated)
