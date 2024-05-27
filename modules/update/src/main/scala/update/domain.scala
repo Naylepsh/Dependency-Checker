@@ -3,7 +3,7 @@ package update
 import java.util.UUID
 
 import cats.syntax.all.*
-import core.domain.update.UpdateDependency
+import core.domain.update.{ DependencyToUpdate, UpdateDependency }
 
 object domain:
   enum FileType:
@@ -16,7 +16,7 @@ object domain:
         .getOrElse(path)
         .split("[.]")
         .lastOption match
-        case Some("txt") => FileType.Txt.asRight
+        case Some("txt")  => FileType.Txt.asRight
         case Some("toml") => FileType.Toml.asRight
         case other        => s"$other is not a supported format".asLeft
 
@@ -54,5 +54,10 @@ object domain:
     def save(attempt: UpdateAttempt): F[UUID]
 
   trait UpdateService[F[_]]:
+    def canUpdate(
+        dependencies: List[DependencyToUpdate],
+        projectId: UUID,
+        sourceFile: String
+    ): F[List[(DependencyToUpdate, Boolean)]]
     def update(request: UpdateDependency): F[Either[String, Unit]]
     def update(request: UpdateDependencyDetails): F[Either[String, Unit]]

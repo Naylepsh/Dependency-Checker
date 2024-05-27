@@ -36,17 +36,4 @@ object UpdateGateway:
         projectId: UUID,
         sourceFile: String
     ): F[List[(DependencyToUpdate, Boolean)]] =
-      val requests = dependencies.map: dependency =>
-        UpdateRequest(projectId, dependency.name, dependency.latestVersion)
-      repository.exist(requests).map: existingRequests =>
-        dependencies.map: dependency =>
-          val requestExists = existingRequests
-            .find(_.dependencyName == dependency.name)
-            .isDefined
-          val canBeUpdated = dependency
-            .currentVersion
-            .map: currentVersion =>
-              currentVersion != dependency.latestVersion
-                && FileType.fromPath(sourceFile).isRight
-            .getOrElse(false)
-          (dependency, !requestExists && canBeUpdated)
+      service.canUpdate(dependencies, projectId, sourceFile)

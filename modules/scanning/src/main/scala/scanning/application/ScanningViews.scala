@@ -6,13 +6,13 @@ import core.domain.dependency.{ DependencyScanReport, DependencyVulnerability }
 import core.domain.project.{ ProjectVulnerability, ScanReport }
 import core.domain.severity.{ Severity, determineSeverity }
 import core.domain.update.UpdateDependency
-import core.domain.{Grouped, Time, semver}
+import core.domain.{ Grouped, Time, semver }
 import io.circe.generic.auto.*
 import io.circe.syntax.*
 import org.joda.time.DateTime
 import scalatags.Text.TypedTag
 import scalatags.Text.all.*
-import scanning.domain.{DependencySummary, ScanSummary}
+import scanning.domain.{ DependencySummary, ScanSummary }
 
 object ScanningViews:
   private def renderSortByNameAction(
@@ -127,7 +127,7 @@ object ScanningViews:
             .scanReport
             .currentVersion
             .foreach: currentVersion =>
-              if dependencySummary.canBeUpdated then
+              if dependencySummary.shouldBeUpdated then
                 actions = button(
                   cls            := "bg-blue-500 ml-3 px-2 py-1 disabled:opacity-75 disabled:bg-gray-700",
                   htmx.ajax.post := "/api/update",

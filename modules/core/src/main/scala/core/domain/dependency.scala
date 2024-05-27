@@ -7,6 +7,7 @@ import com.github.nscala_time.time.Imports.*
 import org.joda.time.Days
 
 import vulnerability.*
+import core.domain.semver.VersionDifference
 
 object dependency:
   case class Dependency(
@@ -88,6 +89,10 @@ object dependency:
           date.toLocalDate(),
           now.toLocalDate()
         ).getDays() < 3 * 365
+
+    val versionDifference: Option[VersionDifference] =
+      currentVersion.flatMap: currentVer =>
+        semver.calculateVersionDifference(currentVer, latestVersion)
 
   object DependencyScanReport:
     def compareByNameAsc(
