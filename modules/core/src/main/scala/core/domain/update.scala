@@ -17,7 +17,7 @@ object update:
       name: String,
       currentVersion: Option[String],
       latestVersion: String,
-      vulnerabilities: List[DependencyVulnerability] = List.empty
+      vulnerabilities: List[DependencyVulnerability]
   )
 
   trait UpdateGateway[F[_]]:

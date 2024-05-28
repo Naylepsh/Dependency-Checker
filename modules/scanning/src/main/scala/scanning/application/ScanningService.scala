@@ -149,7 +149,8 @@ object ScanningService:
         DependencyToUpdate(
           report.name,
           report.currentVersion,
-          report.latestVersion
+          report.latestVersion,
+          report.vulnerabilities
         )
 
       (
