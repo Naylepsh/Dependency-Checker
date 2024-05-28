@@ -127,7 +127,7 @@ object ScanningViews:
             .scanReport
             .currentVersion
             .foreach: currentVersion =>
-              if dependencySummary.shouldBeUpdated then
+              if dependencySummary.canUpdate then
                 actions = button(
                   cls            := "bg-blue-500 ml-3 px-2 py-1 disabled:opacity-75 disabled:bg-gray-700",
                   htmx.ajax.post := "/api/update",

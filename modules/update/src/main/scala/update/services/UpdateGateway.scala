@@ -37,3 +37,7 @@ object UpdateGateway:
         sourceFile: String
     ): F[List[(DependencyToUpdate, Boolean)]] =
       service.canUpdate(dependencies, projectId, sourceFile)
+
+    def shouldUpdate(dependencies: List[DependencyToUpdate])
+        : F[List[(DependencyToUpdate, Boolean)]] =
+      service.shouldUpdate(dependencies)
