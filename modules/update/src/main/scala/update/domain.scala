@@ -59,5 +59,7 @@ object domain:
         projectId: UUID,
         sourceFile: String
     ): F[List[(DependencyToUpdate, Boolean)]]
+    def shouldUpdate(dependencies: List[DependencyToUpdate])
+        : F[List[(DependencyToUpdate, Boolean)]]
     def update(request: UpdateDependency): F[Either[String, Unit]]
     def update(request: UpdateDependencyDetails): F[Either[String, Unit]]

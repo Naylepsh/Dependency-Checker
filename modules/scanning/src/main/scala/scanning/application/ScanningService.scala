@@ -123,35 +123,6 @@ object ScanningService:
 
           doScan *> checkVulnerabilities *> updateDependencies
 
-    private def extractDependenciesToUpdate(scans: List[ScanSummary]) =
-      var depsToUpdate = List.empty[UpdateDependency]
-      scans.foreach: scan =>
-        scan.dependencySummaries.foreach: summary =>
-          summary.items.foreach: dependencySummary =>
-            dependencySummary.scanReport.currentVersion.foreach:
-              currentVersion =>
-                val isHoled = semver.isHoled(currentVersion)
-                val versionDifference =
-                  semver
-                    .unhole(currentVersion)
-                    .flatMap(semver.calculateVersionDifference(
-                      _,
-                      dependencySummary.scanReport.latestVersion
-                    ))
-
-                (isHoled, versionDifference) match
-                  case (_, None)                                    =>
-                  case (true, Some(semver.VersionDifference.Patch)) =>
-                  case _ =>
-                    depsToUpdate = UpdateDependency(
-                      scan.projectName,
-                      dependencySummary.scanReport.name,
-                      summary.groupName,
-                      semver.removeSymbol(currentVersion),
-                      dependencySummary.scanReport.latestVersion
-                    ) :: depsToUpdate
-      depsToUpdate
-
     def getLatestScansTimestamps(limit: Int): F[List[DateTime]] =
       repository.getLatestScansTimestamps(limit)
 
@@ -167,26 +138,35 @@ object ScanningService:
     private def summarize(report: ScanReport): F[ScanSummary] =
       report
         .dependenciesReports
-        .traverse: group =>
-          val toUpdate = group.items.map: report =>
-            DependencyToUpdate(
-              report.name,
-              report.currentVersion,
-              report.latestVersion
-            )
-          updateGateway
-            .canUpdate(toUpdate, report.projectId, group.groupName)
-            .map: results =>
-              group.items.map: dependency =>
-                val canUpdate = results
-                  .find: (dep, _) =>
-                    dep.name == dependency.name
-                  .map: (_, result) =>
-                    result
-                  .getOrElse(true)
-                DependencySummary(dependency, canUpdate)
-            .map(Grouped(group.groupName, _))
+        .traverse(group => summarize(report, group))
         .map(ScanSummary(report.projectName, _))
+
+    private def summarize(
+        report: ScanReport,
+        group: Grouped[DependencyScanReport]
+    ) =
+      val toUpdate = group.items.map: report =>
+        DependencyToUpdate(
+          report.name,
+          report.currentVersion,
+          report.latestVersion,
+          report.vulnerabilities
+        )
+
+      (
+        updateGateway.canUpdate(toUpdate, report.projectId, group.groupName),
+        updateGateway.shouldUpdate(toUpdate)
+      ).tupled.map: (canUpdate, shouldUpdate) =>
+        val depsToUpdate = canUpdate.filter: (dep, cu) =>
+          cu && shouldUpdate.find(_._1 == dep).map(_._2).getOrElse(false)
+        Grouped(
+          group.groupName,
+          items = group.items.map: report =>
+            DependencySummary(
+              report,
+              depsToUpdate.exists(_._1.name == report.name)
+            )
+        )
 
     def obtainUnknownSeveritiesOfVulnerabilities: F[Unit] =
       repository.getVulnerabilitiesOfUnknownSeverity.flatMap: vulnerabilities =>
@@ -215,6 +195,21 @@ object ScanningService:
 
     def getVulnerabilitiesSince(time: DateTime): F[List[ProjectVulnerability]] =
       repository.getVulnerabilitiesSince(time)
+
+  private def extractDependenciesToUpdate(scans: List[ScanSummary]) =
+    var depsToUpdate = List.empty[UpdateDependency]
+    scans.foreach: scan =>
+      scan.dependencySummaries.foreach: summary =>
+        summary.items.foreach: dependencySummary =>
+          dependencySummary.scanReport.currentVersion.foreach: currentVersion =>
+            depsToUpdate = UpdateDependency(
+              scan.projectName,
+              dependencySummary.scanReport.name,
+              summary.groupName,
+              semver.removeSymbol(currentVersion),
+              dependencySummary.scanReport.latestVersion
+            ) :: depsToUpdate
+    depsToUpdate
 
   private val latestKey = "LATEST"
 

@@ -13,6 +13,7 @@ import jira.*
 import org.legogroup.woof.{ *, given }
 import parsers.python.{ PackageManagementFiles, Poetry, Requirements }
 import update.domain.*
+import core.domain.semver
 
 private case class FileContent(filePath: String, content: String)
 
@@ -26,7 +27,7 @@ object UpdateService:
       requirements: Requirements
   ): UpdateService[F] = new:
 
-    def canUpdate(
+    override def canUpdate(
         dependencies: List[DependencyToUpdate],
         projectId: UUID,
         sourceFile: String
@@ -36,7 +37,11 @@ object UpdateService:
       repository.exist(requests).map: existingRequests =>
         canUpdate(dependencies, existingRequests, sourceFile)
 
-    def update(request: UpdateDependency): F[Either[String, Unit]] =
+    override def shouldUpdate(dependencies: List[DependencyToUpdate])
+        : F[List[(DependencyToUpdate, Boolean)]] =
+      dependencies.map(d => d -> UpdateService.shouldUpdate(d)).pure
+
+    override def update(request: UpdateDependency): F[Either[String, Unit]] =
       projectConfigRepository
         .findByProjectName(request.projectName)
         .flatMap:
@@ -54,7 +59,8 @@ object UpdateService:
             )
             update(req)
 
-    def update(request: UpdateDependencyDetails): F[Either[String, Unit]] =
+    override def update(request: UpdateDependencyDetails)
+        : F[Either[String, Unit]] =
       Logger[F].info(s"Requested update for ${request}") *> (
         FileType.fromPath(request.filePath) match
           case Left(reason) => reason.asLeft.pure
@@ -232,3 +238,24 @@ object UpdateService:
               && FileType.fromPath(sourceFile).isRight
           .getOrElse(false)
         (dependency, !requestExists && canBeUpdated)
+
+  def shouldUpdate(dependency: DependencyToUpdate): Boolean =
+    dependency.currentVersion.map: currentVersion =>
+      val isHoled = semver.isHoled(currentVersion)
+      val versionDifference = semver
+        .unhole(currentVersion)
+        .flatMap(semver.calculateVersionDifference(_, dependency.latestVersion))
+      val hasVulnerabilities = dependency.vulnerabilities.nonEmpty
+      val couldResolveVulnerabilities =
+        semver.removeSymbol(currentVersion) != dependency.latestVersion
+
+      (
+        isHoled,
+        versionDifference,
+        hasVulnerabilities && couldResolveVulnerabilities
+      ) match
+        case (_, _, true)                                        => true
+        case (_, None, false)                                    => false
+        case (true, Some(semver.VersionDifference.Patch), false) => false
+        case _                                                   => true
+    .getOrElse(false)
